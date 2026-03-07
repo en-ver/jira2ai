@@ -1,0 +1,33 @@
+[project]
+name = "jira2mcp"
+version = "0.1.0"
+description = "MCP server exposing Jira Cloud tools via FastMCP"
+readme = "README.md"
+authors = [
+    { name = "en-ver" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "fastmcp>=3.1.0",
+    "jira2py==0.4.0",
+    "marklassian>=0.1.0",
+    "pathvalidate>=3.3.1",
+    "pyadf>=0.3.0",
+    "pydantic>=2.12.5",
+]
+
+[project.scripts]
+jira2mcp = "jira2mcp:main"
+
+[build-system]
+requires = ["uv_build>=0.10.4,<0.11.0"]
+build-backend = "uv_build"
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "UP"]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.4",
+    "ty>=0.0.20",
+]
