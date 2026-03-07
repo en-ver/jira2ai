@@ -56,7 +56,7 @@ async def add_link(
     )
 
     try:
-        data = api.issue_links.create_link(
+        api.issue_links.create_link(
             link_type_name=link_type,
             inward_issue_key=inward_issue_key,
             outward_issue_key=outward_issue_key,
