@@ -65,13 +65,13 @@ jobs:
         run: uv sync --group dev
 
       - name: Ruff lint
-        run: uv run ruff check src
+        run: uv run ruff check src scripts
 
       - name: Ruff format
-        run: uv run ruff format --check src
+        run: uv run ruff format --check src scripts
 
       - name: Type check
-        run: uv run ty check src/
+        run: uv run ty check src/ scripts/
 
   build:
     name: Build package
