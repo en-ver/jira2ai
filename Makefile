@@ -36,9 +36,9 @@ check: lint format type-check
 
 # Run non-mutating CI-style checks
 check-ci:
-	uv run --frozen ruff check src scripts
-	uv run --frozen ruff format --check src scripts
-	uv run --frozen ty check src/ scripts/
+	uv run --locked ruff check src scripts
+	uv run --locked ruff format --check src scripts
+	uv run --locked ty check src/ scripts/
 
 # Build sdist and wheel
 build: clean
@@ -58,9 +58,10 @@ bump-version:
 # Prepare a release before opening a PR to main
 release-prep:
 	$(MAKE) bump-version VERSION="$(VERSION_INPUT)" PART="$(PART)"
+	uv lock
 	$(MAKE) check-ci
 	$(MAKE) build
-	@echo "Release prep complete for v$$(uv run --frozen python scripts/bump_version.py --current)"
+	@echo "Release prep complete for v$$(uv run --locked python scripts/bump_version.py --current)"
 	@echo "Review the diff and open a PR from dev to main."
 
 # Require a clean main branch before tagging a release
