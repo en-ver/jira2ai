@@ -2,6 +2,8 @@
 
 PART ?= patch
 VERSION_INPUT := $(or $(VERSION),$(v))
+PACKAGE_DIR := packages/jira2mcp
+CHECK_PATHS := $(PACKAGE_DIR)/src scripts
 
 help:
 	@echo "Available targets:"
@@ -21,28 +23,28 @@ help:
 
 # Run ruff linting with auto-fix
 lint:
-	uv run ruff check --fix src scripts
+	uv run ruff check --fix $(CHECK_PATHS)
 
 # Run ruff formatting
 format:
-	uv run ruff format src scripts
+	uv run ruff format $(CHECK_PATHS)
 
 # Run ty type checking
 type-check:
-	uv run ty check src/ scripts/
+	uv run ty check $(PACKAGE_DIR)/src/ scripts/
 
 # Run all checks
 check: lint format type-check
 
 # Run non-mutating CI-style checks
 check-ci:
-	uv run --locked ruff check src scripts
-	uv run --locked ruff format --check src scripts
-	uv run --locked ty check src/ scripts/
+	uv run --locked ruff check $(CHECK_PATHS)
+	uv run --locked ruff format --check $(CHECK_PATHS)
+	uv run --locked ty check $(PACKAGE_DIR)/src/ scripts/
 
 # Build sdist and wheel
 build: clean
-	uv build
+	uv build --package jira2mcp
 
 # Print the current project version
 version-current:
@@ -94,4 +96,5 @@ push-release-tag:
 clean:
 	find . -type f -name "*.py[co]" -delete
 	find . -type d -name "__pycache__" -delete
-	rm -rf .mypy_cache/ .ty/ .ruff_cache/ .pytest_cache/ dist/ build/ *.egg-info
+	find . -type d -name "*.egg-info" -prune -exec rm -rf {} +
+	rm -rf .mypy_cache/ .ty/ .ruff_cache/ .pytest_cache/ dist/ build/ $(PACKAGE_DIR)/dist/ $(PACKAGE_DIR)/build/
