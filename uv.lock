@@ -462,7 +462,7 @@ wheels = [
 
 [[package]]
 name = "jira2mcp"
-version = "0.1.0"
+version = "0.1.1"
 source = { editable = "." }
 dependencies = [
     { name = "fastmcp" },
@@ -482,7 +482,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "fastmcp", specifier = ">=3.1.0" },
-    { name = "jira2py", specifier = "==0.4.0" },
+    { name = "jira2py", specifier = "==0.5.0" },
     { name = "marklassian", specifier = ">=0.1.0" },
     { name = "pathvalidate", specifier = ">=3.3.1" },
     { name = "pyadf", specifier = ">=0.3.0" },
@@ -497,15 +497,15 @@ dev = [
 
 [[package]]
 name = "jira2py"
-version = "0.4.0"
+version = "0.5.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx", extra = ["http2"] },
     { name = "tenacity" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/02/d4/70f67d2243f1cb2d7b2a873f6bc9e33dcead3279699a6a4c75e86cbeb6b9/jira2py-0.4.0.tar.gz", hash = "sha256:c6a8d2d2c1e1993d3bfdcfcae113316d7879a22d7ea7032635bfa843396a6ce3", size = 22910, upload-time = "2026-03-07T14:29:58.797Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/0c/e1/dbc55bd7d389333acbbe9e9bf85ae3eba49176b4daa543966450719d92ec/jira2py-0.5.0.tar.gz", hash = "sha256:139dfd8cd3661c9df9670e33ae49590eee1d4537cb0a77706d39fc7954a8cce5", size = 24444, upload-time = "2026-06-23T17:08:30.54Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/0e/04/3122abf301819d14593aac9e83ad857e33d64c5942cfd68ed7a5f40cc18a/jira2py-0.4.0-py3-none-any.whl", hash = "sha256:8013f130d18c26bbeebeef366ae20bd176fa711e5db5cf1b993827f0b66f6829", size = 20713, upload-time = "2026-03-07T14:29:57.744Z" },
+    { url = "https://files.pythonhosted.org/packages/f7/36/ef70015be3f0efcb045fffa77a430bedcdf48ce24eb11d5a7b38b1207f11/jira2py-0.5.0-py3-none-any.whl", hash = "sha256:91b509a6d3879d670eeca42b39938b0e7dcc3985714210f410cb5b1188a93a7f", size = 21675, upload-time = "2026-06-23T17:08:29.171Z" },
 ]
 
 [[package]]
