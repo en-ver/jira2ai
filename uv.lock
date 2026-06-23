@@ -2,6 +2,12 @@ version = 1
 revision = 3
 requires-python = ">=3.13"
 
+[manifest]
+members = [
+    "jira2ai-workspace",
+    "jira2mcp",
+]
+
 [[package]]
 name = "aiofile"
 version = "3.9.0"
@@ -461,9 +467,28 @@ wheels = [
 ]
 
 [[package]]
+name = "jira2ai-workspace"
+version = "0.0.0"
+source = { virtual = "." }
+
+[package.dev-dependencies]
+dev = [
+    { name = "ruff" },
+    { name = "ty" },
+]
+
+[package.metadata]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "ruff", specifier = ">=0.15.4" },
+    { name = "ty", specifier = ">=0.0.20" },
+]
+
+[[package]]
 name = "jira2mcp"
 version = "0.1.1"
-source = { editable = "." }
+source = { editable = "packages/jira2mcp" }
 dependencies = [
     { name = "fastmcp" },
     { name = "jira2py" },
@@ -471,12 +496,6 @@ dependencies = [
     { name = "pathvalidate" },
     { name = "pyadf" },
     { name = "pydantic" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "ruff" },
-    { name = "ty" },
 ]
 
 [package.metadata]
@@ -487,12 +506,6 @@ requires-dist = [
     { name = "pathvalidate", specifier = ">=3.3.1" },
     { name = "pyadf", specifier = ">=0.3.0" },
     { name = "pydantic", specifier = ">=2.12.5" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "ruff", specifier = ">=0.15.4" },
-    { name = "ty", specifier = ">=0.0.20" },
 ]
 
 [[package]]
