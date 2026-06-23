@@ -118,7 +118,7 @@ If you prefer not to set global environment variables, provide them directly in 
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development checks and pull request guidance.
+See [CONTRIBUTING.md](../../CONTRIBUTING.md) for development checks and pull request guidance.
 
 ## License
 
