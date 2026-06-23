@@ -116,6 +116,10 @@ If you prefer not to set global environment variables, provide them directly in 
 - **Extra fields** — request additional fields on `jira_read` beyond the standard set; rich-text fields are auto-converted.
 - **Link management** — read the `data://jira/link-types` resource to discover available link types, then create or delete links between issues.
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development checks and pull request guidance.
+
 ## License
 
 MIT
