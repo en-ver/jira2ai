@@ -1,29 +1,19 @@
 """Search Jira issues using JQL."""
 
-import json
 from typing import Annotated
 
 from fastmcp.dependencies import CurrentContext, Depends
-from fastmcp.exceptions import ToolError
 from fastmcp.server.context import Context
 from fastmcp.tools.tool import ToolResult
+from jira2ai_core.client import get_api
+from jira2ai_core.errors import JiraOperationError
+from jira2ai_core.operations.search import search_issues
 from jira2py import JiraAPI
 from pydantic import Field
 
-from ..formatters import format_search_results
-from ..models import SearchResult
-from ..utils import get_api, truncate
-from .server import tools
+from jira2mcp.adapter import adapt_operation_result, to_tool_error
 
-SEARCH_FIELDS = [
-    "summary",
-    "status",
-    "assignee",
-    "priority",
-    "issuetype",
-    "created",
-    "updated",
-]
+from .server import tools
 
 
 @tools.tool(
@@ -58,24 +48,11 @@ async def search(
     - created >= -7d
     """
     await ctx.info(f"Searching issues: {jql}")
-    limit = min(max_results, 50)
-    request_fields = fields or SEARCH_FIELDS
 
     try:
-        data = api.search.enhanced_search(
-            jql=jql,
-            max_results=limit,
-            fields=request_fields,
-        )
-    except Exception as e:
-        await ctx.error(f"Failed to search issues: {e}")
-        raise ToolError(f"Failed to search issues: {e}") from e
+        result = search_issues(jql, max_results=max_results, fields=fields, api=api)
+    except JiraOperationError as exc:
+        await ctx.error(str(exc))
+        raise to_tool_error(exc) from exc
 
-    if raw:
-        return ToolResult(
-            content=json.dumps(data, indent=2, default=str),
-            structured_content=data,
-        )
-
-    result = SearchResult.model_validate(data)
-    return truncate(format_search_results(result, jql=jql))
+    return adapt_operation_result(result, raw=raw, truncate_text=True)

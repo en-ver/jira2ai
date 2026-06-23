@@ -1,15 +1,17 @@
 """Create an issue link between two Jira issues."""
 
-import json
 from typing import Annotated
 
 from fastmcp.dependencies import CurrentContext, Depends
-from fastmcp.exceptions import ToolError
 from fastmcp.server.context import Context
 from fastmcp.tools.tool import ToolResult
+from jira2ai_core.client import get_api
+from jira2ai_core.errors import JiraOperationError
+from jira2ai_core.operations.links import create_issue_link
 from jira2py import JiraAPI
 
-from ..utils import get_api
+from jira2mcp.adapter import adapt_operation_result, to_tool_error
+
 from .server import tools
 
 
@@ -56,25 +58,14 @@ async def add_link(
     )
 
     try:
-        api.issue_links.create_link(
-            link_type_name=link_type,
-            inward_issue_key=inward_issue_key,
-            outward_issue_key=outward_issue_key,
+        result = create_issue_link(
+            link_type,
+            outward_issue_key,
+            inward_issue_key,
+            api=api,
         )
-    except Exception as e:
-        await ctx.error(f"Failed to create link: {e}")
-        raise ToolError(f"Failed to create link: {e}") from e
+    except JiraOperationError as exc:
+        await ctx.error(str(exc))
+        raise to_tool_error(exc) from exc
 
-    if raw:
-        result = {
-            "status": "created",
-            "link_type": link_type,
-            "outward_issue": outward_issue_key,
-            "inward_issue": inward_issue_key,
-        }
-        return ToolResult(
-            content=json.dumps(result, indent=2),
-            structured_content=result,
-        )
-
-    return f"Created link: {outward_issue_key} {link_type.lower()} {inward_issue_key}"
+    return adapt_operation_result(result, raw=raw)

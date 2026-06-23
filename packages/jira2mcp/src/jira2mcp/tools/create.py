@@ -1,16 +1,18 @@
 """Create a new Jira issue."""
 
-import json
 from typing import Annotated, Any
 
 from fastmcp.dependencies import CurrentContext, Depends
-from fastmcp.exceptions import ToolError
 from fastmcp.server.context import Context
 from fastmcp.tools.tool import ToolResult
+from jira2ai_core.client import get_api
+from jira2ai_core.errors import Jira2AIValidationError, JiraOperationError
+from jira2ai_core.operations.issues import create_issue as create_issue_operation
+from jira2ai_core.operations.issues import validate_create_issue_input
 from jira2py import JiraAPI
 
-from ..adf import convert_markdown_fields, detect_adf_field_ids, markdown_to_adf
-from ..utils import get_api
+from jira2mcp.adapter import adapt_operation_result, to_tool_error
+
 from .server import tools
 
 
@@ -46,46 +48,24 @@ async def create(
     required fields on the create screen. Use jira_users to look up account
     IDs for assignee or reporter fields.
     """
-    if fields:
-        conflicts = set(fields.keys()) & {"project", "issuetype", "summary"}
-        if conflicts:
-            raise ToolError(
-                f"Use explicit parameters instead of fields for: {conflicts}"
-            )
-
-    extra_fields: dict = {**(fields or {})}
-
-    # Auto-convert markdown strings to ADF for known rich-text fields
-    if extra_fields:
-        try:
-            all_fields = api.fields.get_fields()
-            adf_ids = detect_adf_field_ids(all_fields)
-        except Exception:
-            adf_ids = set()
-        extra_fields = convert_markdown_fields(extra_fields, adf_ids)
-
-    issue_fields: dict = {
-        **extra_fields,
-        "project": {"key": project_key},
-        "issuetype": {"name": issue_type},
-        "summary": summary,
-    }
-
-    if description:
-        issue_fields["description"] = markdown_to_adf(description)
+    try:
+        validate_create_issue_input(fields=fields)
+    except Jira2AIValidationError as exc:
+        raise to_tool_error(exc) from exc
 
     await ctx.info(f"Creating {issue_type} in {project_key}: {summary}")
+
     try:
-        result = api.issues.create_issue(fields=issue_fields)
-    except Exception as e:
-        await ctx.error(f"Failed to create issue: {e}")
-        raise ToolError(f"Failed to create issue: {e}") from e
-
-    if raw:
-        return ToolResult(
-            content=json.dumps(result, indent=2, default=str),
-            structured_content=result,
+        result = create_issue_operation(
+            project_key,
+            issue_type,
+            summary,
+            description=description,
+            fields=fields,
+            api=api,
         )
+    except JiraOperationError as exc:
+        await ctx.error(str(exc))
+        raise to_tool_error(exc) from exc
 
-    key = result.get("key", "?")
-    return f"Created {key}: {summary}\nURL: {api.credentials.url}/browse/{key}"
+    return adapt_operation_result(result, raw=raw)

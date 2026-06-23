@@ -118,7 +118,12 @@ If you prefer not to set global environment variables, provide them directly in 
 
 ## Repository layout
 
-This repository is a `uv` workspace. The current published package lives under `packages/jira2mcp`, and the root `Makefile` remains the main developer command surface.
+This repository is a `uv` workspace with two packages:
+
+- `packages/jira2ai-core` — shared operation layer used internally by the MCP package.
+- `packages/jira2mcp` — the FastMCP server/adapter package published as `jira2mcp`.
+
+End-user setup stays the same: use `uvx jira2mcp` directly or `claude mcp add jira -- uvx jira2mcp`.
 
 ## Contributing
 

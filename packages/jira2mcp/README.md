@@ -116,6 +116,15 @@ If you prefer not to set global environment variables, provide them directly in 
 - **Extra fields** — request additional fields on `jira_read` beyond the standard set; rich-text fields are auto-converted.
 - **Link management** — read the `data://jira/link-types` resource to discover available link types, then create or delete links between issues.
 
+## Repository layout
+
+This repository is a `uv` workspace with two packages:
+
+- `packages/jira2ai-core` — shared operation layer used internally by the MCP package.
+- `packages/jira2mcp` — the FastMCP server/adapter package published as `jira2mcp`.
+
+End-user setup stays the same: use `uvx jira2mcp` directly or `claude mcp add jira -- uvx jira2mcp`.
+
 ## Contributing
 
 See [CONTRIBUTING.md](../../CONTRIBUTING.md) for development checks and pull request guidance.
