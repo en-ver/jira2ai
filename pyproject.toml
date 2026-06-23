@@ -1,6 +1,6 @@
 [project]
 name = "jira2mcp"
-version = "0.1.0"
+version = "0.1.1"
 description = "MCP server exposing Jira Cloud tools via FastMCP"
 readme = "README.md"
 authors = [
@@ -9,7 +9,7 @@ authors = [
 requires-python = ">=3.13"
 dependencies = [
     "fastmcp>=3.1.0",
-    "jira2py==0.4.0",
+    "jira2py==0.5.0",
     "marklassian>=0.1.0",
     "pathvalidate>=3.3.1",
     "pyadf>=0.3.0",
