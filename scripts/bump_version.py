@@ -6,7 +6,9 @@ import sys
 import tomllib
 from pathlib import Path
 
-PYPROJECT_PATH = Path(__file__).resolve().parents[1] / "pyproject.toml"
+PYPROJECT_PATH = (
+    Path(__file__).resolve().parents[1] / "packages" / "jira2mcp" / "pyproject.toml"
+)
 VERSION_PATTERN = re.compile(
     r'^(version\s*=\s*")(?P<version>\d+\.\d+\.\d+)("\s*)$', re.MULTILINE
 )

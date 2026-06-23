@@ -36,12 +36,12 @@ jobs:
           TAG_VERSION="${GITHUB_REF_NAME#v}"
           PYPROJECT_VERSION=$(python -c "
           import re
-          with open('pyproject.toml') as f:
+          with open('packages/jira2mcp/pyproject.toml') as f:
               match = re.search(r'^version\s*=\s*\"(.+?)\"', f.read(), re.MULTILINE)
               print(match.group(1))
           ")
           if [ "$TAG_VERSION" != "$PYPROJECT_VERSION" ]; then
-            echo "::error::Tag version ($TAG_VERSION) does not match pyproject.toml version ($PYPROJECT_VERSION)"
+            echo "::error::Tag version ($TAG_VERSION) does not match packages/jira2mcp/pyproject.toml version ($PYPROJECT_VERSION)"
             exit 1
           fi
           echo "Version: $TAG_VERSION"
@@ -62,16 +62,16 @@ jobs:
         run: uv python install 3.13
 
       - name: Install dependencies
-        run: uv sync --group dev
+        run: uv sync --all-packages --group dev
 
       - name: Ruff lint
-        run: uv run ruff check src scripts
+        run: uv run --locked ruff check packages/jira2mcp/src scripts
 
       - name: Ruff format
-        run: uv run ruff format --check src scripts
+        run: uv run --locked ruff format --check packages/jira2mcp/src scripts
 
       - name: Type check
-        run: uv run ty check src/ scripts/
+        run: uv run --locked ty check packages/jira2mcp/src/ scripts/
 
   build:
     name: Build package
@@ -89,7 +89,7 @@ jobs:
         run: uv python install 3.13
 
       - name: Build sdist and wheel
-        run: uv build
+        run: uv build --package jira2mcp
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
