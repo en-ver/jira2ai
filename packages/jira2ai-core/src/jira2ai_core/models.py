@@ -195,12 +195,14 @@ class FieldSchema(JiraModel):
 class FieldMeta(JiraModel):
     """Metadata for a single field on create/edit screen."""
 
+    model_config = ConfigDict(validate_by_name=True, validate_by_alias=True)
+
     fieldId: str = ""
     key: str = ""
     id: str = ""
     name: str = "?"
     required: bool = False
-    schema: FieldSchema | None = None
+    jira_schema: FieldSchema | None = Field(default=None, validation_alias="schema")
     allowedValues: list[Any] = []
     defaultValue: Any = None
 

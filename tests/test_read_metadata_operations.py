@@ -295,12 +295,25 @@ def test_fields_operations_return_mode_specific_raw_payloads(
         {"project_id_or_key": "PROJ", "issue_type_id": "10001"}
     ]
     assert create_fields_result.data == create_fields_response["values"]
+    assert create_fields_result.data[0]["schema"] == {"type": "string"}
+    assert create_fields_result.data[1]["schema"] == {
+        "type": "string",
+        "custom": "textarea",
+    }
     assert "Fields for PROJ / Bug:" in create_fields_result.text
-    assert 'customfield_10001 "Acceptance Criteria"' in create_fields_result.text
+    assert (
+        'customfield_10001 "Acceptance Criteria" — string (textarea)'
+        in create_fields_result.text
+    )
 
     assert edit_fields_result.data == edit_metadata_response
+    assert edit_fields_result.data["fields"]["summary"]["schema"] == {"type": "string"}
+    assert edit_fields_result.data["fields"]["customfield_10001"]["schema"] == {
+        "type": "string",
+        "custom": "textarea",
+    }
     assert "Fields for PROJ-123 / edit:" in edit_fields_result.text
-    assert 'summary "Summary"' in edit_fields_result.text
+    assert 'summary "Summary" — string' in edit_fields_result.text
 
 
 def test_get_create_fields_raises_validation_error_for_unknown_issue_type(
