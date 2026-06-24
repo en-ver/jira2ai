@@ -488,7 +488,7 @@ wheels = [
 
 [[package]]
 name = "jira2ai-core"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "packages/jira2ai-core" }
 dependencies = [
     { name = "httpx" },

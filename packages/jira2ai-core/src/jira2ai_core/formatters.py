@@ -294,8 +294,9 @@ def _named(resource: Any) -> str:
 def _format_field(f: FieldMeta) -> list[str]:
     """Format a single field's metadata."""
     lines: list[str] = []
-    schema_type = f.schema.type if f.schema else "unknown"
-    custom = f.schema.custom if f.schema else ""
+    jira_schema = f.jira_schema
+    schema_type = jira_schema.type if jira_schema else "unknown"
+    custom = jira_schema.custom if jira_schema else ""
     custom_suffix = f" ({custom.split(':')[-1]})" if custom else ""
     lines.append(f'  {f.resolved_id} "{f.name}" — {schema_type}{custom_suffix}')
 

@@ -15,5 +15,7 @@ def test_jira2mcp_helper_modules_are_core_shims() -> None:
     assert mcp_adf.adf_to_markdown is core_adf.adf_to_markdown
     assert mcp_formatters.format_issue_full is core_formatters.format_issue_full
     assert mcp_models.JiraIssue is core_models.JiraIssue
+    assert mcp_models.FieldMeta is core_models.FieldMeta
+    assert mcp_models.FieldSchema is core_models.FieldSchema
     assert mcp_utils.truncate is core_utils.truncate
     assert mcp_utils.get_api is core_client.get_api
