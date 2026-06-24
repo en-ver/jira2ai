@@ -532,7 +532,7 @@ dev = [
 
 [[package]]
 name = "jira2cli"
-version = "0.1.0"
+version = "0.1.1"
 source = { editable = "packages/jira2cli" }
 dependencies = [
     { name = "jira2ai-core" },
@@ -547,7 +547,7 @@ requires-dist = [
 
 [[package]]
 name = "jira2mcp"
-version = "0.1.2"
+version = "0.1.3"
 source = { editable = "packages/jira2mcp" }
 dependencies = [
     { name = "fastmcp" },

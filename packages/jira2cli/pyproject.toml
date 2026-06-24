@@ -1,6 +1,6 @@
 [project]
 name = "jira2cli"
-version = "0.1.0"
+version = "0.1.1"
 description = "CLI for Jira AI integrations powered by jira2ai-core"
 readme = "README.md"
 authors = [
@@ -8,7 +8,7 @@ authors = [
 ]
 requires-python = ">=3.13"
 dependencies = [
-    "jira2ai-core==0.1.0",
+    "jira2ai-core==0.2.0",
     "typer>=0.16.0",
 ]
 
