@@ -1,19 +1,29 @@
 """Download a Jira attachment."""
 
-import os
 from pathlib import Path
 from typing import Annotated
 from urllib.parse import urlparse
 
-import httpx
 from fastmcp import Context
 from fastmcp.dependencies import CurrentContext, Depends
 from fastmcp.exceptions import ToolError
+from jira2ai_core.client import get_api
+from jira2ai_core.errors import (
+    AttachmentDownloadError,
+    AttachmentError,
+    Jira2AIValidationError,
+    JiraOperationError,
+)
+from jira2ai_core.operations.attachments import (
+    download_attachment_content,
+    format_attachment_download_result,
+    plan_attachment_download,
+    validate_attachment_id,
+)
 from jira2py import JiraAPI
-from pathvalidate import sanitize_filename
 
-from ..models import AttachmentMeta
-from ..utils import format_size, get_api
+from jira2mcp.adapter import to_tool_error
+
 from .server import tools
 
 
@@ -48,47 +58,25 @@ async def attachment(
     Use jira_read to get attachment IDs and metadata first.
     The attachment is saved to the specified output path (or current directory).
     """
-    MAX_DOWNLOAD = 100 * 1024 * 1024  # 100 MB
-
-    if not attachment_id.strip():
-        raise ToolError("attachment_id is required and cannot be empty")
+    try:
+        validate_attachment_id(attachment_id)
+    except Jira2AIValidationError as exc:
+        raise to_tool_error(exc) from exc
 
     await ctx.info(f"Downloading attachment {attachment_id}")
 
-    # Get metadata
     try:
-        meta = AttachmentMeta.model_validate(
-            api.attachments.get_attachment_metadata(attachment_id=attachment_id)
+        plan = plan_attachment_download(
+            attachment_id,
+            output_path=output_path,
+            api=api,
         )
-    except Exception as e:
-        await ctx.error(f"Failed to fetch attachment metadata {attachment_id}: {e}")
-        raise ToolError(
-            f"Failed to fetch attachment metadata {attachment_id}: {e}"
-        ) from e
+    except JiraOperationError as exc:
+        await ctx.error(str(exc))
+        raise to_tool_error(exc) from exc
+    except AttachmentError as exc:
+        raise to_tool_error(exc) from exc
 
-    raw_filename = os.path.basename(meta.filename or f"attachment-{attachment_id}")
-    filename = str(sanitize_filename(raw_filename, platform="universal")).strip()
-    if not filename or filename in (".", ".."):
-        filename = f"attachment-{attachment_id}"
-
-    if meta.size > MAX_DOWNLOAD:
-        raise ToolError(
-            f"Attachment too large: {format_size(meta.size)}. "
-            f"Max allowed: {format_size(MAX_DOWNLOAD)}"
-        )
-
-    # Determine output file path
-    if output_path:
-        resolved = os.path.abspath(output_path)
-        if os.path.isdir(resolved) or output_path.endswith("/"):
-            output_file = os.path.join(resolved, filename)
-        else:
-            output_file = resolved
-    else:
-        output_file = os.path.abspath(filename)
-
-    # Prevent writing outside allowed boundaries
-    resolved_output = Path(output_file).resolve()
     roots = []
     try:
         roots = await ctx.list_roots()
@@ -96,40 +84,22 @@ async def attachment(
         roots = []
 
     if roots:
-        if not _path_within_roots(resolved_output, roots):
+        if not _path_within_roots(plan.resolved_output, roots):
             raise ToolError(
-                f"Path is outside allowed MCP roots. Resolved path: {resolved_output}"
+                f"Path is outside allowed MCP roots. Resolved path: {plan.resolved_output}"
             )
     else:
         # Fallback: no roots declared, use CWD as boundary
         cwd = Path.cwd().resolve()
-        if not resolved_output.is_relative_to(cwd):
+        if not plan.resolved_output.is_relative_to(cwd):
             raise ToolError(
                 f"Cannot write outside working directory ({cwd}). "
-                f"Resolved path: {resolved_output}"
+                f"Resolved path: {plan.resolved_output}"
             )
 
-    # Download content via streaming
-    content_url = f"{api.credentials.url}/rest/api/3/attachment/content/{attachment_id}"
-    auth = (api.credentials.username or "", api.credentials.api_token or "")
-    timeout = httpx.Timeout(120.0, connect=30.0)
+    try:
+        download_attachment_content(plan, api=api)
+    except AttachmentDownloadError as exc:
+        raise to_tool_error(exc) from exc
 
-    os.makedirs(os.path.dirname(output_file) or ".", exist_ok=True)
-    with httpx.Client(http2=True, timeout=timeout) as http_client:
-        with http_client.stream(
-            "GET",
-            content_url,
-            auth=auth,
-            follow_redirects=True,
-        ) as resp:
-            resp.raise_for_status()
-            with open(output_file, "wb") as f:
-                for chunk in resp.iter_bytes(chunk_size=65536):
-                    f.write(chunk)
-
-    return (
-        f"Downloaded: {filename}\n"
-        f"Type: {meta.mimeType}\n"
-        f"Size: {format_size(meta.size)}\n"
-        f"Saved to: {output_file}"
-    )
+    return format_attachment_download_result(plan)

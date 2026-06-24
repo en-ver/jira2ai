@@ -1,16 +1,17 @@
 """List Jira projects."""
 
-import json
 from typing import Annotated
 
 from fastmcp.dependencies import CurrentContext, Depends
-from fastmcp.exceptions import ToolError
 from fastmcp.server.context import Context
 from fastmcp.tools.tool import ToolResult
+from jira2ai_core.client import get_api
+from jira2ai_core.errors import JiraOperationError
+from jira2ai_core.operations.projects import list_projects
 from jira2py import JiraAPI
 
-from ..models import ProjectSearchResult
-from ..utils import get_api
+from jira2mcp.adapter import adapt_operation_result, to_tool_error
+
 from .server import tools
 
 
@@ -34,41 +35,11 @@ async def projects(
     jira_create or jira_fields.
     """
     await ctx.info(f"Fetching projects{f' matching: {query}' if query else ''}")
+
     try:
-        data = api.projects.search_projects(
-            query=query,
-            max_results=100,
-            extra_params={"orderBy": "name"},
-        )
-    except Exception as e:
-        await ctx.error(f"Failed to fetch projects: {e}")
-        raise ToolError(f"Failed to fetch projects: {e}") from e
+        result = list_projects(query, api=api)
+    except JiraOperationError as exc:
+        await ctx.error(str(exc))
+        raise to_tool_error(exc) from exc
 
-    if raw:
-        return ToolResult(
-            content=json.dumps(data, indent=2, default=str),
-            structured_content=data,
-        )
-
-    result = ProjectSearchResult.model_validate(data)
-
-    if not result.values:
-        if query:
-            return f'No projects found matching "{query}"'
-        return "No projects found"
-
-    lines: list[str] = []
-    header = f'Projects matching "{query}"' if query else "Projects"
-    lines.append(f"{header}:\n")
-
-    for p in result.values:
-        lines.append(f"  {p.key} — {p.name}")
-
-    if not result.isLast:
-        if result.total is not None:
-            more = result.total - len(result.values)
-            lines.append(f"\n  ... and {more} more (refine your search)")
-        else:
-            lines.append("\n  ... more results available (refine your search)")
-
-    return "\n".join(lines)
+    return adapt_operation_result(result, raw=raw)

@@ -1,17 +1,17 @@
 """Read a Jira issue by key."""
 
-import json
 from typing import Annotated
 
 from fastmcp.dependencies import CurrentContext, Depends
-from fastmcp.exceptions import ToolError
 from fastmcp.server.context import Context
 from fastmcp.tools.tool import ToolResult
+from jira2ai_core.client import get_api
+from jira2ai_core.errors import JiraOperationError
+from jira2ai_core.operations.issues import read_issue
 from jira2py import JiraAPI
 
-from ..formatters import DEFAULT_FIELDS, format_issue_full
-from ..models import JiraIssue
-from ..utils import get_api, truncate
+from jira2mcp.adapter import adapt_operation_result, to_tool_error
+
 from .server import tools
 
 
@@ -41,34 +41,11 @@ async def read(
     from ADF to Markdown. Use jira_comments tool for comment details.
     """
     await ctx.info(f"Reading issue {issue_key}")
-    request_fields = list(DEFAULT_FIELDS)
-    if extra_fields:
-        request_fields.extend(f for f in extra_fields if f not in request_fields)
 
     try:
-        data = api.issues.get_issue(
-            issue_id=issue_key,
-            fields=",".join(request_fields),
-            expand="names",
-        )
-    except Exception as e:
-        await ctx.error(f"Failed to fetch issue {issue_key}: {e}")
-        raise ToolError(f"Failed to fetch issue {issue_key}: {e}") from e
+        result = read_issue(issue_key, extra_fields=extra_fields, api=api)
+    except JiraOperationError as exc:
+        await ctx.error(str(exc))
+        raise to_tool_error(exc) from exc
 
-    if raw:
-        return ToolResult(
-            content=json.dumps(data, indent=2, default=str),
-            structured_content=data,
-        )
-
-    issue = JiraIssue.model_validate(data)
-    names = data.get("names") or {}
-    url = f"{api.credentials.url}/browse/{issue_key}"
-    output = format_issue_full(
-        issue,
-        url=url,
-        requested_fields=request_fields,
-        field_names=names,
-    )
-
-    return truncate(output)
+    return adapt_operation_result(result, raw=raw, truncate_text=True)
