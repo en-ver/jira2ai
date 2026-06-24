@@ -1,3 +1,6 @@
+import subprocess
+import sys
+
 from jira2ai_core.errors import (
     AttachmentDownloadError,
     AttachmentPathError,
@@ -5,6 +8,7 @@ from jira2ai_core.errors import (
     Jira2AIValidationError,
     JiraOperationError,
 )
+from jira2ai_core.models import FieldMeta, FieldSchema
 from jira2ai_core.results import OperationResult
 
 
@@ -41,3 +45,48 @@ def test_core_error_hierarchy_covers_expected_contracts() -> None:
     assert isinstance(Jira2AIConfigError("missing token"), Exception)
     assert isinstance(AttachmentPathError("outside roots"), Exception)
     assert isinstance(AttachmentDownloadError("download failed"), Exception)
+
+
+def test_field_meta_parses_jira_schema_and_dumps_renamed_field() -> None:
+    field = FieldMeta.model_validate(
+        {
+            "fieldId": "summary",
+            "name": "Summary",
+            "schema": {"type": "string"},
+        }
+    )
+
+    assert field.jira_schema == FieldSchema(type="string")
+    assert "jira_schema" in FieldMeta.model_fields
+    assert "schema" not in FieldMeta.model_fields
+
+    dumped = field.model_dump()
+    assert dumped["jira_schema"] == {"type": "string", "custom": ""}
+    assert "schema" not in dumped
+
+
+def test_field_meta_accepts_python_construction_by_jira_schema_name() -> None:
+    field = FieldMeta.model_validate(
+        {
+            "fieldId": "summary",
+            "name": "Summary",
+            "jira_schema": {"type": "string"},
+        }
+    )
+
+    assert field.jira_schema == FieldSchema(type="string")
+
+
+def test_importing_models_with_warning_errors_enabled_succeeds() -> None:
+    subprocess.run(
+        [
+            sys.executable,
+            "-W",
+            "error::UserWarning",
+            "-c",
+            "import jira2ai_core.models",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
