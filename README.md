@@ -1,4 +1,4 @@
-# jira2mcp
+# jira2ai
 
 Jira AI workspace for Jira Cloud integrations.
 

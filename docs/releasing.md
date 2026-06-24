@@ -22,9 +22,10 @@ Do not tag, push release tags, create GitHub Releases, or publish to PyPI in thi
 - GitHub environment `pypi` exists for that workflow.
 - Publishing uses OIDC / Trusted Publishing only.
 - No PyPI API token fallback is configured or used.
-- The current repository is still `en-ver/jira2mcp`.
-- After the GitHub repo is renamed to `en-ver/jira2ai`, the PyPI Trusted Publisher repository setting must be updated for each package.
-- `jira2ai-core` and `jira2cli` each need PyPI Trusted Publisher registration before their first publish.
+- The repository is now `en-ver/jira2ai`.
+- Before the first post-rename release, verify PyPI Trusted Publishers are configured for owner `en-ver`, repository `jira2ai`, workflow `.github/workflows/publish.yml`, and environment `pypi`.
+- The existing `jira2mcp` PyPI project publisher must be updated to repository `jira2ai` before the first post-rename release.
+- New `jira2ai-core` and `jira2cli` PyPI project publishers must be registered for repository `jira2ai` before their first publish.
 
 These are boundaries to verify before release operations, not confirmation that setup is already complete.
 
@@ -94,9 +95,9 @@ Repository files now assume this release shape:
 
 Operational notes:
 
-- The repo has not been renamed yet; it is still `en-ver/jira2mcp`.
-- After renaming the repo to `en-ver/jira2ai`, update the Trusted Publisher repository setting for every package in PyPI.
-- `jira2mcp` already has release history, but its publisher settings still need to match the final repo name after rename.
-- `jira2ai-core` and `jira2cli` must be registered in PyPI Trusted Publishing before their first publish.
+- The repository is now `en-ver/jira2ai`.
+- Before the first post-rename release, verify each PyPI Trusted Publisher is configured for owner `en-ver`, repository `jira2ai`, workflow `.github/workflows/publish.yml`, and environment `pypi`.
+- `jira2mcp` already has release history, but its existing PyPI Trusted Publisher settings must be updated to repository `jira2ai` before the first post-rename release.
+- `jira2ai-core` and `jira2cli` must be registered in PyPI Trusted Publishing for repository `jira2ai` before their first publish.
 
 Until those checks are complete, stop before `make release`, `make push-release-tag`, or any manual publish step.

@@ -48,5 +48,5 @@ Do not assume `uvx jira2cli` or `pip install jira2cli` is available yet. Keep us
 
 Release sequencing, package tags, and Trusted Publishing boundaries:
 
-- <https://github.com/en-ver/jira2mcp/blob/main/docs/releasing.md>
-- <https://github.com/en-ver/jira2mcp/blob/main/CONTRIBUTING.md>
+- <https://github.com/en-ver/jira2ai/blob/main/docs/releasing.md>
+- <https://github.com/en-ver/jira2ai/blob/main/CONTRIBUTING.md>

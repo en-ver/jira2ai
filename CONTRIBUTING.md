@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for contributing to jira2mcp.
+Thanks for contributing to the Jira AI workspace.
 
 ## Development checks
 
