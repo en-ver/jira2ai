@@ -3,7 +3,9 @@ name: Publish to PyPI
 on:
   push:
     tags:
-      - "v*"
+      - "jira2ai-core-v*"
+      - "jira2mcp-v*"
+      - "jira2cli-v*"
 
 concurrency:
   group: publish-${{ github.ref }}
@@ -15,13 +17,33 @@ permissions:
   contents: read
 
 jobs:
-  validate:
-    name: Validate release
+  validate-tag:
+    name: Validate release tag
     runs-on: ubuntu-latest
+    outputs:
+      package: ${{ steps.tag.outputs.package }}
+      version: ${{ steps.tag.outputs.version }}
     steps:
       - uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Set up Python
+        run: uv python install 3.13
+
+      - id: tag
+        name: Validate tag and export package metadata
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          uv run --frozen python scripts/bump_version.py --validate-tag "$TAG"
+          PACKAGE="${TAG%-v*}"
+          VERSION="${TAG##*-v}"
+          echo "package=${PACKAGE}" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
 
       - name: Verify tag is on main branch
         run: |
@@ -31,24 +53,18 @@ jobs:
             exit 1
           fi
 
-      - name: Verify tag matches pyproject.toml version
+      - name: Verify package release requirements
+        env:
+          PACKAGE: ${{ steps.tag.outputs.package }}
         run: |
-          TAG_VERSION="${GITHUB_REF_NAME#v}"
-          PYPROJECT_VERSION=$(python -c "
-          import re
-          with open('packages/jira2mcp/pyproject.toml') as f:
-              match = re.search(r'^version\s*=\s*\"(.+?)\"', f.read(), re.MULTILINE)
-              print(match.group(1))
-          ")
-          if [ "$TAG_VERSION" != "$PYPROJECT_VERSION" ]; then
-            echo "::error::Tag version ($TAG_VERSION) does not match packages/jira2mcp/pyproject.toml version ($PYPROJECT_VERSION)"
-            exit 1
-          fi
-          echo "Version: $TAG_VERSION"
+          uv run --frozen python scripts/bump_version.py \
+            --package "${PACKAGE}" \
+            --validate-release \
+            --require-published-core
 
   check:
     name: Lint, type-check, and test
-    needs: validate
+    needs: validate-tag
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -78,7 +94,7 @@ jobs:
 
   build:
     name: Build package
-    needs: check
+    needs: [validate-tag, check]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -91,55 +107,57 @@ jobs:
       - name: Set up Python
         run: uv python install 3.13
 
-      - name: Build sdist and wheel
-        run: uv build --package jira2mcp
+      - name: Build tagged package
+        env:
+          PACKAGE: ${{ needs.validate-tag.outputs.package }}
+        run: uv build --package "${PACKAGE}"
 
-      - name: Upload build artifacts
+      - name: Upload package build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: dist
+          name: dist-${{ needs.validate-tag.outputs.package }}
           path: dist/
 
   release:
     name: Create GitHub Release
-    needs: build
+    needs: [validate-tag, build]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
-          name: dist
+          name: dist-${{ needs.validate-tag.outputs.package }}
           path: dist/
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ needs.validate-tag.outputs.package }} v${{ needs.validate-tag.outputs.version }}
           generate_release_notes: true
           files: dist/*
 
   publish:
     name: Publish to PyPI
-    needs: build
+    needs: [validate-tag, build]
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/jira2mcp
+      url: https://pypi.org/p/${{ needs.validate-tag.outputs.package }}
     permissions:
+      contents: read
       id-token: write
     steps:
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
-          name: dist
+          name: dist-${{ needs.validate-tag.outputs.package }}
           path: dist/
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           attestations: true
+          packages-dir: dist/

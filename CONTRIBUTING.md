@@ -45,11 +45,29 @@ uv run --package jira2cli jira2cli --help
 
 `make build-all` builds `jira2ai-core`, `jira2mcp`, and `jira2cli` for local verification.
 
-## Release note
+## Release process
 
-The existing `v*` publish workflow still validates the full workspace, but it only builds, releases, and publishes `jira2mcp`.
+Maintainers should use the package-aware release notes in [docs/releasing.md](docs/releasing.md).
 
-Do not cut a release for `jira2ai-core` or `jira2cli` yet, and do not change the current tag/publish flow in this stage.
+Future releases use package-specific tags only:
+
+- `jira2ai-core-vX.Y.Z`
+- `jira2mcp-vX.Y.Z`
+- `jira2cli-vX.Y.Z`
+
+Do not use broad future `v*` tags.
+
+Current helper entry points:
+
+```bash
+make release-prep PACKAGE=jira2ai-core VERSION=0.1.0
+make release-prep PACKAGE=jira2mcp VERSION=0.1.2
+make release-prep PACKAGE=jira2cli VERSION=0.1.0
+make release PACKAGE=jira2mcp
+make push-release-tag PACKAGE=jira2mcp
+```
+
+For the current migration, stop before any tag push, GitHub release, or PyPI publish until the Trusted Publishing and repo-boundary checks in `docs/releasing.md` are verified.
 
 To see the available development targets, run:
 

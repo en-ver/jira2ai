@@ -2,6 +2,7 @@
 name = "jira2cli"
 version = "0.1.0"
 description = "CLI for Jira AI integrations powered by jira2ai-core"
+readme = "README.md"
 authors = [
     { name = "en-ver" }
 ]

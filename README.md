@@ -154,7 +154,13 @@ End-user MCP setup stays the same: use `uvx jira2mcp` directly or `claude mcp ad
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for workspace setup, development checks, and pull request guidance.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for workspace setup, development checks, pull request guidance, and maintainer release links.
+
+## Maintainers
+
+Package-specific release steps, tag formats, sequencing, and current stop gates live in [docs/releasing.md](docs/releasing.md).
+
+End-user MCP setup stays the same: `uvx jira2mcp` or `claude mcp add jira -- uvx jira2mcp`.
 
 ## License
 

@@ -128,9 +128,14 @@ This repository is a `uv` workspace with three packages:
 
 End-user MCP setup stays the same: use `uvx jira2mcp` directly or `claude mcp add jira -- uvx jira2mcp`.
 
-## Contributing
+## Maintainers
 
-See [CONTRIBUTING.md](../../CONTRIBUTING.md) for development checks and pull request guidance.
+`jira2mcp` releases are part of a multi-package workspace. Future tags use `jira2mcp-vX.Y.Z`, not broad `v*` tags.
+
+See the maintainer release guide for sequencing, stop gates, and Trusted Publishing boundaries:
+
+- <https://github.com/en-ver/jira2mcp/blob/main/docs/releasing.md>
+- <https://github.com/en-ver/jira2mcp/blob/main/CONTRIBUTING.md>
 
 ## License
 
