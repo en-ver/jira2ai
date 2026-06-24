@@ -1,15 +1,17 @@
 """Delete an issue link between two Jira issues."""
 
-import json
 from typing import Annotated
 
 from fastmcp.dependencies import CurrentContext, Depends
-from fastmcp.exceptions import ToolError
 from fastmcp.server.context import Context
 from fastmcp.tools.tool import ToolResult
+from jira2ai_core.client import get_api
+from jira2ai_core.errors import JiraOperationError
+from jira2ai_core.operations.links import delete_issue_link
 from jira2py import JiraAPI
 
-from ..utils import get_api
+from jira2mcp.adapter import adapt_operation_result, to_tool_error
+
 from .server import tools
 
 
@@ -39,16 +41,9 @@ async def delete_link(
     await ctx.info(f"Deleting issue link {link_id}")
 
     try:
-        api.issue_links.delete_link(link_id=link_id)
-    except Exception as e:
-        await ctx.error(f"Failed to delete link {link_id}: {e}")
-        raise ToolError(f"Failed to delete link {link_id}: {e}") from e
+        result = delete_issue_link(link_id, api=api)
+    except JiraOperationError as exc:
+        await ctx.error(str(exc))
+        raise to_tool_error(exc) from exc
 
-    if raw:
-        result = {"status": "deleted", "link_id": link_id}
-        return ToolResult(
-            content=json.dumps(result, indent=2),
-            structured_content=result,
-        )
-
-    return f"Deleted issue link {link_id}"
+    return adapt_operation_result(result, raw=raw)

@@ -1,16 +1,18 @@
 """Update an existing Jira issue."""
 
-import json
 from typing import Annotated, Any
 
 from fastmcp.dependencies import CurrentContext, Depends
-from fastmcp.exceptions import ToolError
 from fastmcp.server.context import Context
 from fastmcp.tools.tool import ToolResult
+from jira2ai_core.client import get_api
+from jira2ai_core.errors import Jira2AIValidationError, JiraOperationError
+from jira2ai_core.operations.issues import edit_issue as edit_issue_operation
+from jira2ai_core.operations.issues import validate_edit_issue_input
 from jira2py import JiraAPI
 
-from ..adf import convert_markdown_fields, detect_adf_field_ids, markdown_to_adf
-from ..utils import get_api
+from jira2mcp.adapter import adapt_operation_result, to_tool_error
+
 from .server import tools
 
 
@@ -41,49 +43,28 @@ async def edit(
     Use jira_fields with issue_key to discover which fields are available
     on the edit screen. Use jira_users to look up account IDs for assignee updates.
     """
-    if not summary and not description and not fields:
-        raise ToolError(
-            "Nothing to update. Provide at least one of: summary, description, or fields."
+    try:
+        validate_edit_issue_input(
+            summary=summary,
+            description=description,
+            fields=fields,
         )
-
-    if fields:
-        conflicts = set(fields.keys()) & {"summary", "description"}
-        if conflicts:
-            raise ToolError(
-                f"Use explicit parameters instead of fields for: {conflicts}"
-            )
-
-    update_fields: dict = {**(fields or {})}
-
-    # Auto-convert markdown strings to ADF for known rich-text fields
-    if update_fields:
-        try:
-            all_fields = api.fields.get_fields()
-            adf_ids = detect_adf_field_ids(all_fields)
-        except Exception:
-            adf_ids = set()
-        update_fields = convert_markdown_fields(update_fields, adf_ids)
-
-    if summary:
-        update_fields["summary"] = summary
-    if description:
-        update_fields["description"] = markdown_to_adf(description)
+    except Jira2AIValidationError as exc:
+        raise to_tool_error(exc) from exc
 
     await ctx.info(f"Updating issue {issue_key}")
+
     try:
-        result = api.issues.edit_issue(
-            issue_id=issue_key,
-            fields=update_fields,
-            return_issue=raw,
+        result = edit_issue_operation(
+            issue_key,
+            summary=summary,
+            description=description,
+            fields=fields,
+            raw=raw,
+            api=api,
         )
-    except Exception as e:
-        await ctx.error(f"Failed to update issue {issue_key}: {e}")
-        raise ToolError(f"Failed to update issue {issue_key}: {e}") from e
+    except JiraOperationError as exc:
+        await ctx.error(str(exc))
+        raise to_tool_error(exc) from exc
 
-    if raw:
-        return ToolResult(
-            content=json.dumps(result, indent=2, default=str),
-            structured_content=result,
-        )
-
-    return f"Successfully updated {issue_key}\nURL: {api.credentials.url}/browse/{issue_key}"
+    return adapt_operation_result(result, raw=raw)

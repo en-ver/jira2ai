@@ -1,17 +1,20 @@
-.PHONY: lint format type-check check check-ci clean help build bump-version version-current release-prep release push-release-tag ensure-main-clean
+.PHONY: lint format type-check test check check-ci clean help build bump-version version-current release-prep release push-release-tag ensure-main-clean
 
 PART ?= patch
 VERSION_INPUT := $(or $(VERSION),$(v))
 PACKAGE_DIR := packages/jira2mcp
-CHECK_PATHS := $(PACKAGE_DIR)/src scripts
+CORE_PACKAGE_DIR := packages/jira2ai-core
+CHECK_PATHS := $(CORE_PACKAGE_DIR)/src $(PACKAGE_DIR)/src scripts tests
+TYPECHECK_PATHS := $(CORE_PACKAGE_DIR)/src/ $(PACKAGE_DIR)/src/ scripts/
 
 help:
 	@echo "Available targets:"
 	@echo "  lint             - Run ruff linting with auto-fix"
 	@echo "  format           - Run ruff formatting"
 	@echo "  type-check       - Run ty type checking"
+	@echo "  test             - Run pytest"
 	@echo "  check            - Run mutating local checks (lint, format, type-check)"
-	@echo "  check-ci         - Run non-mutating CI-style checks"
+	@echo "  check-ci         - Run non-mutating CI-style checks, including tests"
 	@echo "  build            - Build sdist and wheel"
 	@echo "  bump-version     - Bump version (default patch) or set VERSION=0.2.0 / v=0.2.0"
 	@echo "  version-current  - Print the current project version"
@@ -31,7 +34,11 @@ format:
 
 # Run ty type checking
 type-check:
-	uv run ty check $(PACKAGE_DIR)/src/ scripts/
+	uv run ty check $(TYPECHECK_PATHS)
+
+# Run pytest
+test:
+	uv run pytest
 
 # Run all checks
 check: lint format type-check
@@ -40,7 +47,8 @@ check: lint format type-check
 check-ci:
 	uv run --locked ruff check $(CHECK_PATHS)
 	uv run --locked ruff format --check $(CHECK_PATHS)
-	uv run --locked ty check $(PACKAGE_DIR)/src/ scripts/
+	uv run --locked ty check $(TYPECHECK_PATHS)
+	uv run --locked pytest
 
 # Build sdist and wheel
 build: clean
@@ -97,4 +105,4 @@ clean:
 	find . -type f -name "*.py[co]" -delete
 	find . -type d -name "__pycache__" -delete
 	find . -type d -name "*.egg-info" -prune -exec rm -rf {} +
-	rm -rf .mypy_cache/ .ty/ .ruff_cache/ .pytest_cache/ dist/ build/ $(PACKAGE_DIR)/dist/ $(PACKAGE_DIR)/build/
+	rm -rf .mypy_cache/ .ty/ .ruff_cache/ .pytest_cache/ dist/ build/ $(CORE_PACKAGE_DIR)/dist/ $(CORE_PACKAGE_DIR)/build/ $(PACKAGE_DIR)/dist/ $(PACKAGE_DIR)/build/
