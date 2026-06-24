@@ -41,3 +41,12 @@ uv run --package jira2cli jira2cli fields --project-key PROJ
 - `packages/jira2cli` — CLI adapter package.
 
 For MCP installs and Claude setup, use `uvx jira2mcp` and `claude mcp add jira -- uvx jira2mcp` as documented in the repository root README.
+
+## Maintainers
+
+Do not assume `uvx jira2cli` or `pip install jira2cli` is available yet. Keep using local workspace commands until the release gates in the maintainer docs are completed.
+
+Release sequencing, package tags, and Trusted Publishing boundaries:
+
+- <https://github.com/en-ver/jira2mcp/blob/main/docs/releasing.md>
+- <https://github.com/en-ver/jira2mcp/blob/main/CONTRIBUTING.md>

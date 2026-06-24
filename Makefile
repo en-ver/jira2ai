@@ -1,5 +1,6 @@
 .PHONY: lint format type-check test check check-ci clean help build build-jira2ai-core build-jira2mcp build-jira2cli build-all bump-version version-current release-prep release push-release-tag ensure-main-clean
 
+PACKAGE ?= jira2mcp
 PART ?= patch
 VERSION_INPUT := $(or $(VERSION),$(v))
 MCP_PACKAGE_DIR := packages/jira2mcp
@@ -16,16 +17,16 @@ help:
 	@echo "  test             - Run pytest"
 	@echo "  check            - Run mutating local checks (lint, format, type-check)"
 	@echo "  check-ci         - Run non-mutating CI-style checks, including tests"
-	@echo "  build            - Build jira2mcp sdist and wheel"
+	@echo "  build            - Build the selected package (default: jira2mcp; override with PACKAGE=...)"
 	@echo "  build-jira2ai-core - Build jira2ai-core sdist and wheel"
 	@echo "  build-jira2mcp   - Build jira2mcp sdist and wheel"
 	@echo "  build-jira2cli   - Build jira2cli sdist and wheel"
 	@echo "  build-all        - Build all workspace packages"
-	@echo "  bump-version     - Bump version (default patch) or set VERSION=0.2.0 / v=0.2.0"
-	@echo "  version-current  - Print the current project version"
-	@echo "  release-prep     - Bump version and run non-mutating checks"
-	@echo "  release          - Create a local annotated release tag from a clean main branch"
-	@echo "  push-release-tag - Push the current release tag only"
+	@echo "  bump-version     - Bump selected package version (default patch) or set VERSION=0.2.0 / v=0.2.0"
+	@echo "  version-current  - Print the current selected package version"
+	@echo "  release-prep     - Validate selected package release readiness, bump version, and run non-mutating checks"
+	@echo "  release          - Create a local annotated release tag for the selected package from a clean main branch"
+	@echo "  push-release-tag - Push the current selected package release tag only"
 	@echo "  clean            - Clean Python cache files"
 	@echo "  help             - Show this help message"
 
@@ -57,7 +58,7 @@ check-ci:
 
 # Build sdist and wheel
 build: clean
-	uv build --package jira2mcp
+	uv build --package $(PACKAGE)
 
 build-jira2ai-core:
 	uv build --package jira2ai-core
@@ -72,22 +73,23 @@ build-all: clean build-jira2ai-core build-jira2mcp build-jira2cli
 
 # Print the current project version
 version-current:
-	@uv run --frozen python scripts/bump_version.py --current
+	@uv run --frozen python scripts/bump_version.py --package "$(PACKAGE)" --current
 
 # Bump the project version
 bump-version:
 	@args="--part $(PART)"; \
 	if [ -n "$(VERSION_INPUT)" ]; then args="--version $(VERSION_INPUT)"; fi; \
-	new_version="$$(uv run --frozen python scripts/bump_version.py $$args)" || exit $$?; \
+	new_version="$$(uv run --frozen python scripts/bump_version.py --package "$(PACKAGE)" $$args)" || exit $$?; \
 	echo "Version set to $$new_version"
 
 # Prepare a release before opening a PR to main
 release-prep:
-	$(MAKE) bump-version VERSION="$(VERSION_INPUT)" PART="$(PART)"
+	@uv run --frozen python scripts/bump_version.py --package "$(PACKAGE)" --validate-release --require-published-core
+	$(MAKE) bump-version PACKAGE="$(PACKAGE)" VERSION="$(VERSION_INPUT)" PART="$(PART)"
 	uv lock
 	$(MAKE) check-ci
-	$(MAKE) build
-	@echo "Release prep complete for v$$(uv run --locked python scripts/bump_version.py --current)"
+	$(MAKE) build PACKAGE="$(PACKAGE)"
+	@echo "Release prep complete for $(PACKAGE)-v$$(uv run --locked python scripts/bump_version.py --package "$(PACKAGE)" --current)"
 	@echo "Review the diff and open a PR from dev to main."
 
 # Require a clean main branch before tagging a release
@@ -98,23 +100,25 @@ ensure-main-clean:
 
 # Create a local release tag without pushing main or force-updating tags
 release: ensure-main-clean
-	@version="$$(uv run --frozen python scripts/bump_version.py --current)"; \
-	if git rev-parse -q --verify "refs/tags/v$$version" >/dev/null; then \
-		echo "Local tag v$$version already exists."; \
+	@version="$$(uv run --frozen python scripts/bump_version.py --package "$(PACKAGE)" --current)"; \
+	tag="$(PACKAGE)-v$$version"; \
+	if git rev-parse -q --verify "refs/tags/$$tag" >/dev/null; then \
+		echo "Local tag $$tag already exists."; \
 		exit 1; \
 	fi; \
-	if git ls-remote --exit-code --tags origin "refs/tags/v$$version" >/dev/null 2>&1; then \
-		echo "Remote tag v$$version already exists."; \
+	if git ls-remote --exit-code --tags origin "refs/tags/$$tag" >/dev/null 2>&1; then \
+		echo "Remote tag $$tag already exists."; \
 		exit 1; \
 	fi; \
-	git tag -a "v$$version" -m "Release v$$version"; \
-	echo "Created local tag v$$version"
+	git tag -a "$$tag" -m "Release $$tag"; \
+	echo "Created local tag $$tag"
 
 # Push the release tag only to trigger publishing
 push-release-tag:
-	@version="$$(uv run --frozen python scripts/bump_version.py --current)"; \
-	git rev-parse -q --verify "refs/tags/v$$version" >/dev/null || { echo "Local tag v$$version does not exist."; exit 1; }; \
-	git push origin "refs/tags/v$$version"
+	@version="$$(uv run --frozen python scripts/bump_version.py --package "$(PACKAGE)" --current)"; \
+	tag="$(PACKAGE)-v$$version"; \
+	git rev-parse -q --verify "refs/tags/$$tag" >/dev/null || { echo "Local tag $$tag does not exist."; exit 1; }; \
+	git push origin "refs/tags/$$tag"
 
 # Clean Python cache files
 clean:
