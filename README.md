@@ -1,6 +1,12 @@
 # jira2mcp
 
-MCP server for Jira Cloud — gives AI assistants like Claude the ability to read, create, edit, search, and comment on Jira issues.
+Jira AI workspace for Jira Cloud integrations.
+
+This repository currently contains three packages:
+
+- `jira2ai-core` — shared Jira operations and formatting utilities.
+- `jira2mcp` — the MCP adapter published as `jira2mcp`.
+- `jira2cli` — a CLI adapter for local and development workflows.
 
 Built with [FastMCP](https://github.com/jlowin/fastmcp) and [jira2py](https://pypi.org/project/jira2py/).
 
@@ -108,6 +114,26 @@ If you prefer not to set global environment variables, provide them directly in 
 |---|---|
 | `jql_syntax` | JQL syntax reference for building search queries |
 
+## CLI usage for local development
+
+`jira2cli` uses the same `JIRA_URL`, `JIRA_USER`, and `JIRA_API_TOKEN` variables shown above.
+
+Sync the workspace once:
+
+```bash
+uv sync --all-packages --group dev
+```
+
+Then run the CLI from the workspace:
+
+```bash
+uv run --package jira2cli jira2cli --help
+uv run --package jira2cli jira2cli read PROJ-123
+uv run --package jira2cli jira2cli search 'project = PROJ ORDER BY updated DESC'
+```
+
+`jira2cli` is available for local/development use in this workspace. Continue to use `uvx jira2mcp` for MCP installs.
+
 ## Key features
 
 - **Markdown in, Markdown out** — write descriptions and comments in Markdown; they're auto-converted to Atlassian Document Format (ADF). ADF fields from Jira are converted back to Markdown.
@@ -118,12 +144,13 @@ If you prefer not to set global environment variables, provide them directly in 
 
 ## Repository layout
 
-This repository is a `uv` workspace with two packages:
+This repository is a `uv` workspace with three packages:
 
-- `packages/jira2ai-core` — shared operation layer used internally by the MCP package.
+- `packages/jira2ai-core` — shared operations used by both adapters.
 - `packages/jira2mcp` — the FastMCP server/adapter package published as `jira2mcp`.
+- `packages/jira2cli` — the CLI adapter package for local/dev use.
 
-End-user setup stays the same: use `uvx jira2mcp` directly or `claude mcp add jira -- uvx jira2mcp`.
+End-user MCP setup stays the same: use `uvx jira2mcp` directly or `claude mcp add jira -- uvx jira2mcp`.
 
 ## Contributing
 

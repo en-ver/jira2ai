@@ -1,0 +1,22 @@
+[project]
+name = "jira2cli"
+version = "0.1.0"
+description = "CLI for Jira AI integrations powered by jira2ai-core"
+authors = [
+    { name = "en-ver" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "jira2ai-core==0.1.0",
+    "typer>=0.16.0",
+]
+
+[tool.uv.sources]
+jira2ai-core = { workspace = true }
+
+[project.scripts]
+jira2cli = "jira2cli:main"
+
+[build-system]
+requires = ["uv_build>=0.10.4,<0.11.0"]
+build-backend = "uv_build"

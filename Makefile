@@ -1,11 +1,12 @@
-.PHONY: lint format type-check test check check-ci clean help build bump-version version-current release-prep release push-release-tag ensure-main-clean
+.PHONY: lint format type-check test check check-ci clean help build build-jira2ai-core build-jira2mcp build-jira2cli build-all bump-version version-current release-prep release push-release-tag ensure-main-clean
 
 PART ?= patch
 VERSION_INPUT := $(or $(VERSION),$(v))
-PACKAGE_DIR := packages/jira2mcp
+MCP_PACKAGE_DIR := packages/jira2mcp
 CORE_PACKAGE_DIR := packages/jira2ai-core
-CHECK_PATHS := $(CORE_PACKAGE_DIR)/src $(PACKAGE_DIR)/src scripts tests
-TYPECHECK_PATHS := $(CORE_PACKAGE_DIR)/src/ $(PACKAGE_DIR)/src/ scripts/
+CLI_PACKAGE_DIR := packages/jira2cli
+CHECK_PATHS := $(CORE_PACKAGE_DIR)/src $(MCP_PACKAGE_DIR)/src $(CLI_PACKAGE_DIR)/src scripts tests
+TYPECHECK_PATHS := $(CORE_PACKAGE_DIR)/src/ $(MCP_PACKAGE_DIR)/src/ $(CLI_PACKAGE_DIR)/src/ scripts/
 
 help:
 	@echo "Available targets:"
@@ -15,7 +16,11 @@ help:
 	@echo "  test             - Run pytest"
 	@echo "  check            - Run mutating local checks (lint, format, type-check)"
 	@echo "  check-ci         - Run non-mutating CI-style checks, including tests"
-	@echo "  build            - Build sdist and wheel"
+	@echo "  build            - Build jira2mcp sdist and wheel"
+	@echo "  build-jira2ai-core - Build jira2ai-core sdist and wheel"
+	@echo "  build-jira2mcp   - Build jira2mcp sdist and wheel"
+	@echo "  build-jira2cli   - Build jira2cli sdist and wheel"
+	@echo "  build-all        - Build all workspace packages"
 	@echo "  bump-version     - Bump version (default patch) or set VERSION=0.2.0 / v=0.2.0"
 	@echo "  version-current  - Print the current project version"
 	@echo "  release-prep     - Bump version and run non-mutating checks"
@@ -53,6 +58,17 @@ check-ci:
 # Build sdist and wheel
 build: clean
 	uv build --package jira2mcp
+
+build-jira2ai-core:
+	uv build --package jira2ai-core
+
+build-jira2mcp:
+	uv build --package jira2mcp
+
+build-jira2cli:
+	uv build --package jira2cli
+
+build-all: clean build-jira2ai-core build-jira2mcp build-jira2cli
 
 # Print the current project version
 version-current:
@@ -105,4 +121,4 @@ clean:
 	find . -type f -name "*.py[co]" -delete
 	find . -type d -name "__pycache__" -delete
 	find . -type d -name "*.egg-info" -prune -exec rm -rf {} +
-	rm -rf .mypy_cache/ .ty/ .ruff_cache/ .pytest_cache/ dist/ build/ $(CORE_PACKAGE_DIR)/dist/ $(CORE_PACKAGE_DIR)/build/ $(PACKAGE_DIR)/dist/ $(PACKAGE_DIR)/build/
+	rm -rf .mypy_cache/ .ty/ .ruff_cache/ .pytest_cache/ dist/ build/ $(CORE_PACKAGE_DIR)/dist/ $(CORE_PACKAGE_DIR)/build/ $(MCP_PACKAGE_DIR)/dist/ $(MCP_PACKAGE_DIR)/build/ $(CLI_PACKAGE_DIR)/dist/ $(CLI_PACKAGE_DIR)/build/
