@@ -1,6 +1,6 @@
 [project]
 name = "jira2ai-core"
-version = "0.2.1"
+version = "0.2.2"
 description = "Shared core package for Jira AI integrations"
 readme = "README.md"
 authors = [
