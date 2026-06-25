@@ -3,18 +3,19 @@ from __future__ import annotations
 import asyncio
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Any, cast
 
 import pytest
 from conftest import FakeContext
 from fastmcp.exceptions import ToolError
-from jira2ai_core.errors import AttachmentError, JiraOperationError
-from jira2ai_core.operations import attachments as attachment_operations
-from jira2ai_core.operations.attachments import (
+from jira2mcp.attachment_io import (
     download_attachment_content,
     format_attachment_download_result,
-    plan_attachment_download,
 )
 from jira2mcp.tools import attachment as attachment_tool
+from jira2py.helpers import JiraHelpers
+from jira2py.helpers.errors import AttachmentError, JiraHelperOperationError
+from jira2py.helpers.models import AttachmentDownloadPlan
 
 ATTACHMENT_META = {
     "id": 7,
@@ -24,15 +25,24 @@ ATTACHMENT_META = {
 }
 
 
+def _plan_download(api, attachment_id: str, *, output_path: str | None = None):
+    result = JiraHelpers(api).attachments.plan_download(
+        attachment_id,
+        output_path=output_path,
+    )
+    return result.data
+
+
 def test_plan_attachment_download_builds_metadata_and_destination(
     tmp_path,
     make_attachment_api,
 ) -> None:
     api = make_attachment_api(metadata_response=ATTACHMENT_META)
 
-    plan = plan_attachment_download("7", output_path=str(tmp_path), api=api)
+    plan = _plan_download(api, "7", output_path=str(tmp_path))
 
     assert api._get_attachment_metadata.calls == [{"attachment_id": "7"}]
+    assert isinstance(plan, AttachmentDownloadPlan)
     assert plan.filename == "debug.log"
     assert plan.output_file == str(tmp_path / "debug.log")
     assert plan.resolved_output == (tmp_path / "debug.log").resolve()
@@ -51,14 +61,11 @@ def test_plan_attachment_download_falls_back_when_filename_sanitizes_empty(
     make_attachment_api,
 ) -> None:
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setattr(
-        attachment_operations,
-        "sanitize_filename",
-        lambda *_args, **_kwargs: " .. ",
+    api = make_attachment_api(
+        metadata_response={**ATTACHMENT_META, "filename": " .. /.. "}
     )
-    api = make_attachment_api(metadata_response=ATTACHMENT_META)
 
-    plan = plan_attachment_download("7", api=api)
+    plan = _plan_download(api, "7")
 
     assert plan.filename == "attachment-7"
     assert plan.output_file == str(tmp_path / "attachment-7")
@@ -78,17 +85,17 @@ def test_plan_attachment_download_rejects_too_large_attachments(
         AttachmentError,
         match=r"Attachment too large: 100\.0 MB\. Max allowed: 100\.0 MB",
     ):
-        plan_attachment_download("7", api=api)
+        _plan_download(api, "7")
 
 
 def test_plan_attachment_download_wraps_metadata_failures(make_attachment_api) -> None:
     api = make_attachment_api(metadata_error=RuntimeError("boom"))
 
     with pytest.raises(
-        JiraOperationError,
+        JiraHelperOperationError,
         match=r"Failed to fetch attachment metadata 7: boom",
     ):
-        plan_attachment_download("7", api=api)
+        _plan_download(api, "7")
 
 
 def test_download_attachment_content_uses_injected_downloader(
@@ -96,10 +103,10 @@ def test_download_attachment_content_uses_injected_downloader(
     make_attachment_api,
 ) -> None:
     api = make_attachment_api(metadata_response=ATTACHMENT_META)
-    plan = plan_attachment_download(
+    plan = _plan_download(
+        api,
         "7",
         output_path=f"{tmp_path / 'downloads'}/",
-        api=api,
     )
     calls: list[tuple[str, Path, tuple[str, str]]] = []
 
@@ -111,7 +118,7 @@ def test_download_attachment_content_uses_injected_downloader(
 
     assert calls == [
         (
-            "https://example.atlassian.net/rest/api/3/attachment/content/7",
+            plan.content_url,
             tmp_path / "downloads" / "debug.log",
             ("user@example.com", "secret-token"),
         )
@@ -123,7 +130,13 @@ def test_attachment_tool_rejects_empty_ids_before_logging(fake_ctx) -> None:
     with pytest.raises(
         ToolError, match=r"attachment_id is required and cannot be empty"
     ):
-        asyncio.run(attachment_tool.attachment("   ", ctx=fake_ctx, api=object()))
+        asyncio.run(
+            attachment_tool.attachment(
+                "   ",
+                ctx=cast(Any, fake_ctx),
+                api=cast(Any, object()),
+            )
+        )
 
     assert fake_ctx.info_messages == []
     assert fake_ctx.error_messages == []
@@ -133,7 +146,13 @@ def test_attachment_tool_logs_metadata_errors(fake_ctx, make_attachment_api) -> 
     api = make_attachment_api(metadata_error=RuntimeError("boom"))
 
     with pytest.raises(ToolError, match=r"Failed to fetch attachment metadata 7: boom"):
-        asyncio.run(attachment_tool.attachment("7", ctx=fake_ctx, api=api))
+        asyncio.run(
+            attachment_tool.attachment(
+                "7",
+                ctx=cast(Any, fake_ctx),
+                api=api,
+            )
+        )
 
     assert fake_ctx.info_messages == ["Downloading attachment 7"]
     assert fake_ctx.error_messages == ["Failed to fetch attachment metadata 7: boom"]
@@ -159,7 +178,7 @@ def test_attachment_tool_keeps_root_approval_in_mcp_adapter(
         attachment_tool.attachment(
             "7",
             output_path=f"{tmp_path / 'downloads'}/",
-            ctx=ctx,
+            ctx=cast(Any, ctx),
             api=api,
         )
     )
@@ -191,7 +210,7 @@ def test_attachment_tool_rejects_paths_outside_mcp_roots(
             attachment_tool.attachment(
                 "7",
                 output_path=f"{tmp_path / 'blocked'}/",
-                ctx=ctx,
+                ctx=cast(Any, ctx),
                 api=api,
             )
         )
@@ -216,7 +235,7 @@ def test_attachment_tool_uses_cwd_boundary_when_no_roots(
             attachment_tool.attachment(
                 "7",
                 output_path="../outside.txt",
-                ctx=ctx,
+                ctx=cast(Any, ctx),
                 api=api,
             )
         )

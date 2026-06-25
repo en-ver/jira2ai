@@ -1,6 +1,6 @@
 # jira2cli
 
-CLI adapter for Jira Cloud, powered by `jira2ai-core`.
+CLI adapter for Jira Cloud, powered by `jira2py` helpers.
 
 `jira2cli` is currently intended for local and development use from this workspace. Do not assume a published `uvx` or PyPI install path yet.
 
@@ -50,7 +50,6 @@ Use `jira2cli worklog-report` to build a report for issues selected by JQL.
 
 ## Workspace layout
 
-- `packages/jira2ai-core` — shared operations.
 - `packages/jira2mcp` — MCP adapter published as `jira2mcp`.
 - `packages/jira2cli` — CLI adapter package.
 

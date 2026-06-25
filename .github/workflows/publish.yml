@@ -3,7 +3,6 @@ name: Publish to PyPI
 on:
   push:
     tags:
-      - "jira2ai-core-v*"
       - "jira2mcp-v*"
       - "jira2cli-v*"
 
@@ -59,8 +58,7 @@ jobs:
         run: |
           uv run --frozen python scripts/bump_version.py \
             --package "${PACKAGE}" \
-            --validate-release \
-            --require-published-core
+            --validate-release
 
   check:
     name: Lint, type-check, and test
@@ -81,16 +79,16 @@ jobs:
         run: uv sync --all-packages --group dev
 
       - name: Ruff lint
-        run: uv run --locked ruff check packages/jira2ai-core/src packages/jira2mcp/src packages/jira2cli/src scripts tests
+        run: uv run --locked ruff check packages/jira2mcp/src packages/jira2cli/src scripts tests
 
       - name: Ruff format
-        run: uv run --locked ruff format --check packages/jira2ai-core/src packages/jira2mcp/src packages/jira2cli/src scripts tests
+        run: uv run --locked ruff format --check packages/jira2mcp/src packages/jira2cli/src scripts tests
 
       - name: Type check
-        run: uv run --locked ty check packages/jira2ai-core/src/ packages/jira2mcp/src/ packages/jira2cli/src/ scripts/
+        run: uv run --locked ty check packages/jira2mcp/src/ packages/jira2cli/src/ scripts/
 
       - name: Test
-        run: uv run --locked pytest
+        run: uv run --locked python -m pytest
 
   build:
     name: Build package

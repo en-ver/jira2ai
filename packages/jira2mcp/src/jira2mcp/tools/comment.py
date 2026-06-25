@@ -5,12 +5,12 @@ from typing import Annotated
 from fastmcp.dependencies import CurrentContext, Depends
 from fastmcp.server.context import Context
 from fastmcp.tools.tool import ToolResult
-from jira2ai_core.client import get_api
-from jira2ai_core.errors import JiraOperationError
-from jira2ai_core.operations.comments import add_comment
 from jira2py import JiraAPI
+from jira2py.helpers import JiraHelpers
+from jira2py.helpers.errors import JiraHelperError, JiraHelperOperationError
 
 from jira2mcp.adapter import adapt_operation_result, to_tool_error
+from jira2mcp.utils import get_api
 
 from .server import tools
 
@@ -38,9 +38,11 @@ async def comment(
     await ctx.info(f"Adding comment to {issue_key}")
 
     try:
-        result = add_comment(issue_key, body, api=api)
-    except JiraOperationError as exc:
+        result = JiraHelpers(api).comments.add(issue_key, body)
+    except JiraHelperOperationError as exc:
         await ctx.error(str(exc))
+        raise to_tool_error(exc) from exc
+    except JiraHelperError as exc:
         raise to_tool_error(exc) from exc
 
     return adapt_operation_result(result, raw=raw)

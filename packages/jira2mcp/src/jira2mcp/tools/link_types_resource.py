@@ -1,9 +1,10 @@
 """MCP resource exposing available Jira issue link types."""
 
 from fastmcp.dependencies import Depends
-from jira2ai_core.client import get_api
-from jira2ai_core.operations.links import list_link_types as _list_link_types
 from jira2py import JiraAPI
+from jira2py.helpers import JiraHelpers
+
+from jira2mcp.utils import get_api
 
 from .server import tools
 
@@ -17,4 +18,4 @@ def list_link_types(api: JiraAPI = Depends(get_api)) -> str:
 
     Use the link type name with the jira_add_link tool to create links between issues.
     """
-    return _list_link_types(api=api).text
+    return JiraHelpers(api).links.types().text

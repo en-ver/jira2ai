@@ -4,7 +4,6 @@ requires-python = ">=3.13"
 
 [manifest]
 members = [
-    "jira2ai-core",
     "jira2ai-workspace",
     "jira2cli",
     "jira2mcp",
@@ -487,29 +486,6 @@ wheels = [
 ]
 
 [[package]]
-name = "jira2ai-core"
-version = "0.2.2"
-source = { editable = "packages/jira2ai-core" }
-dependencies = [
-    { name = "httpx" },
-    { name = "jira2py" },
-    { name = "marklassian" },
-    { name = "pathvalidate" },
-    { name = "pyadf" },
-    { name = "pydantic" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "httpx", specifier = ">=0.28.1" },
-    { name = "jira2py", specifier = "==0.6.0" },
-    { name = "marklassian", specifier = ">=0.1.0" },
-    { name = "pathvalidate", specifier = ">=3.3.1" },
-    { name = "pyadf", specifier = ">=0.3.0" },
-    { name = "pydantic", specifier = ">=2.12.5" },
-]
-
-[[package]]
 name = "jira2ai-workspace"
 version = "0.0.0"
 source = { virtual = "." }
@@ -535,13 +511,15 @@ name = "jira2cli"
 version = "0.1.2"
 source = { editable = "packages/jira2cli" }
 dependencies = [
-    { name = "jira2ai-core" },
+    { name = "httpx" },
+    { name = "jira2py" },
     { name = "typer" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "jira2ai-core", editable = "packages/jira2ai-core" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "jira2py", specifier = "==0.7.0" },
     { name = "typer", specifier = ">=0.16.0" },
 ]
 
@@ -551,30 +529,37 @@ version = "0.1.4"
 source = { editable = "packages/jira2mcp" }
 dependencies = [
     { name = "fastmcp" },
-    { name = "jira2ai-core" },
+    { name = "httpx" },
     { name = "jira2py" },
+    { name = "marklassian" },
+    { name = "pyadf" },
     { name = "pydantic" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "fastmcp", specifier = ">=3.1.0" },
-    { name = "jira2ai-core", editable = "packages/jira2ai-core" },
-    { name = "jira2py", specifier = "==0.6.0" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "jira2py", specifier = "==0.7.0" },
+    { name = "marklassian", specifier = ">=0.1.0" },
+    { name = "pyadf", specifier = ">=0.3.0" },
     { name = "pydantic", specifier = ">=2.12.5" },
 ]
 
 [[package]]
 name = "jira2py"
-version = "0.6.0"
+version = "0.7.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx", extra = ["http2"] },
+    { name = "marklassian" },
+    { name = "pyadf" },
+    { name = "pydantic" },
     { name = "tenacity" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/6a/0f/f64bad85361a45a3482f5b655c425cbddb7a05b8aef438ddcbef6b6d3d1d/jira2py-0.6.0.tar.gz", hash = "sha256:fb4c0750de194a12d274a9a8cd5a677d68933b1de41970fb3ca884ce92a0d299", size = 25366, upload-time = "2026-06-25T12:03:59.912Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/92/b7/f83bc92fde89dc610fe6a1aa7e8d73251b2f4939040e2724a48e91afde3e/jira2py-0.7.0.tar.gz", hash = "sha256:908b39d3420fffcad18228c8c92fc3cd9c1b59ef3e2ca43c3875977572ca4d15", size = 50534, upload-time = "2026-06-25T21:10:31.073Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/dc/66/e667f407cb0fdfbfd499bbc4e76e4faaf5d979dc0b0619edcb78b76ce351/jira2py-0.6.0-py3-none-any.whl", hash = "sha256:ce83a11b9a92d80e671d352d75637a8a4235138891d00b469b1671cf7d54acc9", size = 22609, upload-time = "2026-06-25T12:03:58.639Z" },
+    { url = "https://files.pythonhosted.org/packages/2e/ac/33e19e0cacea28546657d4891536756cf75f87296a789f3939be0120f916/jira2py-0.7.0-py3-none-any.whl", hash = "sha256:fed2e54796a1482c04b8898c9ad486700f6ae11dd351fef87c090b6dd97f384e", size = 45105, upload-time = "2026-06-25T21:10:29.791Z" },
 ]
 
 [[package]]
@@ -761,15 +746,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/72/55/b748445cb4ea6b125626f15379be7c96d1035d4fa3e8fee362fa92298abf/pathable-0.5.0.tar.gz", hash = "sha256:d81938348a1cacb525e7c75166270644782c0fb9c8cecc16be033e71427e0ef1", size = 16655, upload-time = "2026-02-20T08:47:00.748Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/52/96/5a770e5c461462575474468e5af931cff9de036e7c2b4fea23c1c58d2cbe/pathable-0.5.0-py3-none-any.whl", hash = "sha256:646e3d09491a6351a0c82632a09c02cdf70a252e73196b36d8a15ba0a114f0a6", size = 16867, upload-time = "2026-02-20T08:46:59.536Z" },
-]
-
-[[package]]
-name = "pathvalidate"
-version = "3.3.1"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/fa/2a/52a8da6fe965dea6192eb716b357558e103aea0a1e9a8352ad575a8406ca/pathvalidate-3.3.1.tar.gz", hash = "sha256:b18c07212bfead624345bb8e1d6141cdcf15a39736994ea0b94035ad2b1ba177", size = 63262, upload-time = "2025-06-15T09:07:20.736Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/9a/70/875f4a23bfc4731703a5835487d0d2fb999031bd415e7d17c0ae615c18b7/pathvalidate-3.3.1-py3-none-any.whl", hash = "sha256:5263baab691f8e1af96092fa5137ee17df5bdfbd6cff1fcac4d6ef4bc2e1735f", size = 24305, upload-time = "2025-06-15T09:07:19.117Z" },
 ]
 
 [[package]]

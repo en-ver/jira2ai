@@ -8,43 +8,36 @@ from typing import Any, cast
 import pytest
 from fastmcp.exceptions import ToolError
 from fastmcp.tools.tool import ToolResult
-from jira2ai_core.errors import Jira2AIValidationError, JiraOperationError
-from jira2ai_core.results import OperationResult
 from jira2mcp import mcp
 from jira2mcp.tools import worklogs as worklog_tool_module
 from jira2mcp.tools.worklogs import worklog_report
+from jira2py.helpers import HelperResult
+from jira2py.helpers.errors import JiraHelperOperationError, JiraHelperValidationError
 
 
-def test_worklog_report_delegates_to_core_operation(fake_ctx, monkeypatch) -> None:
+def test_worklog_report_delegates_to_helper_group(fake_ctx, monkeypatch) -> None:
     calls: list[dict[str, object]] = []
     api = cast(Any, object())
 
-    def fake_get_worklog_report(
-        *,
-        api: object,
-        start_date: str,
-        end_date: str,
-        jql: str,
-        account_id: str | None = None,
-        max_issues: int = 100,
-        include_details: bool = False,
-    ) -> OperationResult:
-        calls.append(
-            {
-                "api": api,
-                "start_date": start_date,
-                "end_date": end_date,
-                "jql": jql,
-                "account_id": account_id,
-                "max_issues": max_issues,
-                "include_details": include_details,
-            }
-        )
-        return OperationResult.with_data("formatted worklog report", {"rowCount": 1})
+    class FakeJiraHelpers:
+        def __init__(self, received_api: object) -> None:
+            self.worklogs = cast(
+                Any,
+                type(
+                    "Worklogs",
+                    (),
+                    {
+                        "report": lambda _self, **kwargs: (
+                            calls.append({"api": received_api, **kwargs})
+                            or HelperResult.with_data(
+                                "formatted worklog report", {"rowCount": 1}
+                            )
+                        )
+                    },
+                )(),
+            )
 
-    monkeypatch.setattr(
-        worklog_tool_module, "get_worklog_report", fake_get_worklog_report
-    )
+    monkeypatch.setattr(worklog_tool_module, "JiraHelpers", FakeJiraHelpers)
 
     result = asyncio.run(
         worklog_report(
@@ -80,12 +73,22 @@ def test_worklog_report_delegates_to_core_operation(fake_ctx, monkeypatch) -> No
 def test_worklog_report_raw_returns_tool_result(fake_ctx, monkeypatch) -> None:
     payload = {"rowCount": 1, "rows": [{"issueKey": "PROJ-1"}]}
 
-    def fake_get_worklog_report(**_: object) -> OperationResult:
-        return OperationResult.with_data("formatted worklog report", payload)
+    class FakeJiraHelpers:
+        def __init__(self, _api: object) -> None:
+            self.worklogs = cast(
+                Any,
+                type(
+                    "Worklogs",
+                    (),
+                    {
+                        "report": lambda _self, **_kwargs: HelperResult.with_data(
+                            "formatted worklog report", payload
+                        )
+                    },
+                )(),
+            )
 
-    monkeypatch.setattr(
-        worklog_tool_module, "get_worklog_report", fake_get_worklog_report
-    )
+    monkeypatch.setattr(worklog_tool_module, "JiraHelpers", FakeJiraHelpers)
 
     result = asyncio.run(
         worklog_report(
@@ -108,12 +111,24 @@ def test_worklog_report_raw_returns_tool_result(fake_ctx, monkeypatch) -> None:
 
 
 def test_worklog_report_wraps_validation_errors(fake_ctx, monkeypatch) -> None:
-    def fake_get_worklog_report(**_: object) -> OperationResult:
-        raise Jira2AIValidationError("start_date must be in YYYY-MM-DD format.")
+    class FakeJiraHelpers:
+        def __init__(self, _api: object) -> None:
+            self.worklogs = cast(
+                Any,
+                type(
+                    "Worklogs",
+                    (),
+                    {
+                        "report": lambda _self, **_kwargs: (_ for _ in ()).throw(
+                            JiraHelperValidationError(
+                                "start_date must be in YYYY-MM-DD format."
+                            )
+                        )
+                    },
+                )(),
+            )
 
-    monkeypatch.setattr(
-        worklog_tool_module, "get_worklog_report", fake_get_worklog_report
-    )
+    monkeypatch.setattr(worklog_tool_module, "JiraHelpers", FakeJiraHelpers)
 
     with pytest.raises(ToolError, match=r"start_date must be in YYYY-MM-DD format\."):
         asyncio.run(
@@ -131,12 +146,24 @@ def test_worklog_report_wraps_validation_errors(fake_ctx, monkeypatch) -> None:
 
 
 def test_worklog_report_logs_operation_errors(fake_ctx, monkeypatch) -> None:
-    def fake_get_worklog_report(**_: object) -> OperationResult:
-        raise JiraOperationError("Failed to search issues for worklog report: boom")
+    class FakeJiraHelpers:
+        def __init__(self, _api: object) -> None:
+            self.worklogs = cast(
+                Any,
+                type(
+                    "Worklogs",
+                    (),
+                    {
+                        "report": lambda _self, **_kwargs: (_ for _ in ()).throw(
+                            JiraHelperOperationError(
+                                "Failed to search issues for worklog report: boom"
+                            )
+                        )
+                    },
+                )(),
+            )
 
-    monkeypatch.setattr(
-        worklog_tool_module, "get_worklog_report", fake_get_worklog_report
-    )
+    monkeypatch.setattr(worklog_tool_module, "JiraHelpers", FakeJiraHelpers)
 
     with pytest.raises(
         ToolError,

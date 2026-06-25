@@ -1,28 +1,28 @@
 """Download a Jira attachment."""
 
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, cast
 from urllib.parse import urlparse
 
 from fastmcp import Context
 from fastmcp.dependencies import CurrentContext, Depends
 from fastmcp.exceptions import ToolError
-from jira2ai_core.client import get_api
-from jira2ai_core.errors import (
+from jira2py import JiraAPI
+from jira2py.helpers import JiraHelpers
+from jira2py.helpers.errors import (
     AttachmentDownloadError,
     AttachmentError,
-    Jira2AIValidationError,
-    JiraOperationError,
+    JiraHelperOperationError,
+    JiraHelperValidationError,
 )
-from jira2ai_core.operations.attachments import (
-    download_attachment_content,
-    format_attachment_download_result,
-    plan_attachment_download,
-    validate_attachment_id,
-)
-from jira2py import JiraAPI
+from jira2py.helpers.models import AttachmentDownloadPlan
 
 from jira2mcp.adapter import to_tool_error
+from jira2mcp.attachment_io import (
+    download_attachment_content,
+    format_attachment_download_result,
+)
+from jira2mcp.utils import get_api
 
 from .server import tools
 
@@ -32,7 +32,6 @@ def _path_within_roots(resolved_path: Path, roots: list) -> bool:
     for root in roots:
         uri = str(root.uri) if hasattr(root, "uri") else str(root)
         parsed = urlparse(uri)
-        # file:///path -> /path; plain path -> use as-is
         root_path = Path(parsed.path if parsed.scheme == "file" else uri).resolve()
         if resolved_path.is_relative_to(root_path):
             return True
@@ -58,20 +57,21 @@ async def attachment(
     Use jira_read to get attachment IDs and metadata first.
     The attachment is saved to the specified output path (or current directory).
     """
+    helpers = JiraHelpers(api)
     try:
-        validate_attachment_id(attachment_id)
-    except Jira2AIValidationError as exc:
+        helpers.attachments.validate_id(attachment_id)
+    except JiraHelperValidationError as exc:
         raise to_tool_error(exc) from exc
 
     await ctx.info(f"Downloading attachment {attachment_id}")
 
     try:
-        plan = plan_attachment_download(
+        plan_result = helpers.attachments.plan_download(
             attachment_id,
             output_path=output_path,
-            api=api,
         )
-    except JiraOperationError as exc:
+        plan = cast(AttachmentDownloadPlan, plan_result.data)
+    except JiraHelperOperationError as exc:
         await ctx.error(str(exc))
         raise to_tool_error(exc) from exc
     except AttachmentError as exc:
@@ -89,7 +89,6 @@ async def attachment(
                 f"Path is outside allowed MCP roots. Resolved path: {plan.resolved_output}"
             )
     else:
-        # Fallback: no roots declared, use CWD as boundary
         cwd = Path.cwd().resolve()
         if not plan.resolved_output.is_relative_to(cwd):
             raise ToolError(

@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 import typer
-from jira2ai_core import client
-from jira2ai_core.errors import Jira2AIValidationError
-from jira2ai_core.jql import JQL_REFERENCE
-from jira2ai_core.operations import fields as field_operations
-from jira2ai_core.operations import links, projects, users
+from jira2py.helpers import JiraHelpers
+from jira2py.helpers.errors import JiraHelperValidationError
 
+from jira2cli import client
+from jira2cli.jql import JQL_REFERENCE
 from jira2cli.output import (
     raise_cli_exception,
     render_operation_result,
@@ -49,23 +48,20 @@ def fields_command(
     try:
         if issue_key:
             api = client.get_api()
-            result = field_operations.get_edit_fields(issue_key, api=api)
+            result = JiraHelpers(api).metadata.edit_fields(issue_key)
         else:
             if not project_key:
-                raise Jira2AIValidationError(
+                raise JiraHelperValidationError(
                     "Provide either --project-key (to list issue types / create fields) "
                     "or --issue-key (to list edit fields)."
                 )
 
             api = client.get_api()
+            helpers = JiraHelpers(api)
             if issue_type:
-                result = field_operations.get_create_fields(
-                    project_key,
-                    issue_type,
-                    api=api,
-                )
+                result = helpers.metadata.create_fields(project_key, issue_type)
             else:
-                result = field_operations.list_issue_types(project_key, api=api)
+                result = helpers.metadata.issue_types(project_key)
     except Exception as exc:
         raise_cli_exception(exc)
 
@@ -100,7 +96,7 @@ def projects_command(
 
     try:
         api = client.get_api()
-        result = projects.list_projects(query, api=api)
+        result = JiraHelpers(api).metadata.projects(query)
     except Exception as exc:
         raise_cli_exception(exc)
 
@@ -138,7 +134,7 @@ def users_command(
 
     try:
         api = client.get_api()
-        result = users.search_users(query, max_results=max_results, api=api)
+        result = JiraHelpers(api).metadata.users(query, max_results=max_results)
     except Exception as exc:
         raise_cli_exception(exc)
 
@@ -168,7 +164,7 @@ def link_types_command(
 
     try:
         api = client.get_api()
-        result = links.list_link_types(api=api)
+        result = JiraHelpers(api).links.types()
     except Exception as exc:
         raise_cli_exception(exc)
 

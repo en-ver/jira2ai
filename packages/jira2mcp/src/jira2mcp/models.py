@@ -1,6 +1,7 @@
 """Compatibility shim for moved shared models."""
 
-from jira2ai_core.models import (
+from jira2py.helpers.models import (
+    AttachmentDownloadPlan,
     AttachmentMeta,
     CommentPage,
     FieldMeta,
@@ -15,17 +16,25 @@ from jira2ai_core.models import (
     JiraModel,
     JiraProject,
     JiraUser,
+    JiraWorklog,
     LinkedIssue,
     LinkedIssueFields,
     NamedResource,
+    ProjectRef,
     ProjectSearchResult,
     SearchResult,
     Subtask,
     SubtaskFields,
+    WorklogIssueSelector,
+    WorklogPage,
+    WorklogReport,
+    WorklogReportRow,
+    WorklogVisibility,
     user_display,
 )
 
 __all__ = [
+    "AttachmentDownloadPlan",
     "AttachmentMeta",
     "CommentPage",
     "FieldMeta",
@@ -40,12 +49,19 @@ __all__ = [
     "JiraModel",
     "JiraProject",
     "JiraUser",
+    "JiraWorklog",
     "LinkedIssue",
     "LinkedIssueFields",
     "NamedResource",
+    "ProjectRef",
     "ProjectSearchResult",
     "SearchResult",
     "Subtask",
     "SubtaskFields",
+    "WorklogIssueSelector",
+    "WorklogPage",
+    "WorklogReport",
+    "WorklogReportRow",
+    "WorklogVisibility",
     "user_display",
 ]

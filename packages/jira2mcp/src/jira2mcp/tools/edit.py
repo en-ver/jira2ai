@@ -5,13 +5,12 @@ from typing import Annotated, Any
 from fastmcp.dependencies import CurrentContext, Depends
 from fastmcp.server.context import Context
 from fastmcp.tools.tool import ToolResult
-from jira2ai_core.client import get_api
-from jira2ai_core.errors import Jira2AIValidationError, JiraOperationError
-from jira2ai_core.operations.issues import edit_issue as edit_issue_operation
-from jira2ai_core.operations.issues import validate_edit_issue_input
 from jira2py import JiraAPI
+from jira2py.helpers import JiraHelpers
+from jira2py.helpers.errors import JiraHelperOperationError, JiraHelperValidationError
 
 from jira2mcp.adapter import adapt_operation_result, to_tool_error
+from jira2mcp.utils import get_api
 
 from .server import tools
 
@@ -43,27 +42,28 @@ async def edit(
     Use jira_fields with issue_key to discover which fields are available
     on the edit screen. Use jira_users to look up account IDs for assignee updates.
     """
+    helpers = JiraHelpers(api)
     try:
-        validate_edit_issue_input(
+        helpers.issues.validate_edit(
+            issue_key,
             summary=summary,
             description=description,
             fields=fields,
         )
-    except Jira2AIValidationError as exc:
+    except JiraHelperValidationError as exc:
         raise to_tool_error(exc) from exc
 
     await ctx.info(f"Updating issue {issue_key}")
 
     try:
-        result = edit_issue_operation(
+        result = helpers.issues.edit(
             issue_key,
             summary=summary,
             description=description,
             fields=fields,
             raw=raw,
-            api=api,
         )
-    except JiraOperationError as exc:
+    except JiraHelperOperationError as exc:
         await ctx.error(str(exc))
         raise to_tool_error(exc) from exc
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import jira2ai_core.adf as adf
+import jira2mcp.adf as adf
 
 
 def test_markdown_to_adf_returns_empty_doc_for_blank_input() -> None:

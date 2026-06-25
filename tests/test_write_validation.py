@@ -11,7 +11,7 @@ from jira2mcp.tools.edit import edit
 def test_create_rejects_reserved_fields_in_fields_payload(fake_ctx) -> None:
     with pytest.raises(
         ToolError,
-        match=r"Use explicit parameters instead of fields for: \{'project'\}",
+        match=r"Use explicit parameters instead of fields for: project",
     ):
         asyncio.run(
             create(
@@ -44,7 +44,7 @@ def test_edit_requires_at_least_one_update(fake_ctx) -> None:
 def test_edit_rejects_reserved_fields_in_fields_payload(fake_ctx) -> None:
     with pytest.raises(
         ToolError,
-        match=r"Use explicit parameters instead of fields for: \{'summary'\}",
+        match=r"Use explicit parameters instead of fields for: summary",
     ):
         asyncio.run(
             edit(

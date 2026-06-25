@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 import typer
-from jira2ai_core import client
-from jira2ai_core.operations import comments as comment_operations
-from jira2ai_core.operations import issues
+from jira2py.helpers import JiraHelpers
 
+from jira2cli import client
 from jira2cli.output import (
     raise_cli_exception,
     render_operation_result,
@@ -46,13 +45,12 @@ def create_command(
 
     try:
         api = client.get_api()
-        result = issues.create_issue(
+        result = JiraHelpers(api).issues.create(
             project_key,
             issue_type,
             summary,
             description=description,
             fields=fields,
-            api=api,
         )
     except Exception as exc:
         raise_cli_exception(exc)
@@ -101,13 +99,12 @@ def edit_command(
 
     try:
         api = client.get_api()
-        result = issues.edit_issue(
+        result = JiraHelpers(api).issues.edit(
             issue_key,
             summary=summary,
             description=description,
             fields=fields,
             raw=raw,
-            api=api,
         )
     except Exception as exc:
         raise_cli_exception(exc)
@@ -140,7 +137,7 @@ def comment_command(
 
     try:
         api = client.get_api()
-        result = comment_operations.add_comment(issue_key, body, api=api)
+        result = JiraHelpers(api).comments.add(issue_key, body)
     except Exception as exc:
         raise_cli_exception(exc)
 

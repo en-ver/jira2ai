@@ -2,10 +2,17 @@
 
 from __future__ import annotations
 
-import typer
-from jira2ai_core import client
-from jira2ai_core.operations import attachments as attachment_operations
+from typing import cast
 
+import typer
+from jira2py.helpers import JiraHelpers
+from jira2py.helpers.models import AttachmentDownloadPlan
+
+from jira2cli import client
+from jira2cli.attachment_io import (
+    download_attachment_content,
+    format_attachment_download_result,
+)
 from jira2cli.output import raise_cli_exception
 
 
@@ -22,15 +29,16 @@ def attachment_command(
 ) -> None:
     """Download a Jira attachment by its ID."""
     try:
-        attachment_operations.validate_attachment_id(attachment_id)
         api = client.get_api()
-        plan = attachment_operations.plan_attachment_download(
+        helpers = JiraHelpers(api)
+        helpers.attachments.validate_id(attachment_id)
+        plan_result = helpers.attachments.plan_download(
             attachment_id,
             output_path=output_path,
-            api=api,
         )
-        attachment_operations.download_attachment_content(plan, api=api)
-        output = attachment_operations.format_attachment_download_result(plan)
+        plan = cast(AttachmentDownloadPlan, plan_result.data)
+        download_attachment_content(plan, api=api)
+        output = format_attachment_download_result(plan)
     except Exception as exc:
         raise_cli_exception(exc)
 

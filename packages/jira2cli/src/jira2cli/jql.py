@@ -1,4 +1,4 @@
-"""Shared JQL syntax reference text for Jira AI integrations."""
+"""Shared JQL syntax reference text for jira2cli."""
 
 JQL_REFERENCE = """\
 # JQL (Jira Query Language) Syntax Reference

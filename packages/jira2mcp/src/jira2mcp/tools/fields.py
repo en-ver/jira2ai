@@ -5,16 +5,12 @@ from typing import Annotated
 from fastmcp.dependencies import CurrentContext, Depends
 from fastmcp.server.context import Context
 from fastmcp.tools.tool import ToolResult
-from jira2ai_core.client import get_api
-from jira2ai_core.errors import Jira2AIValidationError, JiraOperationError
-from jira2ai_core.operations.fields import (
-    get_create_fields,
-    get_edit_fields,
-    list_issue_types,
-)
 from jira2py import JiraAPI
+from jira2py.helpers import JiraHelpers
+from jira2py.helpers.errors import JiraHelperOperationError, JiraHelperValidationError
 
 from jira2mcp.adapter import adapt_operation_result, to_tool_error
+from jira2mcp.utils import get_api
 
 from .server import tools
 
@@ -52,18 +48,20 @@ async def fields(
     3. Edit fields: provide issue_key (of an existing issue).
        Returns fields available on the Edit Screen — use before jira_edit.
     """
+    helpers = JiraHelpers(api)
+
     if issue_key:
         await ctx.info(f"Fetching edit metadata for {issue_key}")
         try:
-            result = get_edit_fields(issue_key, api=api)
-        except JiraOperationError as exc:
+            result = helpers.metadata.edit_fields(issue_key)
+        except JiraHelperOperationError as exc:
             await ctx.error(str(exc))
             raise to_tool_error(exc) from exc
         return adapt_operation_result(result, raw=raw, truncate_text=True)
 
     if not project_key:
         raise to_tool_error(
-            Jira2AIValidationError(
+            JiraHelperValidationError(
                 "Provide either project_key (to list issue types / create fields) "
                 "or issue_key (to list edit fields)."
             )
@@ -72,19 +70,19 @@ async def fields(
     await ctx.info(f"Fetching issue types for {project_key}")
     if not issue_type:
         try:
-            result = list_issue_types(project_key, api=api)
-        except JiraOperationError as exc:
+            result = helpers.metadata.issue_types(project_key)
+        except JiraHelperOperationError as exc:
             await ctx.error(str(exc))
             raise to_tool_error(exc) from exc
         return adapt_operation_result(result, raw=raw)
 
     await ctx.info(f"Fetching create fields for {project_key}/{issue_type}")
     try:
-        result = get_create_fields(project_key, issue_type, api=api)
-    except JiraOperationError as exc:
+        result = helpers.metadata.create_fields(project_key, issue_type)
+    except JiraHelperOperationError as exc:
         await ctx.error(str(exc))
         raise to_tool_error(exc) from exc
-    except Jira2AIValidationError as exc:
+    except JiraHelperValidationError as exc:
         raise to_tool_error(exc) from exc
 
     return adapt_operation_result(result, raw=raw, truncate_text=True)

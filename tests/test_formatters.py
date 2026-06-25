@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from textwrap import dedent
+from typing import cast
 
-from jira2ai_core.formatters import format_issue_full, format_search_results
-from jira2ai_core.models import JiraIssue, SearchResult
+from jira2mcp.formatters import format_issue_full, format_search_results
+from jira2mcp.models import JiraIssue, SearchResult
 
 
 def test_format_issue_full_renders_current_markdown_output(
@@ -15,7 +16,7 @@ def test_format_issue_full_renders_current_markdown_output(
         issue,
         url="https://example.atlassian.net/browse/PROJ-123",
         requested_fields=["summary", "customfield_10001", "customfield_10002"],
-        field_names=sample_issue_data["names"],
+        field_names=cast(dict[str, str], sample_issue_data["names"]),
     )
 
     assert (
@@ -35,10 +36,9 @@ def test_format_issue_full_renders_current_markdown_output(
         Components: API
         Fix Versions: 1.2.3
         URL: https://example.atlassian.net/browse/PROJ-123
-        Comments: 2 (use jira_comments tool to read them)
+        Comments: 2
 
         --- [ATTACHMENTS (1)] ---
-        Use jira_attachment tool with the attachment id to download
         - debug.log (id: 7, text/plain, 1.5 KB)
 
         --- [SUBTASKS (1)] ---

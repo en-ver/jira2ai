@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import typer
-from jira2ai_core import client
-from jira2ai_core.operations import links
+from jira2py.helpers import JiraHelpers
 
+from jira2cli import client
 from jira2cli.output import (
     raise_cli_exception,
     render_operation_result,
@@ -33,11 +33,10 @@ def add_link_command(
 
     try:
         api = client.get_api()
-        result = links.create_issue_link(
+        result = JiraHelpers(api).links.create(
             link_type,
             outward_key,
             inward_key,
-            api=api,
         )
     except Exception as exc:
         raise_cli_exception(exc)
@@ -69,7 +68,7 @@ def delete_link_command(
 
     try:
         api = client.get_api()
-        result = links.delete_issue_link(link_id, api=api)
+        result = JiraHelpers(api).links.delete(link_id)
     except Exception as exc:
         raise_cli_exception(exc)
 

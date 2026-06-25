@@ -2,7 +2,7 @@
 
 MCP server for Jira Cloud — gives AI assistants like Claude the ability to read, create, edit, search, and comment on Jira issues.
 
-This repository also contains `jira2ai-core` for shared operations and `jira2cli` for local/development CLI usage.
+This repository also contains `jira2cli` for local and development CLI usage.
 
 Built with [FastMCP](https://github.com/jlowin/fastmcp) and [jira2py](https://pypi.org/project/jira2py/).
 
@@ -132,9 +132,8 @@ If you prefer not to set global environment variables, provide them directly in 
 
 ## Repository layout
 
-This repository is a `uv` workspace with three packages:
+This repository is a `uv` workspace with two packages:
 
-- `packages/jira2ai-core` — shared operations used by both adapters.
 - `packages/jira2mcp` — the FastMCP server/adapter package published as `jira2mcp`.
 - `packages/jira2cli` — the CLI adapter package for local/dev use.
 

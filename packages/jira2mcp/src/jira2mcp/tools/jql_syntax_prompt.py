@@ -1,6 +1,6 @@
 """MCP prompt providing JQL syntax reference for building search queries."""
 
-from jira2ai_core.jql import JQL_REFERENCE
+from jira2mcp.jql import JQL_REFERENCE
 
 from .server import tools
 

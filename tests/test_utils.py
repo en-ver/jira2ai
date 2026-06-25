@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from jira2ai_core.utils import TRUNCATION_SUFFIX, format_date, format_size, truncate
+from jira2mcp.utils import TRUNCATION_SUFFIX, format_date, format_size, truncate
 
 
 def test_truncate_adds_suffix_only_when_needed() -> None:

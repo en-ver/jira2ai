@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import typer
-from jira2ai_core import client
-from jira2ai_core.operations import search as search_operations
+from jira2py.helpers import JiraHelpers
 
+from jira2cli import client
 from jira2cli.output import (
     raise_cli_exception,
     render_operation_result,
@@ -43,11 +43,10 @@ def search_command(
 
     try:
         api = client.get_api()
-        result = search_operations.search_issues(
+        result = JiraHelpers(api).search.issues(
             jql,
             max_results=max_results,
             fields=fields,
-            api=api,
         )
     except Exception as exc:
         raise_cli_exception(exc)

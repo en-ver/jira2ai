@@ -2,11 +2,12 @@
 
 Jira AI workspace for Jira Cloud integrations.
 
-This repository currently contains three packages:
+This repository currently contains two packages:
 
-- `jira2ai-core` — shared Jira operations and formatting utilities.
 - `jira2mcp` — the MCP adapter published as `jira2mcp`.
 - `jira2cli` — a CLI adapter for local and development workflows.
+
+Both packages are thin wrappers over published [jira2py](https://pypi.org/project/jira2py/) helpers.
 
 Built with [FastMCP](https://github.com/jlowin/fastmcp) and [jira2py](https://pypi.org/project/jira2py/).
 
@@ -147,9 +148,8 @@ uv run --package jira2cli jira2cli worklog-report --start-date 2026-06-12 --end-
 
 ## Repository layout
 
-This repository is a `uv` workspace with three packages:
+This repository is a `uv` workspace with two packages:
 
-- `packages/jira2ai-core` — shared operations used by both adapters.
 - `packages/jira2mcp` — the FastMCP server/adapter package published as `jira2mcp`.
 - `packages/jira2cli` — the CLI adapter package for local/dev use.
 
@@ -161,7 +161,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for workspace setup, development checks, 
 
 ## Maintainers
 
-Package-specific release steps, tag formats, sequencing, and current stop gates live in [docs/releasing.md](docs/releasing.md).
+Package-specific release steps, tag formats, and current stop gates live in [docs/releasing.md](docs/releasing.md).
 
 End-user MCP setup stays the same: `uvx jira2mcp` or `claude mcp add jira -- uvx jira2mcp`.
 

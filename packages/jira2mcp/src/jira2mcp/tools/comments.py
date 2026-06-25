@@ -5,13 +5,13 @@ from typing import Annotated, Literal
 from fastmcp.dependencies import CurrentContext, Depends
 from fastmcp.server.context import Context
 from fastmcp.tools.tool import ToolResult
-from jira2ai_core.client import get_api
-from jira2ai_core.errors import JiraOperationError
-from jira2ai_core.operations.comments import list_comments
 from jira2py import JiraAPI
+from jira2py.helpers import JiraHelpers
+from jira2py.helpers.errors import JiraHelperError, JiraHelperOperationError
 from pydantic import Field
 
 from jira2mcp.adapter import adapt_operation_result, to_tool_error
+from jira2mcp.utils import get_api
 
 from .server import tools
 
@@ -45,15 +45,16 @@ async def comments(
     await ctx.info(f"Fetching comments for {issue_key}")
 
     try:
-        result = list_comments(
+        result = JiraHelpers(api).comments.list(
             issue_key,
             start_at=start_at,
             max_results=max_results,
             order_by=order_by,
-            api=api,
         )
-    except JiraOperationError as exc:
+    except JiraHelperOperationError as exc:
         await ctx.error(str(exc))
+        raise to_tool_error(exc) from exc
+    except JiraHelperError as exc:
         raise to_tool_error(exc) from exc
 
     return adapt_operation_result(result, raw=raw, truncate_text=True)

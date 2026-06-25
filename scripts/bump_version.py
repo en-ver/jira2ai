@@ -1,21 +1,16 @@
 from __future__ import annotations
 
 import argparse
-import json
 import re
 import sys
 import tomllib
-import urllib.error
-import urllib.request
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_PACKAGE = "jira2mcp"
-CORE_PACKAGE = "jira2ai-core"
 PACKAGE_PYPROJECT_PATHS = {
-    CORE_PACKAGE: REPO_ROOT / "packages" / "jira2ai-core" / "pyproject.toml",
     "jira2mcp": REPO_ROOT / "packages" / "jira2mcp" / "pyproject.toml",
     "jira2cli": REPO_ROOT / "packages" / "jira2cli" / "pyproject.toml",
 }
@@ -24,10 +19,6 @@ VERSION_PATTERN = re.compile(
 )
 SEMVER_PATTERN = re.compile(r"^(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)$")
 LEGACY_TAG_PATTERN = re.compile(r"^v\d+\.\d+\.\d+$")
-EXACT_CORE_DEPENDENCY_PATTERN = re.compile(
-    r"^jira2ai-core\s*==\s*(?P<version>\d+\.\d+\.\d+)$"
-)
-PYPI_JSON_URL = "https://pypi.org/pypi/{package}/json"
 
 
 def supported_packages() -> tuple[str, ...]:
@@ -121,55 +112,8 @@ def validate_tag(tag: str, package: str | None = None) -> tuple[str, str]:
     return tagged_package, tagged_version
 
 
-def read_exact_core_dependency_version(pyproject_path: Path) -> str:
-    dependencies = read_pyproject(pyproject_path)["project"].get("dependencies", [])
-    for dependency in dependencies:
-        if not dependency.startswith(CORE_PACKAGE):
-            continue
-        match = EXACT_CORE_DEPENDENCY_PATTERN.fullmatch(dependency)
-        if match is None:
-            msg = (
-                f"Adapter dependency must pin {CORE_PACKAGE} exactly as "
-                f"{CORE_PACKAGE}==X.Y.Z; found {dependency}"
-            )
-            raise ValueError(msg)
-        return match.group("version")
-    msg = f"Adapter dependency must include {CORE_PACKAGE}==X.Y.Z"
-    raise ValueError(msg)
-
-
-def is_pypi_version_published(package: str, version: str) -> bool:
-    url = PYPI_JSON_URL.format(package=package)
-    try:
-        with urllib.request.urlopen(url) as response:
-            payload = json.load(response)
-    except urllib.error.HTTPError as exc:
-        if exc.code == 404:
-            return False
-        msg = f"Failed to query PyPI for {package} {version}: HTTP {exc.code}"
-        raise RuntimeError(msg) from exc
-    except urllib.error.URLError as exc:
-        msg = f"Failed to query PyPI for {package} {version}: {exc.reason}"
-        raise RuntimeError(msg) from exc
-
-    releases = payload.get("releases", {})
-    return bool(releases.get(version))
-
-
-def validate_release_requirements(
-    package: str, *, require_published_core: bool = False
-) -> str | None:
-    pyproject_path = get_package_pyproject_path(package)
-    if package == CORE_PACKAGE:
-        return None
-
-    core_version = read_exact_core_dependency_version(pyproject_path)
-    if require_published_core and not is_pypi_version_published(
-        CORE_PACKAGE, core_version
-    ):
-        msg = f"Cannot release {package}: {CORE_PACKAGE}=={core_version} is not available on PyPI"
-        raise RuntimeError(msg)
-    return core_version
+def validate_release_requirements(package: str) -> None:
+    parse_version(read_package_version(package))
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -207,18 +151,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--validate-release",
         action="store_true",
-        help=(
-            "Validate release readiness for the selected package. Adapter packages "
-            f"must depend on {CORE_PACKAGE} exactly as {CORE_PACKAGE}==X.Y.Z."
-        ),
-    )
-    parser.add_argument(
-        "--require-published-core",
-        action="store_true",
-        help=(
-            f"With --validate-release, require the exact {CORE_PACKAGE} dependency "
-            "to already exist on PyPI. This is a no-op for jira2ai-core."
-        ),
+        help="Validate release readiness for the selected package.",
     )
     return parser
 
@@ -226,9 +159,6 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-
-    if args.require_published_core and not args.validate_release:
-        parser.error("--require-published-core requires --validate-release")
 
     command_count = sum(
         bool(command)
@@ -259,20 +189,8 @@ def main(argv: Sequence[str] | None = None) -> int:
 
         if args.validate_release:
             package = args.package or DEFAULT_PACKAGE
-            core_version = validate_release_requirements(
-                package,
-                require_published_core=args.require_published_core,
-            )
-            if core_version is None:
-                print(f"{package} release validation passed")
-            elif args.require_published_core:
-                print(
-                    f"{package} release validation passed with published {CORE_PACKAGE}=={core_version}"
-                )
-            else:
-                print(
-                    f"{package} release validation passed with exact {CORE_PACKAGE}=={core_version}"
-                )
+            validate_release_requirements(package)
+            print(f"{package} release validation passed")
             return 0
 
         package = args.package or DEFAULT_PACKAGE

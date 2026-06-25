@@ -5,13 +5,13 @@ from typing import Annotated
 from fastmcp.dependencies import CurrentContext, Depends
 from fastmcp.server.context import Context
 from fastmcp.tools.tool import ToolResult
-from jira2ai_core.client import get_api
-from jira2ai_core.errors import JiraOperationError
-from jira2ai_core.operations.users import search_users
 from jira2py import JiraAPI
+from jira2py.helpers import JiraHelpers
+from jira2py.helpers.errors import JiraHelperError, JiraHelperOperationError
 from pydantic import Field
 
 from jira2mcp.adapter import adapt_operation_result, to_tool_error
+from jira2mcp.utils import get_api
 
 from .server import tools
 
@@ -38,9 +38,11 @@ async def users(
     await ctx.info(f"Searching users: {query}")
 
     try:
-        result = search_users(query, max_results=max_results, api=api)
-    except JiraOperationError as exc:
+        result = JiraHelpers(api).metadata.users(query, max_results=max_results)
+    except JiraHelperOperationError as exc:
         await ctx.error(str(exc))
+        raise to_tool_error(exc) from exc
+    except JiraHelperError as exc:
         raise to_tool_error(exc) from exc
 
     return adapt_operation_result(result, raw=raw)

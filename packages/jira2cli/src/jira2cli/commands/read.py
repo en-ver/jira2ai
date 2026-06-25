@@ -5,9 +5,9 @@ from __future__ import annotations
 from typing import Literal
 
 import typer
-from jira2ai_core import client
-from jira2ai_core.operations import comments, issues
+from jira2py.helpers import JiraHelpers
 
+from jira2cli import client
 from jira2cli.output import (
     raise_cli_exception,
     render_operation_result,
@@ -41,7 +41,7 @@ def read_command(
 
     try:
         api = client.get_api()
-        result = issues.read_issue(issue_key, extra_fields=extra_fields, api=api)
+        result = JiraHelpers(api).issues.read(issue_key, extra_fields=extra_fields)
     except Exception as exc:
         raise_cli_exception(exc)
 
@@ -90,12 +90,11 @@ def comments_command(
 
     try:
         api = client.get_api()
-        result = comments.list_comments(
+        result = JiraHelpers(api).comments.list(
             issue_key,
             start_at=start_at,
             max_results=max_results,
             order_by=order_by,
-            api=api,
         )
     except Exception as exc:
         raise_cli_exception(exc)

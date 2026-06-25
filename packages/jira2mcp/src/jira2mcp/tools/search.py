@@ -5,13 +5,13 @@ from typing import Annotated
 from fastmcp.dependencies import CurrentContext, Depends
 from fastmcp.server.context import Context
 from fastmcp.tools.tool import ToolResult
-from jira2ai_core.client import get_api
-from jira2ai_core.errors import JiraOperationError
-from jira2ai_core.operations.search import search_issues
 from jira2py import JiraAPI
+from jira2py.helpers import JiraHelpers
+from jira2py.helpers.errors import JiraHelperError, JiraHelperOperationError
 from pydantic import Field
 
 from jira2mcp.adapter import adapt_operation_result, to_tool_error
+from jira2mcp.utils import get_api
 
 from .server import tools
 
@@ -50,9 +50,15 @@ async def search(
     await ctx.info(f"Searching issues: {jql}")
 
     try:
-        result = search_issues(jql, max_results=max_results, fields=fields, api=api)
-    except JiraOperationError as exc:
+        result = JiraHelpers(api).search.issues(
+            jql,
+            max_results=max_results,
+            fields=fields,
+        )
+    except JiraHelperOperationError as exc:
         await ctx.error(str(exc))
+        raise to_tool_error(exc) from exc
+    except JiraHelperError as exc:
         raise to_tool_error(exc) from exc
 
     return adapt_operation_result(result, raw=raw, truncate_text=True)

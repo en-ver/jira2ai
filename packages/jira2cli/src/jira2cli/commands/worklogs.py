@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import typer
-from jira2ai_core import client
-from jira2ai_core.operations import worklogs as worklog_operations
+from jira2py.helpers import JiraHelpers
 
+from jira2cli import client
 from jira2cli.output import (
     raise_cli_exception,
     render_operation_result,
@@ -67,8 +67,7 @@ def worklog_report_command(
 
     try:
         api = client.get_api()
-        result = worklog_operations.get_worklog_report(
-            api=api,
+        result = JiraHelpers(api).worklogs.report(
             start_date=start_date,
             end_date=end_date,
             jql=jql,

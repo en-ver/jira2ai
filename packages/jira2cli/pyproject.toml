@@ -1,19 +1,17 @@
 [project]
 name = "jira2cli"
 version = "0.1.2"
-description = "CLI for Jira AI integrations powered by jira2ai-core"
+description = "CLI for Jira AI integrations powered by jira2py helpers"
 readme = "README.md"
 authors = [
     { name = "en-ver" }
 ]
 requires-python = ">=3.13"
 dependencies = [
-    "jira2ai-core==0.2.2",
+    "httpx>=0.28.1",
+    "jira2py==0.7.0",
     "typer>=0.16.0",
 ]
-
-[tool.uv.sources]
-jira2ai-core = { workspace = true }
 
 [project.scripts]
 jira2cli = "jira2cli:main"

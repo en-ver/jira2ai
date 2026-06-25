@@ -6,12 +6,12 @@ import json
 from typing import Any, NoReturn
 
 import typer
-from jira2ai_core.errors import Jira2AIError, Jira2AIValidationError
-from jira2ai_core.results import OperationResult
+from jira2py.helpers import HelperResult
+from jira2py.helpers.errors import JiraHelperError, JiraHelperValidationError
 
 
 def render_operation_result(
-    result: OperationResult,
+    result: HelperResult,
     *,
     json_output: bool = False,
     raw_output: bool = False,
@@ -27,7 +27,7 @@ def render_operation_result(
     return result.text
 
 
-def _json_payload(result: OperationResult) -> Any:
+def _json_payload(result: HelperResult) -> Any:
     """Select the most structured payload available for JSON output."""
     if result.data is not None:
         return result.data
@@ -41,8 +41,8 @@ def _json_payload(result: OperationResult) -> Any:
         return result.raw_content
 
 
-def format_cli_error(error: Jira2AIError) -> str:
-    """Format a core error for CLI stderr."""
+def format_cli_error(error: JiraHelperError) -> str:
+    """Format a helper error for CLI stderr."""
     if not error.details:
         return error.message
 
@@ -52,9 +52,9 @@ def format_cli_error(error: Jira2AIError) -> str:
     )
 
 
-def error_exit_code(error: Jira2AIError) -> int:
-    """Return the CLI exit code for a core error."""
-    if isinstance(error, Jira2AIValidationError):
+def error_exit_code(error: JiraHelperError) -> int:
+    """Return the CLI exit code for a helper error."""
+    if isinstance(error, JiraHelperValidationError):
         return 2
     return 1
 
@@ -81,15 +81,15 @@ def validate_output_options(*, json_output: bool, raw_output: bool) -> None:
         )
 
 
-def raise_cli_error(error: Jira2AIError) -> NoReturn:
-    """Write a CLI-friendly core error message to stderr and exit."""
+def raise_cli_error(error: JiraHelperError) -> NoReturn:
+    """Write a CLI-friendly helper error message to stderr and exit."""
     typer.echo(format_cli_error(error), err=True)
     raise typer.Exit(code=error_exit_code(error))
 
 
 def raise_cli_exception(error: Exception) -> NoReturn:
     """Write a CLI-friendly error message to stderr and exit."""
-    if isinstance(error, Jira2AIError):
+    if isinstance(error, JiraHelperError):
         raise_cli_error(error)
 
     typer.echo(str(error), err=True)

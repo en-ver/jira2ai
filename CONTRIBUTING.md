@@ -8,11 +8,10 @@ This repository uses a root `uv` workspace and the root `Makefile` for local dev
 
 Current package layout:
 
-- `packages/jira2ai-core` — shared Jira operations used by both adapters.
 - `packages/jira2mcp` — FastMCP server/adapter package published as `jira2mcp`.
 - `packages/jira2cli` — CLI adapter package for local/dev use.
 
-Both adapters use the same Jira environment variables:
+Both packages use the same Jira environment variables:
 
 - `JIRA_URL`
 - `JIRA_USER`
@@ -39,11 +38,11 @@ uv run --package jira2cli jira2cli --help
 
 `make check` runs the mutating local lint, format, and type-check targets.
 
-`make check-ci` runs the non-mutating CI-style checks across all three package source trees, `scripts`, and the test suite.
+`make check-ci` runs the non-mutating CI-style checks across both package source trees, `scripts`, and the test suite.
 
-`make build` keeps the existing `jira2mcp` package build used by the current release flow.
+`make build` keeps the existing `jira2mcp` default package build used by the current release flow.
 
-`make build-all` builds `jira2ai-core`, `jira2mcp`, and `jira2cli` for local verification.
+`make build-all` builds `jira2mcp` and `jira2cli` for local verification.
 
 ## Release process
 
@@ -51,7 +50,6 @@ Maintainers should use the package-aware release notes in [docs/releasing.md](do
 
 Future releases use package-specific tags only:
 
-- `jira2ai-core-vX.Y.Z`
 - `jira2mcp-vX.Y.Z`
 - `jira2cli-vX.Y.Z`
 
@@ -60,7 +58,6 @@ Do not use broad future `v*` tags.
 Current helper entry points:
 
 ```bash
-make release-prep PACKAGE=jira2ai-core VERSION=0.1.0
 make release-prep PACKAGE=jira2mcp VERSION=0.1.2
 make release-prep PACKAGE=jira2cli VERSION=0.1.0
 make release PACKAGE=jira2mcp

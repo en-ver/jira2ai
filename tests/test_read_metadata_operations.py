@@ -4,21 +4,11 @@ import asyncio
 import json
 from copy import deepcopy
 from types import SimpleNamespace
+from typing import Any, cast
 
 import pytest
 from fastmcp.exceptions import ToolError
 from fastmcp.tools.tool import ToolResult
-from jira2ai_core.errors import Jira2AIValidationError
-from jira2ai_core.operations.comments import list_comments
-from jira2ai_core.operations.fields import (
-    get_create_fields,
-    get_edit_fields,
-    list_issue_types,
-)
-from jira2ai_core.operations.links import list_link_types
-from jira2ai_core.operations.projects import list_projects
-from jira2ai_core.operations.search import SEARCH_FIELDS, search_issues
-from jira2ai_core.operations.users import search_users as search_users_operation
 from jira2mcp.tools.comments import comments
 from jira2mcp.tools.fields import fields
 from jira2mcp.tools.link_types_resource import (
@@ -27,6 +17,18 @@ from jira2mcp.tools.link_types_resource import (
 from jira2mcp.tools.projects import projects
 from jira2mcp.tools.search import search
 from jira2mcp.tools.users import users
+from jira2py.helpers import JiraHelpers
+from jira2py.helpers.errors import JiraHelperValidationError
+
+SEARCH_FIELDS = [
+    "summary",
+    "status",
+    "assignee",
+    "priority",
+    "issuetype",
+    "created",
+    "updated",
+]
 
 
 class RecordingMethod:
@@ -236,7 +238,7 @@ def test_search_operation_formats_results_and_caps_max_results(
 ) -> None:
     api = make_api(search_response=search_response)
 
-    result = search_issues("project = PROJ", max_results=999, api=api)
+    result = JiraHelpers(api).search.issues("project = PROJ", max_results=999)
 
     assert api._methods["enhanced_search"].calls == [
         {
@@ -256,7 +258,7 @@ def test_comments_operation_preserves_paging_text_and_raw_payload(
 ) -> None:
     api = make_api(comments_response=comments_response)
 
-    result = list_comments("PROJ-123", start_at=1, max_results=200, api=api)
+    result = JiraHelpers(api).comments.list("PROJ-123", start_at=1, max_results=200)
 
     assert api._methods["get_comments"].calls == [
         {
@@ -282,10 +284,11 @@ def test_fields_operations_return_mode_specific_raw_payloads(
         create_fields_response=create_fields_response,
         edit_metadata_response=edit_metadata_response,
     )
+    helpers = JiraHelpers(api)
 
-    issue_types_result = list_issue_types("PROJ", api=api)
-    create_fields_result = get_create_fields("PROJ", "bug", api=api)
-    edit_fields_result = get_edit_fields("PROJ-123", api=api)
+    issue_types_result = helpers.metadata.issue_types("PROJ")
+    create_fields_result = helpers.metadata.create_fields("PROJ", "bug")
+    edit_fields_result = helpers.metadata.edit_fields("PROJ-123")
 
     assert issue_types_result.data == issue_types_response["values"]
     assert "Issue types for PROJ:" in issue_types_result.text
@@ -294,9 +297,10 @@ def test_fields_operations_return_mode_specific_raw_payloads(
     assert api._methods["get_create_fields"].calls == [
         {"project_id_or_key": "PROJ", "issue_type_id": "10001"}
     ]
-    assert create_fields_result.data == create_fields_response["values"]
-    assert create_fields_result.data[0]["schema"] == {"type": "string"}
-    assert create_fields_result.data[1]["schema"] == {
+    create_fields_data = cast(list[dict[str, object]], create_fields_result.data)
+    assert create_fields_data == create_fields_response["values"]
+    assert create_fields_data[0]["schema"] == {"type": "string"}
+    assert create_fields_data[1]["schema"] == {
         "type": "string",
         "custom": "textarea",
     }
@@ -306,9 +310,14 @@ def test_fields_operations_return_mode_specific_raw_payloads(
         in create_fields_result.text
     )
 
-    assert edit_fields_result.data == edit_metadata_response
-    assert edit_fields_result.data["fields"]["summary"]["schema"] == {"type": "string"}
-    assert edit_fields_result.data["fields"]["customfield_10001"]["schema"] == {
+    edit_fields_data = cast(dict[str, object], edit_fields_result.data)
+    assert edit_fields_data == edit_metadata_response
+    assert cast(dict[str, Any], edit_fields_data["fields"])["summary"]["schema"] == {
+        "type": "string"
+    }
+    assert cast(dict[str, Any], edit_fields_data["fields"])["customfield_10001"][
+        "schema"
+    ] == {
         "type": "string",
         "custom": "textarea",
     }
@@ -322,10 +331,10 @@ def test_get_create_fields_raises_validation_error_for_unknown_issue_type(
     api = make_api(issue_types_response=issue_types_response)
 
     with pytest.raises(
-        Jira2AIValidationError,
+        JiraHelperValidationError,
         match='Issue type "Epic" not found in PROJ. Available: Bug, Task',
     ):
-        get_create_fields("PROJ", "Epic", api=api)
+        JiraHelpers(api).metadata.create_fields("PROJ", "Epic")
 
 
 def test_projects_users_and_link_types_operations_format_current_output(
@@ -338,10 +347,11 @@ def test_projects_users_and_link_types_operations_format_current_output(
         users_response=users_response,
         link_types_response=link_types_response,
     )
+    helpers = JiraHelpers(api)
 
-    projects_result = list_projects("pro", api=api)
-    users_result = search_users_operation("ali", max_results=60, api=api)
-    link_types_result = list_link_types(api=api)
+    projects_result = helpers.metadata.projects("pro")
+    users_result = helpers.metadata.users("ali", max_results=60)
+    link_types_result = helpers.links.types()
 
     assert projects_result.data == projects_response
     assert 'Projects matching "pro":' in projects_result.text
@@ -362,7 +372,7 @@ def test_projects_users_and_link_types_operations_format_current_output(
     )
 
 
-def test_search_tool_uses_core_adapter_for_raw_output(
+def test_search_tool_uses_helper_adapter_for_raw_output(
     fake_ctx,
     search_response: dict[str, object],
 ) -> None:
@@ -374,10 +384,12 @@ def test_search_tool_uses_core_adapter_for_raw_output(
     assert fake_ctx.error_messages == []
     assert isinstance(result, ToolResult)
     assert result.structured_content == search_response
-    assert result.content[0].text == json.dumps(search_response, indent=2, default=str)
+    assert cast(Any, result.content[0]).text == json.dumps(
+        search_response, indent=2, default=str
+    )
 
 
-def test_comments_tool_uses_core_adapter_for_raw_output(
+def test_comments_tool_uses_helper_adapter_for_raw_output(
     fake_ctx,
     comments_response: dict[str, object],
 ) -> None:
@@ -389,7 +401,7 @@ def test_comments_tool_uses_core_adapter_for_raw_output(
     assert fake_ctx.error_messages == []
     assert isinstance(result, ToolResult)
     assert result.structured_content == comments_response
-    assert result.content[0].text == json.dumps(
+    assert cast(Any, result.content[0]).text == json.dumps(
         comments_response,
         indent=2,
         default=str,
@@ -450,7 +462,7 @@ def test_projects_tool_logs_and_wraps_operation_errors(fake_ctx) -> None:
     assert fake_ctx.error_messages == ["Failed to fetch projects: boom"]
 
 
-def test_users_tool_and_link_types_resource_delegate_to_core(
+def test_users_tool_and_link_types_resource_delegate_to_helpers(
     fake_ctx,
     users_response: list[dict[str, object]],
     link_types_response: dict[str, object],

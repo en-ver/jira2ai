@@ -9,13 +9,12 @@ authors = [
 requires-python = ">=3.13"
 dependencies = [
     "fastmcp>=3.1.0",
-    "jira2ai-core==0.2.2",
-    "jira2py==0.6.0",
+    "httpx>=0.28.1",
+    "jira2py==0.7.0",
+    "marklassian>=0.1.0",
+    "pyadf>=0.3.0",
     "pydantic>=2.12.5",
 ]
-
-[tool.uv.sources]
-jira2ai-core = { workspace = true }
 
 [project.scripts]
 jira2mcp = "jira2mcp:main"

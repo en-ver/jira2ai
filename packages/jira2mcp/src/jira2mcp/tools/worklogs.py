@@ -5,13 +5,13 @@ from typing import Annotated
 from fastmcp.dependencies import CurrentContext, Depends
 from fastmcp.server.context import Context
 from fastmcp.tools.tool import ToolResult
-from jira2ai_core.client import get_api
-from jira2ai_core.errors import Jira2AIValidationError, JiraOperationError
-from jira2ai_core.operations.worklogs import get_worklog_report
 from jira2py import JiraAPI
+from jira2py.helpers import JiraHelpers
+from jira2py.helpers.errors import JiraHelperOperationError, JiraHelperValidationError
 from pydantic import Field
 
 from jira2mcp.adapter import adapt_operation_result, to_tool_error
+from jira2mcp.utils import get_api
 
 from .server import tools
 
@@ -51,8 +51,7 @@ async def worklog_report(
     await ctx.info(f"Building worklog report for JQL: {jql}")
 
     try:
-        result = get_worklog_report(
-            api=api,
+        result = JiraHelpers(api).worklogs.report(
             start_date=start_date,
             end_date=end_date,
             jql=jql,
@@ -60,9 +59,9 @@ async def worklog_report(
             max_issues=max_issues,
             include_details=include_details,
         )
-    except Jira2AIValidationError as exc:
+    except JiraHelperValidationError as exc:
         raise to_tool_error(exc) from exc
-    except JiraOperationError as exc:
+    except JiraHelperOperationError as exc:
         await ctx.error(str(exc))
         raise to_tool_error(exc) from exc
 

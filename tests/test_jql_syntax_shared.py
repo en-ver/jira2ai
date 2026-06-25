@@ -1,7 +1,7 @@
 from hashlib import sha256
 
-from jira2ai_core.jql import JQL_REFERENCE as CORE_JQL_REFERENCE
-from jira2mcp.tools.jql_syntax_prompt import JQL_REFERENCE as MCP_JQL_REFERENCE
+from jira2cli.jql import JQL_REFERENCE as CLI_JQL_REFERENCE
+from jira2mcp.jql import JQL_REFERENCE as MCP_JQL_REFERENCE
 from jira2mcp.tools.jql_syntax_prompt import jql_syntax
 
 EXPECTED_JQL_REFERENCE_SHA256 = (
@@ -9,12 +9,12 @@ EXPECTED_JQL_REFERENCE_SHA256 = (
 )
 
 
-def test_jql_reference_is_shared_from_core() -> None:
-    assert MCP_JQL_REFERENCE is CORE_JQL_REFERENCE
+def test_jql_reference_is_shared_across_runtime_wrappers() -> None:
+    assert CLI_JQL_REFERENCE == MCP_JQL_REFERENCE
 
 
 def test_jql_syntax_prompt_output_is_unchanged() -> None:
     prompt = jql_syntax()
 
-    assert prompt == CORE_JQL_REFERENCE
+    assert prompt == MCP_JQL_REFERENCE
     assert sha256(prompt.encode()).hexdigest() == EXPECTED_JQL_REFERENCE_SHA256

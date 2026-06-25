@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import asyncio
 import json
+from typing import Any, cast
 
 import pytest
 from fastmcp.exceptions import ToolError
 from fastmcp.tools.tool import ToolResult
-from jira2ai_core.formatters import DEFAULT_FIELDS
 from jira2mcp.tools.read import read
+from jira2py.helpers.issues import DEFAULT_FIELDS
 
 
 def test_read_returns_formatted_issue_and_merges_extra_fields(
@@ -40,6 +41,8 @@ def test_read_returns_formatted_issue_and_merges_extra_fields(
     assert isinstance(result, str)
     assert "Key: PROJ-123" in result
     assert "URL: https://example.atlassian.net/browse/PROJ-123" in result
+    assert "Comments: 2" in result
+    assert "--- [ATTACHMENTS (1)] ---" in result
     assert "--- [ADDITIONAL FIELDS] ---" in result
     assert "--- [ACCEPTANCE CRITERIA (CUSTOMFIELD_10001)] ---" in result
 
@@ -56,7 +59,7 @@ def test_read_raw_returns_tool_result(
     assert isinstance(result, ToolResult)
     assert result.structured_content == sample_issue_data
     assert len(result.content) == 1
-    assert result.content[0].text == json.dumps(
+    assert cast(Any, result.content[0]).text == json.dumps(
         sample_issue_data, indent=2, default=str
     )
 

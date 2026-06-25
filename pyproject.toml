@@ -7,7 +7,7 @@ requires-python = ">=3.13"
 package = false
 
 [tool.uv.workspace]
-members = ["packages/*"]
+members = ["packages/jira2cli", "packages/jira2mcp"]
 
 [tool.ruff.lint]
 select = ["E4", "E7", "E9", "F", "I", "UP"]

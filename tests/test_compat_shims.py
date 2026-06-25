@@ -1,21 +1,20 @@
 from __future__ import annotations
 
-import jira2ai_core.adf as core_adf
-import jira2ai_core.client as core_client
-import jira2ai_core.formatters as core_formatters
-import jira2ai_core.models as core_models
-import jira2ai_core.utils as core_utils
 import jira2mcp.adf as mcp_adf
 import jira2mcp.formatters as mcp_formatters
 import jira2mcp.models as mcp_models
 import jira2mcp.utils as mcp_utils
+from jira2py.helpers.issues import DEFAULT_FIELDS
+from jira2py.helpers.models import FieldMeta, FieldSchema, JiraIssue
 
 
-def test_jira2mcp_helper_modules_are_core_shims() -> None:
-    assert mcp_adf.adf_to_markdown is core_adf.adf_to_markdown
-    assert mcp_formatters.format_issue_full is core_formatters.format_issue_full
-    assert mcp_models.JiraIssue is core_models.JiraIssue
-    assert mcp_models.FieldMeta is core_models.FieldMeta
-    assert mcp_models.FieldSchema is core_models.FieldSchema
-    assert mcp_utils.truncate is core_utils.truncate
-    assert mcp_utils.get_api is core_client.get_api
+def test_jira2mcp_helper_modules_expose_runtime_local_or_public_helpers() -> None:
+    assert mcp_models.JiraIssue is JiraIssue
+    assert mcp_models.FieldMeta is FieldMeta
+    assert mcp_models.FieldSchema is FieldSchema
+    assert mcp_formatters.DEFAULT_FIELDS == DEFAULT_FIELDS
+    assert mcp_adf.adf_to_markdown.__module__ == "jira2mcp.adf"
+    assert mcp_utils.truncate("abcdef", max_chars=4).endswith(
+        mcp_utils.TRUNCATION_SUFFIX
+    )
+    assert mcp_utils.get_api.__module__ == "jira2mcp.utils"

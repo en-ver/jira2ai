@@ -4,8 +4,6 @@ import json
 
 import pytest
 import typer
-from jira2ai_core.errors import Jira2AIError, Jira2AIValidationError, JiraOperationError
-from jira2ai_core.results import OperationResult
 from jira2cli.output import (
     error_exit_code,
     format_cli_error,
@@ -14,10 +12,16 @@ from jira2cli.output import (
     render_operation_result,
     validate_output_options,
 )
+from jira2py.helpers import HelperResult
+from jira2py.helpers.errors import (
+    JiraHelperError,
+    JiraHelperOperationError,
+    JiraHelperValidationError,
+)
 
 
 def test_render_operation_result_returns_text_by_default() -> None:
-    result = OperationResult.text_only("formatted output")
+    result = HelperResult.text_only("formatted output")
 
     rendered = render_operation_result(result)
 
@@ -26,7 +30,7 @@ def test_render_operation_result_returns_text_by_default() -> None:
 
 def test_render_operation_result_json_prefers_structured_data() -> None:
     payload = {"z": 1, "a": ["x", "y"]}
-    result = OperationResult.with_data(
+    result = HelperResult.with_data(
         "formatted output",
         payload,
         raw_content='{"ignored":true}',
@@ -38,7 +42,7 @@ def test_render_operation_result_json_prefers_structured_data() -> None:
 
 
 def test_render_operation_result_raw_output_normalizes_raw_content() -> None:
-    result = OperationResult(
+    result = HelperResult(
         text="formatted output",
         raw_content='{"z": 1, "a": 2}',
     )
@@ -49,7 +53,7 @@ def test_render_operation_result_raw_output_normalizes_raw_content() -> None:
 
 
 def test_render_operation_result_json_falls_back_to_text() -> None:
-    result = OperationResult.text_only("formatted output")
+    result = HelperResult.text_only("formatted output")
 
     rendered = render_operation_result(result, json_output=True)
 
@@ -59,7 +63,7 @@ def test_render_operation_result_json_falls_back_to_text() -> None:
 
 
 def test_format_cli_error_includes_sorted_details() -> None:
-    error = Jira2AIError("operation failed", details={"z": 1, "a": "first"})
+    error = JiraHelperError("operation failed", details={"z": 1, "a": "first"})
 
     formatted = format_cli_error(error)
 
@@ -67,15 +71,15 @@ def test_format_cli_error_includes_sorted_details() -> None:
 
 
 def test_error_exit_code_uses_usage_error_for_validation_errors() -> None:
-    assert error_exit_code(Jira2AIValidationError("bad input")) == 2
-    assert error_exit_code(JiraOperationError("request failed")) == 1
+    assert error_exit_code(JiraHelperValidationError("bad input")) == 2
+    assert error_exit_code(JiraHelperOperationError("request failed")) == 1
 
 
 def test_raise_cli_error_writes_to_stderr_and_exits(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     with pytest.raises(typer.Exit) as exc_info:
-        raise_cli_error(JiraOperationError("request failed"))
+        raise_cli_error(JiraHelperOperationError("request failed"))
 
     captured = capsys.readouterr()
 
@@ -84,7 +88,7 @@ def test_raise_cli_error_writes_to_stderr_and_exits(
     assert captured.out == ""
 
 
-def test_raise_cli_exception_handles_non_core_errors(
+def test_raise_cli_exception_handles_non_helper_errors(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     with pytest.raises(typer.Exit) as exc_info:
