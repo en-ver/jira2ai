@@ -13,9 +13,14 @@ from jira2ai_core.jql import JQL_REFERENCE
 from jira2ai_core.results import OperationResult
 from jira2cli import app
 from jira2cli.commands.worklogs import worklog_report_command
+from typer.main import get_command
 from typer.testing import CliRunner
 
 runner = CliRunner()
+
+
+def _get_registered_command(command_name: str):
+    return get_command(app).commands[command_name]
 
 
 def test_root_help_lists_registered_commands() -> None:
@@ -120,21 +125,38 @@ def test_search_command_json_output_uses_structured_data(
 
 def test_worklog_report_command_help_is_jql_only() -> None:
     result = runner.invoke(app, ["worklog-report", "--help"])
+    command = _get_registered_command("worklog-report")
 
     assert result.exit_code == 0
-    for option_name in [
+    assert command.help == "Build a Jira worklog report for JQL-selected issues."
+    assert [param.name for param in command.params] == [
+        "start_date",
+        "end_date",
+        "jql",
+        "account_id",
+        "max_issues",
+        "include_details",
+        "raw_output",
+        "json_output",
+    ]
+    assert [param.opts for param in command.params] == [
+        ["--start-date"],
+        ["--end-date"],
+        ["--jql"],
+        ["--account-id"],
+        ["--max-issues"],
+        ["--include-details"],
+        ["--raw"],
+        ["--json"],
+    ]
+    assert {param.opts[0] for param in command.params if param.required} == {
         "--start-date",
         "--end-date",
         "--jql",
-        "--account-id",
-        "--max-issues",
-        "--include-details",
-        "--json",
-        "--raw",
-    ]:
-        assert option_name in result.stdout
+    }
 
-    for forbidden_option in [
+    registered_options = {option for param in command.params for option in param.opts}
+    forbidden_options = {
         "--issue",
         "--issue-id",
         "--issue-key",
@@ -142,8 +164,8 @@ def test_worklog_report_command_help_is_jql_only() -> None:
         "--task",
         "--task-id",
         "--task-key",
-    ]:
-        assert forbidden_option not in result.stdout
+    }
+    assert forbidden_options.isdisjoint(registered_options)
 
 
 def test_worklog_report_command_signature_is_jql_only() -> None:
