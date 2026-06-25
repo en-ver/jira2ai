@@ -15,6 +15,7 @@ from .links import create_issue_link, delete_issue_link, list_link_types
 from .projects import list_projects
 from .search import SEARCH_FIELDS, search_issues
 from .users import search_users
+from .worklogs import get_worklog_report
 
 __all__ = [
     "AttachmentDownloadPlan",
@@ -37,5 +38,6 @@ __all__ = [
     "edit_issue",
     "search_issues",
     "search_users",
+    "get_worklog_report",
     "validate_attachment_id",
 ]

@@ -34,6 +34,13 @@ class IssueRef(JiraModel):
     key: str = "?"
 
 
+class ProjectRef(JiraModel):
+    """Minimal project reference embedded in issue fields."""
+
+    key: str = "?"
+    name: str = "?"
+
+
 # --- Attachments ---
 
 
@@ -128,6 +135,7 @@ class IssueFields(JiraModel):
     priority: NamedResource | None = None
     assignee: JiraUser | None = None
     reporter: JiraUser | None = None
+    project: ProjectRef | None = None
     created: str | None = None
     updated: str | None = None
     labels: list[str] = []
@@ -143,6 +151,7 @@ class IssueFields(JiraModel):
 class JiraIssue(JiraModel):
     """A Jira issue."""
 
+    id: str = ""
     key: str = "?"
     fields: IssueFields = Field(default_factory=IssueFields)
 
@@ -172,6 +181,94 @@ class ProjectSearchResult(JiraModel):
     values: list[JiraProject] = []
     isLast: bool = True
     total: int | None = None
+
+
+# --- Worklogs ---
+
+
+class WorklogVisibility(JiraModel):
+    """Visibility restrictions applied to a worklog."""
+
+    type: str | None = None
+    value: str | None = None
+    identifier: str | None = None
+
+
+class JiraWorklog(JiraModel):
+    """A Jira worklog entry."""
+
+    id: str = ""
+    issueId: str = ""
+    author: JiraUser | None = None
+    updateAuthor: JiraUser | None = None
+    comment: dict[str, Any] | None = None
+    visibility: WorklogVisibility | None = None
+    created: str | None = None
+    updated: str | None = None
+    started: str | None = None
+    timeSpent: str | None = None
+    timeSpentSeconds: int = 0
+    properties: list[Any] = []
+
+
+class WorklogPage(JiraModel):
+    """Paginated worklog response for an issue."""
+
+    worklogs: list[JiraWorklog] = []
+    startAt: int = 0
+    maxResults: int = 0
+    total: int = 0
+
+
+class WorklogIssueSelector(JiraModel):
+    """Metadata describing how issues were selected for a worklog report."""
+
+    jql: str
+    maxIssues: int
+    issuesReturned: int
+    truncated: bool = False
+    nextPageToken: str | None = None
+    total: int | None = None
+
+
+class WorklogReportRow(JiraModel):
+    """A normalized worklog report row."""
+
+    dateTime: str
+    issueId: str
+    issueKey: str
+    accountId: str
+    displayName: str
+    timeSpentHours: float
+    worklogId: str | None = None
+    issueSummary: str | None = None
+    projectKey: str | None = None
+    started: str | None = None
+    created: str | None = None
+    updated: str | None = None
+    timeSpentSeconds: int | None = None
+    timeSpent: str | None = None
+    updateAuthor: JiraUser | None = None
+    visibility: WorklogVisibility | None = None
+    comment: dict[str, Any] | None = None
+    properties: list[Any] | None = None
+
+
+class WorklogReport(JiraModel):
+    """Structured worklog report with rows plus metadata."""
+
+    startDate: str
+    endDate: str
+    timezone: str = "UTC"
+    endDateInclusive: bool = True
+    startedAtOrAfter: str
+    startedBefore: str
+    accountId: str | None = None
+    issueSelector: WorklogIssueSelector
+    rowCount: int = 0
+    totalSeconds: int = 0
+    totalHours: float = 0.0
+    rows: list[WorklogReportRow] = []
 
 
 # --- Field metadata ---

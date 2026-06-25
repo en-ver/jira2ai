@@ -502,7 +502,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "httpx", specifier = ">=0.28.1" },
-    { name = "jira2py", specifier = "==0.5.0" },
+    { name = "jira2py", specifier = "==0.6.0" },
     { name = "marklassian", specifier = ">=0.1.0" },
     { name = "pathvalidate", specifier = ">=3.3.1" },
     { name = "pyadf", specifier = ">=0.3.0" },
@@ -560,21 +560,21 @@ dependencies = [
 requires-dist = [
     { name = "fastmcp", specifier = ">=3.1.0" },
     { name = "jira2ai-core", editable = "packages/jira2ai-core" },
-    { name = "jira2py", specifier = "==0.5.0" },
+    { name = "jira2py", specifier = "==0.6.0" },
     { name = "pydantic", specifier = ">=2.12.5" },
 ]
 
 [[package]]
 name = "jira2py"
-version = "0.5.0"
+version = "0.6.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx", extra = ["http2"] },
     { name = "tenacity" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/0c/e1/dbc55bd7d389333acbbe9e9bf85ae3eba49176b4daa543966450719d92ec/jira2py-0.5.0.tar.gz", hash = "sha256:139dfd8cd3661c9df9670e33ae49590eee1d4537cb0a77706d39fc7954a8cce5", size = 24444, upload-time = "2026-06-23T17:08:30.54Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/6a/0f/f64bad85361a45a3482f5b655c425cbddb7a05b8aef438ddcbef6b6d3d1d/jira2py-0.6.0.tar.gz", hash = "sha256:fb4c0750de194a12d274a9a8cd5a677d68933b1de41970fb3ca884ce92a0d299", size = 25366, upload-time = "2026-06-25T12:03:59.912Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f7/36/ef70015be3f0efcb045fffa77a430bedcdf48ce24eb11d5a7b38b1207f11/jira2py-0.5.0-py3-none-any.whl", hash = "sha256:91b509a6d3879d670eeca42b39938b0e7dcc3985714210f410cb5b1188a93a7f", size = 21675, upload-time = "2026-06-23T17:08:29.171Z" },
+    { url = "https://files.pythonhosted.org/packages/dc/66/e667f407cb0fdfbfd499bbc4e76e4faaf5d979dc0b0619edcb78b76ce351/jira2py-0.6.0-py3-none-any.whl", hash = "sha256:ce83a11b9a92d80e671d352d75637a8a4235138891d00b469b1671cf7d54acc9", size = 22609, upload-time = "2026-06-25T12:03:58.639Z" },
 ]
 
 [[package]]
