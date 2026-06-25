@@ -101,6 +101,7 @@ If you prefer not to set global environment variables, provide them directly in 
 | `jira_attachment` | Download an attachment |
 | `jira_add_link` | Create a link between two issues |
 | `jira_delete_link` | Delete an issue link |
+| `jira_worklog_report` | Build a worklog report for JQL-selected issues within a UTC date range |
 
 ## Resources
 
@@ -130,6 +131,7 @@ Then run the CLI from the workspace:
 uv run --package jira2cli jira2cli --help
 uv run --package jira2cli jira2cli read PROJ-123
 uv run --package jira2cli jira2cli search 'project = PROJ ORDER BY updated DESC'
+uv run --package jira2cli jira2cli worklog-report --start-date 2026-06-12 --end-date 2026-06-13 --jql 'issue = PROJ-123'
 ```
 
 `jira2cli` is available for local/development use in this workspace. Continue to use `uvx jira2mcp` for MCP installs.
@@ -141,6 +143,7 @@ uv run --package jira2cli jira2cli search 'project = PROJ ORDER BY updated DESC'
 - **User lookup** — use `jira_users` to resolve display names to account IDs for assignment.
 - **Extra fields** — request additional fields on `jira_read` beyond the standard set; rich-text fields are auto-converted.
 - **Link management** — read the `data://jira/link-types` resource to discover available link types, then create or delete links between issues.
+- **Worklog reporting** — use `jira_worklog_report` or `jira2cli worklog-report` with required UTC `start_date`/`end_date` and JQL issue selection. `end_date` is inclusive, optional `account_id` filtering is applied client-side, `max_issues` defaults to `100` and limits how many matched issues are scanned (with truncation noted when more match), rows use `displayName` as the friendly user name, and results reflect the configured Jira account's issue/worklog visibility.
 
 ## Repository layout
 

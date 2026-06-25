@@ -32,7 +32,21 @@ uv run --package jira2cli jira2cli --help
 uv run --package jira2cli jira2cli read PROJ-123
 uv run --package jira2cli jira2cli search 'project = PROJ ORDER BY updated DESC'
 uv run --package jira2cli jira2cli fields --project-key PROJ
+uv run --package jira2cli jira2cli worklog-report --start-date 2026-06-12 --end-date 2026-06-13 --jql 'issue = PROJ-123'
 ```
+
+## Worklog reports
+
+Use `jira2cli worklog-report` to build a report for issues selected by JQL.
+
+- Required options: `--start-date`, `--end-date`, and `--jql`.
+- Optional options: `--account-id`, `--max-issues`, `--include-details`, `--json`, and `--raw`.
+- Issue selection is JQL-only. For a single issue, use `--jql 'issue = PROJ-123'`.
+- Dates are interpreted in UTC, and `--end-date` is inclusive.
+- `--account-id` filters returned worklogs client-side by author `accountId`.
+- `--max-issues` defaults to `100`, must be at least `1`, and limits how many JQL-matched issues are scanned; the report notes truncation when more issues match.
+- Output rows use `displayName` as the friendly user name.
+- Results depend on the configured Jira account's issue/worklog visibility and permissions.
 
 ## Workspace layout
 

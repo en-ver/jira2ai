@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 from types import SimpleNamespace
 
 import pytest
@@ -11,6 +12,7 @@ from jira2ai_core.errors import (
 from jira2ai_core.jql import JQL_REFERENCE
 from jira2ai_core.results import OperationResult
 from jira2cli import app
+from jira2cli.commands.worklogs import worklog_report_command
 from typer.testing import CliRunner
 
 runner = CliRunner()
@@ -23,6 +25,7 @@ def test_root_help_lists_registered_commands() -> None:
     for command_name in [
         "read",
         "search",
+        "worklog-report",
         "comments",
         "fields",
         "projects",
@@ -111,6 +114,226 @@ def test_search_command_json_output_uses_structured_data(
         "  ],\n"
         '  "jql": "project = PROJ",\n'
         '  "max_results": 7\n'
+        "}\n"
+    )
+
+
+def test_worklog_report_command_help_is_jql_only() -> None:
+    result = runner.invoke(app, ["worklog-report", "--help"])
+
+    assert result.exit_code == 0
+    for option_name in [
+        "--start-date",
+        "--end-date",
+        "--jql",
+        "--account-id",
+        "--max-issues",
+        "--include-details",
+        "--json",
+        "--raw",
+    ]:
+        assert option_name in result.stdout
+
+    for forbidden_option in [
+        "--issue",
+        "--issue-id",
+        "--issue-key",
+        "--issue-id-or-key",
+        "--task",
+        "--task-id",
+        "--task-key",
+    ]:
+        assert forbidden_option not in result.stdout
+
+
+def test_worklog_report_command_signature_is_jql_only() -> None:
+    parameter_names = list(inspect.signature(worklog_report_command).parameters)
+
+    assert parameter_names == [
+        "start_date",
+        "end_date",
+        "jql",
+        "account_id",
+        "max_issues",
+        "include_details",
+        "raw_output",
+        "json_output",
+    ]
+    forbidden = {
+        "issue",
+        "issue_id",
+        "issue_key",
+        "issue_id_or_key",
+        "task",
+        "task_id",
+        "task_key",
+    }
+    assert forbidden.isdisjoint(parameter_names)
+
+
+def test_worklog_report_command_delegates_to_core(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    api = SimpleNamespace(name="api")
+    calls: list[tuple[str, object]] = []
+
+    def fake_get_api():
+        calls.append(("get_api", None))
+        return api
+
+    def fake_get_worklog_report(
+        *,
+        api,
+        start_date: str,
+        end_date: str,
+        jql: str,
+        account_id: str | None = None,
+        max_issues: int = 100,
+        include_details: bool = False,
+    ):
+        calls.append(
+            (
+                "get_worklog_report",
+                (
+                    api,
+                    start_date,
+                    end_date,
+                    jql,
+                    account_id,
+                    max_issues,
+                    include_details,
+                ),
+            )
+        )
+        return OperationResult.text_only("formatted worklog report")
+
+    monkeypatch.setattr("jira2ai_core.client.get_api", fake_get_api)
+    monkeypatch.setattr(
+        "jira2ai_core.operations.worklogs.get_worklog_report",
+        fake_get_worklog_report,
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "worklog-report",
+            "--start-date",
+            "2026-06-12",
+            "--end-date",
+            "2026-06-13",
+            "--jql",
+            "project = PROJ",
+            "--account-id",
+            "acct-1",
+            "--max-issues",
+            "25",
+            "--include-details",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert result.stdout == "formatted worklog report\n"
+    assert calls == [
+        ("get_api", None),
+        (
+            "get_worklog_report",
+            (api, "2026-06-12", "2026-06-13", "project = PROJ", "acct-1", 25, True),
+        ),
+    ]
+
+
+def test_worklog_report_command_json_output_uses_structured_data(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    api = object()
+
+    monkeypatch.setattr("jira2ai_core.client.get_api", lambda: api)
+    monkeypatch.setattr(
+        "jira2ai_core.operations.worklogs.get_worklog_report",
+        lambda *, api, start_date, end_date, jql, account_id, max_issues, include_details: (
+            OperationResult.with_data(
+                "ignored",
+                {
+                    "start_date": start_date,
+                    "end_date": end_date,
+                    "jql": jql,
+                    "account_id": account_id,
+                    "max_issues": max_issues,
+                    "include_details": include_details,
+                    "api_matches": api is not None,
+                },
+            )
+        ),
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "worklog-report",
+            "--start-date",
+            "2026-06-12",
+            "--end-date",
+            "2026-06-13",
+            "--jql",
+            "project = PROJ",
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert result.stdout == (
+        "{\n"
+        '  "account_id": null,\n'
+        '  "api_matches": true,\n'
+        '  "end_date": "2026-06-13",\n'
+        '  "include_details": false,\n'
+        '  "jql": "project = PROJ",\n'
+        '  "max_issues": 100,\n'
+        '  "start_date": "2026-06-12"\n'
+        "}\n"
+    )
+
+
+def test_worklog_report_command_raw_output_uses_structured_data(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    api = object()
+
+    monkeypatch.setattr("jira2ai_core.client.get_api", lambda: api)
+    monkeypatch.setattr(
+        "jira2ai_core.operations.worklogs.get_worklog_report",
+        lambda **_: OperationResult.with_data(
+            "ignored",
+            {
+                "rowCount": 1,
+                "rows": [{"issueKey": "PROJ-1"}],
+            },
+        ),
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "worklog-report",
+            "--start-date",
+            "2026-06-12",
+            "--end-date",
+            "2026-06-13",
+            "--jql",
+            "project = PROJ",
+            "--raw",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert result.stdout == (
+        "{\n"
+        '  "rowCount": 1,\n'
+        '  "rows": [\n'
+        "    {\n"
+        '      "issueKey": "PROJ-1"\n'
+        "    }\n"
+        "  ]\n"
         "}\n"
     )
 

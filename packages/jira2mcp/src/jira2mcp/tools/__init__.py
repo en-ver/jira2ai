@@ -16,6 +16,7 @@ from . import (  # noqa: F401
     read,
     search,
     users,
+    worklogs,
 )
 from .server import tools
 

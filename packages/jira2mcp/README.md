@@ -97,6 +97,18 @@ If you prefer not to set global environment variables, provide them directly in 
 | `jira_attachment` | Download an attachment |
 | `jira_add_link` | Create a link between two issues |
 | `jira_delete_link` | Delete an issue link |
+| `jira_worklog_report` | Build a worklog report for JQL-selected issues within a UTC date range |
+
+### `jira_worklog_report`
+
+- Required parameters: `start_date`, `end_date`, and `jql`.
+- Optional parameters: `account_id`, `max_issues`, `include_details`, and `raw`.
+- Issue selection is JQL-only. For a single issue, use JQL such as `issue = PROJ-123`.
+- Dates are interpreted in UTC, and `end_date` is inclusive.
+- Optional `account_id` filtering is applied client-side by worklog author `accountId`.
+- `max_issues` defaults to `100`, must be at least `1`, and limits how many JQL-matched issues are scanned; the report notes truncation when more issues match.
+- Output rows use `displayName` as the friendly user name.
+- Results depend on the configured Jira account's issue/worklog visibility and permissions.
 
 ## Resources
 

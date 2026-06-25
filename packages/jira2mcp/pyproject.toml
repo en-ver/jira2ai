@@ -10,7 +10,7 @@ requires-python = ">=3.13"
 dependencies = [
     "fastmcp>=3.1.0",
     "jira2ai-core==0.2.0",
-    "jira2py==0.5.0",
+    "jira2py==0.6.0",
     "pydantic>=2.12.5",
 ]
 
