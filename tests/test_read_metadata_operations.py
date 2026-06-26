@@ -9,6 +9,8 @@ from typing import Any, cast
 import pytest
 from fastmcp.exceptions import ToolError
 from fastmcp.tools.tool import ToolResult
+from jira2mcp.tools import fields as fields_tool_module
+from jira2mcp.tools import projects as projects_tool_module
 from jira2mcp.tools.comments import comments
 from jira2mcp.tools.fields import fields
 from jira2mcp.tools.link_types_resource import (
@@ -18,7 +20,7 @@ from jira2mcp.tools.projects import projects
 from jira2mcp.tools.search import search
 from jira2mcp.tools.users import users
 from jira2py.helpers import JiraHelpers
-from jira2py.helpers.errors import JiraHelperValidationError
+from jira2py.helpers.errors import JiraHelperError, JiraHelperValidationError
 
 SEARCH_FIELDS = [
     "summary",
@@ -460,6 +462,56 @@ def test_projects_tool_logs_and_wraps_operation_errors(fake_ctx) -> None:
 
     assert fake_ctx.info_messages == ["Fetching projects"]
     assert fake_ctx.error_messages == ["Failed to fetch projects: boom"]
+
+
+def test_projects_tool_wraps_base_helper_errors_without_logging(
+    fake_ctx, monkeypatch
+) -> None:
+    class FakeMetadata:
+        def projects(self, _query: str | None) -> None:
+            raise JiraHelperError("helper boom")
+
+    class FakeJiraHelpers:
+        def __init__(self, _api: object) -> None:
+            self.metadata = FakeMetadata()
+
+    monkeypatch.setattr(projects_tool_module, "JiraHelpers", FakeJiraHelpers)
+
+    with pytest.raises(ToolError, match=r"helper boom"):
+        asyncio.run(projects(ctx=fake_ctx, api=cast(Any, object())))
+
+    assert fake_ctx.info_messages == ["Fetching projects"]
+    assert fake_ctx.error_messages == []
+
+
+def test_fields_tool_wraps_base_helper_errors_without_logging(
+    fake_ctx, monkeypatch
+) -> None:
+    class FakeMetadata:
+        def create_fields(self, _project_key: str, _issue_type: str) -> None:
+            raise JiraHelperError("helper boom")
+
+    class FakeJiraHelpers:
+        def __init__(self, _api: object) -> None:
+            self.metadata = FakeMetadata()
+
+    monkeypatch.setattr(fields_tool_module, "JiraHelpers", FakeJiraHelpers)
+
+    with pytest.raises(ToolError, match=r"helper boom"):
+        asyncio.run(
+            fields(
+                project_key="PROJ",
+                issue_type="Bug",
+                ctx=fake_ctx,
+                api=cast(Any, object()),
+            )
+        )
+
+    assert fake_ctx.info_messages == [
+        "Fetching issue types for PROJ",
+        "Fetching create fields for PROJ/Bug",
+    ]
+    assert fake_ctx.error_messages == []
 
 
 def test_users_tool_and_link_types_resource_delegate_to_helpers(

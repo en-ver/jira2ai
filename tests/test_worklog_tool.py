@@ -12,7 +12,11 @@ from jira2mcp import mcp
 from jira2mcp.tools import worklogs as worklog_tool_module
 from jira2mcp.tools.worklogs import worklog_report
 from jira2py.helpers import HelperResult
-from jira2py.helpers.errors import JiraHelperOperationError, JiraHelperValidationError
+from jira2py.helpers.errors import (
+    JiraHelperError,
+    JiraHelperOperationError,
+    JiraHelperValidationError,
+)
 
 
 def test_worklog_report_delegates_to_helper_group(fake_ctx, monkeypatch) -> None:
@@ -183,6 +187,41 @@ def test_worklog_report_logs_operation_errors(fake_ctx, monkeypatch) -> None:
     assert fake_ctx.error_messages == [
         "Failed to search issues for worklog report: boom"
     ]
+
+
+def test_worklog_report_wraps_base_helper_errors_without_logging(
+    fake_ctx, monkeypatch
+) -> None:
+    class FakeJiraHelpers:
+        def __init__(self, _api: object) -> None:
+            self.worklogs = cast(
+                Any,
+                type(
+                    "Worklogs",
+                    (),
+                    {
+                        "report": lambda _self, **_kwargs: (_ for _ in ()).throw(
+                            JiraHelperError("helper boom")
+                        )
+                    },
+                )(),
+            )
+
+    monkeypatch.setattr(worklog_tool_module, "JiraHelpers", FakeJiraHelpers)
+
+    with pytest.raises(ToolError, match=r"helper boom"):
+        asyncio.run(
+            worklog_report(
+                "2026-06-12",
+                "2026-06-13",
+                "project = PROJ",
+                ctx=fake_ctx,
+                api=cast(Any, object()),
+            )
+        )
+
+    assert fake_ctx.info_messages == ["Building worklog report for JQL: project = PROJ"]
+    assert fake_ctx.error_messages == []
 
 
 def test_worklog_report_signature_is_jql_only() -> None:

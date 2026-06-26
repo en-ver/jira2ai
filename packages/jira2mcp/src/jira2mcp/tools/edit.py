@@ -7,7 +7,11 @@ from fastmcp.server.context import Context
 from fastmcp.tools.tool import ToolResult
 from jira2py import JiraAPI
 from jira2py.helpers import JiraHelpers
-from jira2py.helpers.errors import JiraHelperOperationError, JiraHelperValidationError
+from jira2py.helpers.errors import (
+    JiraHelperError,
+    JiraHelperOperationError,
+    JiraHelperValidationError,
+)
 
 from jira2mcp.adapter import adapt_operation_result, to_tool_error
 from jira2mcp.utils import get_api
@@ -52,6 +56,8 @@ async def edit(
         )
     except JiraHelperValidationError as exc:
         raise to_tool_error(exc) from exc
+    except JiraHelperError as exc:
+        raise to_tool_error(exc) from exc
 
     await ctx.info(f"Updating issue {issue_key}")
 
@@ -65,6 +71,8 @@ async def edit(
         )
     except JiraHelperOperationError as exc:
         await ctx.error(str(exc))
+        raise to_tool_error(exc) from exc
+    except JiraHelperError as exc:
         raise to_tool_error(exc) from exc
 
     return adapt_operation_result(result, raw=raw)
