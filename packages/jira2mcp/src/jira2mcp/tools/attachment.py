@@ -20,6 +20,7 @@ from jira2py.helpers.errors import (
     JiraHelperValidationError,
 )
 from jira2py.helpers.models import AttachmentDownloadPlan
+from mcp.types import Root
 
 from jira2mcp.adapter import adapt_operation_result, to_tool_error
 from jira2mcp.attachment_io import (
@@ -39,10 +40,10 @@ def _validate_attachment_id(*, attachment_id: str, api: JiraAPI) -> None:
         raise to_tool_error(exc) from exc
 
 
-def _path_within_roots(resolved_path: Path, roots: list[object]) -> bool:
+def _path_within_roots(resolved_path: Path, roots: list[Root]) -> bool:
     """Check if a resolved path is within any of the declared MCP roots."""
     for root in roots:
-        uri = str(root.uri) if hasattr(root, "uri") else str(root)
+        uri = str(root.uri)
         parsed = urlparse(uri)
         root_path = Path(parsed.path if parsed.scheme == "file" else uri).resolve()
         if resolved_path.is_relative_to(root_path):
@@ -79,11 +80,11 @@ async def _plan_download_with_root_checks(
     )
     plan = cast(AttachmentDownloadPlan, plan_result.data)
 
-    roots: list[object] = []
+    roots: list[Root] | None = None
     try:
         roots = await ctx.list_roots()
     except Exception:
-        roots = []
+        pass
 
     if roots:
         if not _path_within_roots(plan.resolved_output, roots):
