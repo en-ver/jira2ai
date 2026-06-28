@@ -5,9 +5,9 @@ Use this before issue creation or issue edits whenever required fields, editable
 ## Create Metadata
 
 1. If the issue type is not confirmed yet, inspect available issue types for the project:
-   - `uv run --package jira2cli jira2cli fields --project-key <PROJECT> --json`
+   - `uv run jira2cli fields --project-key <PROJECT> --json`
 2. Fetch scoped create metadata:
-   - `uv run --package jira2cli jira2cli fields --project-key <PROJECT> --issue-type <TYPE> --json`
+   - `uv run jira2cli fields --project-key <PROJECT> --issue-type <TYPE> --json`
 3. For each field you may set, inspect:
    - `required`
    - `allowedValues`
@@ -20,9 +20,9 @@ Use this before issue creation or issue edits whenever required fields, editable
 ## Edit Metadata
 
 1. Read the current issue state first:
-   - `uv run --package jira2cli jira2cli read <KEY> --json`
+   - `uv run jira2cli read <KEY> --json`
 2. Fetch edit metadata:
-   - `uv run --package jira2cli jira2cli fields --issue-key <KEY> --json`
+   - `uv run jira2cli fields --issue-key <KEY> --json`
 3. Inspect the same metadata keys before deciding which fields can be changed.
 4. If the field is not present or the required values are still unclear, stop and ask before editing.
 

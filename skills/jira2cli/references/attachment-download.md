@@ -1,16 +1,26 @@
-# Attachment Download
+# Attachment Management
 
-Use this when the issue context already identifies a Jira attachment ID and you need to save the file locally.
+Use this when the issue context already identifies the Jira issue key or attachment ID and you need to inspect, download, upload, or delete attachments.
 
 ## Workflow
 
-1. Read the issue first so the attachment target is explicit:
-   - `uv run --package jira2cli jira2cli read <KEY> --json`
-2. Confirm the exact attachment ID and expected file name before downloading.
-3. Download the attachment:
-   - `uv run --package jira2cli jira2cli attachment <ATTACHMENT_ID>`
-4. Use `--output-path <path>` when you need a specific directory or full file path:
-   - `uv run --package jira2cli jira2cli attachment <ATTACHMENT_ID> --output-path <path>`
-5. Verify that the saved path matches the intended destination before using the file in later steps.
+1. Read the issue first so the target is explicit:
+   - `uv run jira2cli read <KEY> --json`
+2. List attachments on the issue when you need IDs or file names:
+   - `uv run jira2cli attachment-list <KEY> --json`
+3. Read attachment metadata when you need details for one attachment:
+   - `uv run jira2cli attachment-read <ATTACHMENT_ID> --json`
+4. Download the attachment when you need local content:
+   - `uv run jira2cli attachment <ATTACHMENT_ID>`
+   - `uv run jira2cli attachment-download <ATTACHMENT_ID> --output-path <path> --json`
+5. Upload only after the user confirms the exact file path and target issue:
+   - `uv run jira2cli attachment-upload <KEY> <PATH> --json`
+6. Delete only after the user confirms the exact attachment ID:
+   - `uv run jira2cli attachment-delete <ATTACHMENT_ID> --json`
 
-Do not guess attachment IDs or overwrite an unexpected destination path without confirming it.
+## Notes
+
+- `attachment` remains the simple download command.
+- `attachment-download` adds structured/raw-friendly output.
+- Confirm the exact destination path before downloading or the exact source path before uploading.
+- Do not guess attachment IDs or overwrite/delete unexpected files without confirmation.

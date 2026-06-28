@@ -1,11 +1,13 @@
 # jira2ai
 
-Jira AI workspace for Jira Cloud integrations.
+Jira AI workspace for **Jira Cloud only** integrations.
+
+This repo does **not** target Jira Server/Data Center. It also does not add dedicated issue assign commands, issue delete/archive flows, sprint/board/epic operations, or admin-heavy Jira configuration tooling.
 
 This repository currently contains two packages:
 
 - `jira2mcp` — the MCP adapter published as `jira2mcp`.
-- `jira2cli` — a CLI adapter for local and development workflows.
+- `jira2cli` — a flat local/development CLI adapter.
 
 Both packages are thin wrappers over published [jira2py](https://pypi.org/project/jira2py/) helpers.
 
@@ -13,15 +15,25 @@ Built with [FastMCP](https://github.com/jlowin/fastmcp) and [jira2py](https://py
 
 ## Setup
 
-### 1. Get your Jira credentials
+### 1. Get your Jira Cloud credentials
 
 You need three values from your Jira Cloud instance:
 
 | Variable | Description |
 |---|---|
-| `JIRA_URL` | Your Jira instance URL (e.g. `https://yourcompany.atlassian.net`) |
+| `JIRA_URL` | Your Jira instance URL (for example `https://yourcompany.atlassian.net`) |
 | `JIRA_USER` | Your Jira account email |
 | `JIRA_API_TOKEN` | API token from [id.atlassian.com/manage-profile/security/api-tokens](https://id.atlassian.com/manage-profile/security/api-tokens) |
+
+Optional explicit credentials file format:
+
+```json
+{
+  "url": "https://yourcompany.atlassian.net",
+  "username": "you@company.com",
+  "api_token": "your-api-token"
+}
+```
 
 ### 2. Install uv (if not already installed)
 
@@ -43,7 +55,7 @@ claude mcp add jira -- uvx jira2mcp
 
 ### 4. Configure credentials
 
-**Option A: Shell environment variables**
+**Option A: environment variables**
 
 Export them in your shell profile (`~/.bashrc`, `~/.zshrc`, etc.):
 
@@ -53,7 +65,7 @@ export JIRA_USER="you@company.com"
 export JIRA_API_TOKEN="your-api-token"
 ```
 
-The MCP configuration stays minimal:
+The MCP configuration can stay minimal:
 
 ```json
 {
@@ -66,42 +78,91 @@ The MCP configuration stays minimal:
 }
 ```
 
-**Option B: Inline in MCP configuration**
+You can also provide the same variables inline in the MCP `env` block instead of exporting them globally.
 
-If you prefer not to set global environment variables, provide them directly in the `env` section:
+**Option B: explicit credentials file**
+
+Pass the file explicitly to the MCP server:
+
+```bash
+claude mcp add jira -- uvx jira2mcp --credentials-file ~/.config/jira-cloud.json
+```
+
+Equivalent config:
 
 ```json
 {
   "mcpServers": {
     "jira": {
       "command": "uvx",
-      "args": ["jira2mcp"],
-      "env": {
-        "JIRA_URL": "https://yourcompany.atlassian.net",
-        "JIRA_USER": "you@company.com",
-        "JIRA_API_TOKEN": "your-api-token"
-      }
+      "args": [
+        "jira2mcp",
+        "--credentials-file",
+        "/Users/you/.config/jira-cloud.json"
+      ]
     }
   }
 }
 ```
 
-## Tools
+If `--credentials-file` is omitted, `jira2mcp` uses `JIRA_URL`, `JIRA_USER`, and `JIRA_API_TOKEN` from the environment.
+
+There is **no** default credentials path and **no** implicit `JIRA_CREDENTIALS_FILE` behavior.
+
+## MCP tools
+
+### Identity, reads, and transitions
 
 | Tool | Description |
 |---|---|
+| `jira_auth_status` | Check whether the configured Jira Cloud credentials authenticate |
+| `jira_me` | Show the currently authenticated Jira Cloud user |
 | `jira_read` | Read a Jira issue by key with full details |
 | `jira_search` | Search issues using JQL |
+| `jira_comments` | List comments on an issue |
+| `jira_transitions` | List available workflow transitions for an issue |
+| `jira_transition` | Apply a workflow transition to an issue |
+
+### Metadata and saved filters
+
+| Tool | Description |
+|---|---|
+| `jira_fields` | Get field metadata for create/edit workflows |
+| `jira_projects` | List accessible projects |
+| `jira_project` | Read one project by key or ID |
+| `jira_users` | Search users by name or email |
+| `jira_statuses` | List visible Jira statuses |
+| `jira_priorities` | List visible Jira priorities |
+| `jira_filters` | List or search saved filters visible to the current user |
+| `jira_run_filter` | Resolve a saved filter's JQL and run the normal search flow |
+
+### Issue mutations and links
+
+| Tool | Description |
+|---|---|
 | `jira_create` | Create a new issue |
 | `jira_edit` | Update an existing issue |
 | `jira_comment` | Add a comment to an issue |
-| `jira_comments` | List comments with pagination |
-| `jira_fields` | Get field metadata for create/edit screens |
-| `jira_projects` | List accessible projects |
-| `jira_users` | Search users by name or email |
-| `jira_attachment` | Download an attachment |
+| `jira_update_comment` | Update an existing issue comment |
+| `jira_delete_comment` | Delete an issue comment |
+| `jira_issue_links` | List issue links on a specific issue |
 | `jira_add_link` | Create a link between two issues |
 | `jira_delete_link` | Delete an issue link |
+
+### Attachments and worklogs
+
+| Tool | Description |
+|---|---|
+| `jira_attachment` | Download an attachment with the original simple surface |
+| `jira_attachments` | List attachments on an issue |
+| `jira_attachment_metadata` | Read attachment metadata by ID |
+| `jira_download_attachment` | Download an attachment with structured/raw output support |
+| `jira_upload_attachment` | Upload a local file as an issue attachment |
+| `jira_delete_attachment` | Delete an attachment by ID |
+| `jira_worklogs` | List worklogs on an issue |
+| `jira_add_worklog` | Add a worklog to an issue |
+| `jira_update_worklog` | Update an existing worklog |
+| `jira_delete_worklog` | Delete a worklog |
 | `jira_worklog_report` | Build a worklog report for JQL-selected issues within a UTC date range |
 
 ## Resources
@@ -118,7 +179,7 @@ If you prefer not to set global environment variables, provide them directly in 
 
 ## CLI usage for local development
 
-`jira2cli` uses the same `JIRA_URL`, `JIRA_USER`, and `JIRA_API_TOKEN` variables shown above.
+`jira2cli` is for local/development use in this workspace.
 
 Sync the workspace once:
 
@@ -126,16 +187,46 @@ Sync the workspace once:
 uv sync --all-packages --group dev
 ```
 
-Then run the CLI from the workspace:
+Use either environment variables or an explicit CLI flag:
 
 ```bash
-uv run --package jira2cli jira2cli --help
-uv run --package jira2cli jira2cli read PROJ-123
-uv run --package jira2cli jira2cli search 'project = PROJ ORDER BY updated DESC'
-uv run --package jira2cli jira2cli worklog-report --start-date 2026-06-12 --end-date 2026-06-13 --jql 'issue = PROJ-123'
+uv run jira2cli auth-status
+uv run jira2cli --credentials-file ~/.config/jira-cloud.json me --json
 ```
 
-`jira2cli` is available for local/development use in this workspace. Continue to use `uvx jira2mcp` for MCP installs.
+`uv run jira2cli ...` is the normal workspace-root form here. Use `uv run --package jira2cli jira2cli ...` only when you want explicit advanced workspace-member selection.
+
+If `--credentials-file` is omitted, `jira2cli` uses `JIRA_URL`, `JIRA_USER`, and `JIRA_API_TOKEN` from the environment.
+
+There is **no** default credentials path and **no** implicit `JIRA_CREDENTIALS_FILE` behavior.
+
+### Flat `jira2cli` command surface
+
+- Identity: `auth-status`, `me`
+- Reads/search: `read`, `comments`, `search`, `transitions`, `transition`
+- Metadata/reference: `fields`, `project`, `projects`, `statuses`, `priorities`, `users`, `link-types`, `jql-syntax`, `filters`, `filter-run`
+- Issue mutations: `create`, `edit`, `comment`, `comment-update`, `comment-delete`
+- Links: `issue-links`, `add-link`, `delete-link`
+- Attachments: `attachment`, `attachment-list`, `attachment-read`, `attachment-download`, `attachment-upload`, `attachment-delete`
+- Worklogs: `worklogs`, `worklog-add`, `worklog-update`, `worklog-delete`, `worklog-report`
+
+`filter-run` returns the same search-shaped result as `search` after resolving the saved filter's JQL.
+
+Representative commands:
+
+```bash
+uv run jira2cli --help
+uv run jira2cli read PROJ-123
+uv run jira2cli project PROJ --json
+uv run jira2cli transitions PROJ-123 --json
+uv run jira2cli filters --query mine --json
+uv run jira2cli filter-run 10400 --field key --field summary --json
+uv run jira2cli attachment-list PROJ-123 --json
+uv run jira2cli worklogs PROJ-123 --json
+uv run jira2cli worklog-report --start-date 2026-06-12 --end-date 2026-06-13 --jql 'issue = PROJ-123'
+```
+
+Continue to use `uvx jira2mcp` for MCP installs.
 
 ## Pi skill reference
 
@@ -155,12 +246,12 @@ Do not assume Pi auto-discovers this skill from a Python wheel, PyPI install, or
 
 ## Key features
 
-- **Markdown in, Markdown out** — write descriptions and comments in Markdown; they're auto-converted to Atlassian Document Format (ADF). ADF fields from Jira are converted back to Markdown.
-- **Field discovery** — use `jira_fields` to discover required and available fields before creating or editing issues.
-- **User lookup** — use `jira_users` to resolve display names to account IDs for assignment.
-- **Extra fields** — request additional fields on `jira_read` beyond the standard set; rich-text fields are auto-converted.
-- **Link management** — read the `data://jira/link-types` resource to discover available link types, then create or delete links between issues.
-- **Worklog reporting** — use `jira_worklog_report` or `jira2cli worklog-report` with required UTC `start_date`/`end_date` and JQL issue selection. `end_date` is inclusive, optional `account_id` filtering is applied client-side, `max_issues` defaults to `100` and limits how many matched issues are scanned (with truncation noted when more match), rows use `displayName` as the friendly user name, and results reflect the configured Jira account's issue/worklog visibility.
+- **Markdown in, Markdown out** — descriptions and comments accept Markdown and are converted to Atlassian Document Format (ADF); rich-text Jira fields are converted back to Markdown.
+- **Field discovery** — use `jira_fields` / `jira2cli fields` before create or edit operations.
+- **Saved filter reuse** — use `jira_filters` / `jira2cli filters` to discover saved filters, then `jira_run_filter` / `jira2cli filter-run` to execute them through the standard search flow.
+- **Attachment workflows** — list, inspect, download, upload, and delete attachments from MCP or the CLI.
+- **Workflow transitions** — inspect transitions first, then apply an explicit transition ID or exact name.
+- **Worklog workflows** — list, report, add, update, and delete worklogs with explicit issue/worklog IDs.
 
 ## Repository layout
 
@@ -179,8 +270,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for workspace setup, development checks, 
 ## Maintainers
 
 Package-specific release steps, tag formats, and current stop gates live in [docs/releasing.md](docs/releasing.md).
-
-End-user MCP setup stays the same: `uvx jira2mcp` or `claude mcp add jira -- uvx jira2mcp`.
 
 ## License
 

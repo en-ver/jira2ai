@@ -5,10 +5,10 @@ Use this when you need a worklog report for issues selected by JQL within a UTC 
 ## Workflow
 
 1. If the JQL is new or uncertain, validate it first:
-   - `uv run --package jira2cli jira2cli jql-syntax`
-   - `uv run --package jira2cli jira2cli search '<JQL>' --field key --field summary --max-results <N> --json`
+   - `uv run jira2cli jql-syntax`
+   - `uv run jira2cli search '<JQL>' --field key --field summary --max-results <N> --json`
 2. Run the report:
-   - `uv run --package jira2cli jira2cli worklog-report --start-date <YYYY-MM-DD> --end-date <YYYY-MM-DD> --jql '<JQL>' --json`
+   - `uv run jira2cli worklog-report --start-date <YYYY-MM-DD> --end-date <YYYY-MM-DD> --jql '<JQL>' --json`
 3. Use `--account-id <ACCOUNT_ID>` when the report should include worklogs from only one Jira user.
 4. Use `--max-issues <N>` when you need a smaller or larger scan limit than the default `100`.
 5. Add `--include-details` when you need optional detail fields such as `updateAuthor`, `visibility`, `comment`, or `properties`.

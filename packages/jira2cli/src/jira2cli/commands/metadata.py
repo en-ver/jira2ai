@@ -74,6 +74,40 @@ def fields_command(
     )
 
 
+def project_command(
+    project_id_or_key: str = typer.Argument(
+        ...,
+        help="Explicit project key or project ID.",
+    ),
+    raw_output: bool = typer.Option(
+        False,
+        "--raw",
+        help="Render the raw API payload as JSON.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Render structured output as JSON.",
+    ),
+) -> None:
+    """Get a single Jira project by explicit key or ID."""
+    validate_output_options(json_output=json_output, raw_output=raw_output)
+
+    try:
+        api = client.get_api()
+        result = JiraHelpers(api).metadata.project(project_id_or_key)
+    except Exception as exc:
+        raise_cli_exception(exc)
+
+    typer.echo(
+        render_operation_result(
+            result,
+            json_output=json_output,
+            raw_output=raw_output,
+        )
+    )
+
+
 def projects_command(
     query: str | None = typer.Option(
         None,
@@ -97,6 +131,66 @@ def projects_command(
     try:
         api = client.get_api()
         result = JiraHelpers(api).metadata.projects(query)
+    except Exception as exc:
+        raise_cli_exception(exc)
+
+    typer.echo(
+        render_operation_result(
+            result,
+            json_output=json_output,
+            raw_output=raw_output,
+        )
+    )
+
+
+def statuses_command(
+    raw_output: bool = typer.Option(
+        False,
+        "--raw",
+        help="Render the raw API payload as JSON.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Render structured output as JSON.",
+    ),
+) -> None:
+    """List Jira statuses visible to the current user."""
+    validate_output_options(json_output=json_output, raw_output=raw_output)
+
+    try:
+        api = client.get_api()
+        result = JiraHelpers(api).metadata.statuses()
+    except Exception as exc:
+        raise_cli_exception(exc)
+
+    typer.echo(
+        render_operation_result(
+            result,
+            json_output=json_output,
+            raw_output=raw_output,
+        )
+    )
+
+
+def priorities_command(
+    raw_output: bool = typer.Option(
+        False,
+        "--raw",
+        help="Render the raw API payload as JSON.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Render structured output as JSON.",
+    ),
+) -> None:
+    """List Jira priorities visible to the current user."""
+    validate_output_options(json_output=json_output, raw_output=raw_output)
+
+    try:
+        api = client.get_api()
+        result = JiraHelpers(api).metadata.priorities()
     except Exception as exc:
         raise_cli_exception(exc)
 
@@ -185,7 +279,10 @@ def jql_syntax_command() -> None:
 def register_metadata_commands(app: typer.Typer) -> None:
     """Register metadata and reference commands."""
     app.command("fields")(fields_command)
+    app.command("project")(project_command)
     app.command("projects")(projects_command)
+    app.command("statuses")(statuses_command)
+    app.command("priorities")(priorities_command)
     app.command("users")(users_command)
     app.command("link-types")(link_types_command)
     app.command("jql-syntax")(jql_syntax_command)
@@ -195,7 +292,10 @@ __all__ = [
     "fields_command",
     "jql_syntax_command",
     "link_types_command",
+    "priorities_command",
+    "project_command",
     "projects_command",
     "register_metadata_commands",
+    "statuses_command",
     "users_command",
 ]

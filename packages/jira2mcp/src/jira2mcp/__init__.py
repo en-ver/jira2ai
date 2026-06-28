@@ -1,10 +1,15 @@
 """Jira MCP Server — Model Context Protocol server for Jira Cloud."""
 
+from __future__ import annotations
+
+import argparse
+from collections.abc import Sequence
 from importlib.metadata import version as _pkg_version
 
 from fastmcp import FastMCP
 
 from .tools import tools
+from .utils import set_credentials_file
 
 mcp = FastMCP(
     "jira2mcp",
@@ -27,6 +32,21 @@ mcp = FastMCP(
 mcp.mount(tools, namespace="jira")
 
 
-def main() -> None:
+def _build_arg_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="jira2mcp",
+        description="Jira Cloud MCP server",
+    )
+    parser.add_argument(
+        "--credentials-file",
+        metavar="PATH",
+        help="Explicit path to a Jira Cloud JSON credentials file",
+    )
+    return parser
+
+
+def main(argv: Sequence[str] | None = None) -> None:
     """Entry point for the MCP server."""
+    args = _build_arg_parser().parse_args(argv)
+    set_credentials_file(args.credentials_file)
     mcp.run(transport="stdio")

@@ -1,4 +1,4 @@
-"""List comments on a Jira issue."""
+"""Jira comment listing and management tools."""
 
 from typing import Annotated, Literal
 
@@ -58,3 +58,62 @@ async def comments(
         raise to_tool_error(exc) from exc
 
     return adapt_operation_result(result, raw=raw, truncate_text=True)
+
+
+@tools.tool(
+    tags={"write"},
+    annotations={
+        "readOnlyHint": False,
+        "idempotentHint": False,
+        "openWorldHint": False,
+    },
+)
+async def update_comment(
+    issue_key: Annotated[str, "Issue key (e.g. PROJ-123)"],
+    comment_id: Annotated[str, "Comment ID"],
+    body: Annotated[str, "Replacement comment text in markdown"],
+    raw: Annotated[bool, "Return raw JSON from the API"] = False,
+    ctx: Context = CurrentContext(),
+    api: JiraAPI = Depends(get_api),
+) -> str | ToolResult:
+    """Update an existing Jira issue comment."""
+    await ctx.info(f"Updating comment {comment_id} on {issue_key}")
+
+    try:
+        result = JiraHelpers(api).comments.update(issue_key, comment_id, body)
+    except JiraHelperOperationError as exc:
+        await ctx.error(str(exc))
+        raise to_tool_error(exc) from exc
+    except JiraHelperError as exc:
+        raise to_tool_error(exc) from exc
+
+    return adapt_operation_result(result, raw=raw, truncate_text=True)
+
+
+@tools.tool(
+    tags={"write"},
+    annotations={
+        "readOnlyHint": False,
+        "idempotentHint": False,
+        "openWorldHint": False,
+    },
+)
+async def delete_comment(
+    issue_key: Annotated[str, "Issue key (e.g. PROJ-123)"],
+    comment_id: Annotated[str, "Comment ID"],
+    raw: Annotated[bool, "Return raw helper result"] = False,
+    ctx: Context = CurrentContext(),
+    api: JiraAPI = Depends(get_api),
+) -> str | ToolResult:
+    """Delete a Jira issue comment by explicit issue key and comment ID."""
+    await ctx.info(f"Deleting comment {comment_id} from {issue_key}")
+
+    try:
+        result = JiraHelpers(api).comments.delete(issue_key, comment_id)
+    except JiraHelperOperationError as exc:
+        await ctx.error(str(exc))
+        raise to_tool_error(exc) from exc
+    except JiraHelperError as exc:
+        raise to_tool_error(exc) from exc
+
+    return adapt_operation_result(result, raw=raw)

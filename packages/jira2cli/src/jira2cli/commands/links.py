@@ -13,6 +13,37 @@ from jira2cli.output import (
 )
 
 
+def issue_links_command(
+    issue_key: str = typer.Argument(..., help="Issue key (e.g. PROJ-123)"),
+    raw_output: bool = typer.Option(
+        False,
+        "--raw",
+        help="Render the raw API payload as JSON.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Render structured output as JSON.",
+    ),
+) -> None:
+    """List Jira issue links on a specific issue."""
+    validate_output_options(json_output=json_output, raw_output=raw_output)
+
+    try:
+        api = client.get_api()
+        result = JiraHelpers(api).links.list(issue_key)
+    except Exception as exc:
+        raise_cli_exception(exc)
+
+    typer.echo(
+        render_operation_result(
+            result,
+            json_output=json_output,
+            raw_output=raw_output,
+        )
+    )
+
+
 def add_link_command(
     link_type: str = typer.Argument(..., help="Link type name (e.g. Blocks, Clones)"),
     outward_key: str = typer.Argument(..., help="Issue key on the outward side."),
@@ -83,6 +114,7 @@ def delete_link_command(
 
 def register_link_commands(app: typer.Typer) -> None:
     """Register link-management commands."""
+    app.command("issue-links")(issue_links_command)
     app.command("add-link")(add_link_command)
     app.command("delete-link")(delete_link_command)
 
@@ -90,5 +122,6 @@ def register_link_commands(app: typer.Typer) -> None:
 __all__ = [
     "add_link_command",
     "delete_link_command",
+    "issue_links_command",
     "register_link_commands",
 ]

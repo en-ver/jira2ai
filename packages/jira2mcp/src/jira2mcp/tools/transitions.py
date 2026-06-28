@@ -1,4 +1,4 @@
-"""Jira project metadata tools."""
+"""Jira issue transition tools."""
 
 from typing import Annotated
 
@@ -16,52 +16,20 @@ from .server import tools
 
 
 @tools.tool(
-    tags={"metadata"},
+    tags={"read"},
     annotations={"readOnlyHint": True, "idempotentHint": True, "openWorldHint": False},
 )
-async def projects(
-    query: Annotated[
-        str | None,
-        "Filter by project name or key (case insensitive). Omit to list all projects",
-    ] = None,
+async def transitions(
+    issue_key: Annotated[str, "Issue key (e.g. PROJ-123)"],
     raw: Annotated[bool, "Return raw JSON from the API"] = False,
     ctx: Context = CurrentContext(),
     api: JiraAPI = Depends(get_api),
 ) -> str | ToolResult:
-    """List Jira projects accessible to you.
-
-    Optionally filter by name or key with a search query.
-    Use this to resolve a project name to its key before calling
-    jira_create or jira_fields.
-    """
-    await ctx.info(f"Fetching projects{f' matching: {query}' if query else ''}")
+    """List available workflow transitions for a Jira issue."""
+    await ctx.info(f"Fetching transitions for {issue_key}")
 
     try:
-        result = JiraHelpers(api).metadata.projects(query)
-    except JiraHelperOperationError as exc:
-        await ctx.error(str(exc))
-        raise to_tool_error(exc) from exc
-    except JiraHelperError as exc:
-        raise to_tool_error(exc) from exc
-
-    return adapt_operation_result(result, raw=raw)
-
-
-@tools.tool(
-    tags={"metadata"},
-    annotations={"readOnlyHint": True, "idempotentHint": True, "openWorldHint": False},
-)
-async def project(
-    project_id_or_key: Annotated[str, "Explicit project key or project ID"],
-    raw: Annotated[bool, "Return raw JSON from the API"] = False,
-    ctx: Context = CurrentContext(),
-    api: JiraAPI = Depends(get_api),
-) -> str | ToolResult:
-    """Fetch a single Jira project by explicit key or ID."""
-    await ctx.info(f"Fetching project {project_id_or_key}")
-
-    try:
-        result = JiraHelpers(api).metadata.project(project_id_or_key)
+        result = JiraHelpers(api).metadata.transitions(issue_key)
     except JiraHelperOperationError as exc:
         await ctx.error(str(exc))
         raise to_tool_error(exc) from exc
@@ -69,3 +37,35 @@ async def project(
         raise to_tool_error(exc) from exc
 
     return adapt_operation_result(result, raw=raw, truncate_text=True)
+
+
+@tools.tool(
+    tags={"write"},
+    annotations={
+        "readOnlyHint": False,
+        "idempotentHint": False,
+        "openWorldHint": False,
+    },
+)
+async def transition(
+    issue_key: Annotated[str, "Issue key (e.g. PROJ-123)"],
+    transition: Annotated[
+        str,
+        "Explicit transition ID or exact transition name to apply",
+    ],
+    raw: Annotated[bool, "Return raw JSON from the helper result"] = False,
+    ctx: Context = CurrentContext(),
+    api: JiraAPI = Depends(get_api),
+) -> str | ToolResult:
+    """Apply a workflow transition to a Jira issue."""
+    await ctx.info(f"Transitioning {issue_key} via {transition}")
+
+    try:
+        result = JiraHelpers(api).issues.transition(issue_key, transition)
+    except JiraHelperOperationError as exc:
+        await ctx.error(str(exc))
+        raise to_tool_error(exc) from exc
+    except JiraHelperError as exc:
+        raise to_tool_error(exc) from exc
+
+    return adapt_operation_result(result, raw=raw)

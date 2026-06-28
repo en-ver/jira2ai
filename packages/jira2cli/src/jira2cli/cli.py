@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import typer
 
+from .client import set_credentials_file
 from .commands import register_commands
 
 app = typer.Typer(
@@ -17,8 +18,15 @@ register_commands(app)
 
 
 @app.callback()
-def callback() -> None:
+def callback(
+    credentials_file: str | None = typer.Option(
+        None,
+        "--credentials-file",
+        help="Explicit path to a Jira Cloud JSON credentials file.",
+    ),
+) -> None:
     """Jira CLI powered by jira2py helpers."""
+    set_credentials_file(credentials_file)
 
 
 def main() -> None:

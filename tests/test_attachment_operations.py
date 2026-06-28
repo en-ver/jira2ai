@@ -6,7 +6,7 @@ from types import SimpleNamespace
 from typing import Any, cast
 
 import pytest
-from conftest import FakeContext
+from conftest import FakeContext, RecordingMethod
 from fastmcp.exceptions import ToolError
 from jira2mcp.attachment_io import (
     download_attachment_content,
@@ -239,3 +239,77 @@ def test_attachment_tool_uses_cwd_boundary_when_no_roots(
                 api=api,
             )
         )
+
+
+def test_upload_attachment_rejects_path_outside_cwd_before_reading(
+    monkeypatch,
+    tmp_path,
+    fake_ctx,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    add_attachment = RecordingMethod(response=[])
+    api = SimpleNamespace(attachments=SimpleNamespace(add_attachment=add_attachment))
+
+    with pytest.raises(
+        ToolError,
+        match=r"Attachment upload path must stay within the server working directory: ../secret\.txt",
+    ):
+        asyncio.run(
+            attachment_tool.upload_attachment(
+                "PROJ-1",
+                "../secret.txt",
+                ctx=cast(Any, fake_ctx),
+                api=cast(Any, api),
+            )
+        )
+
+    assert add_attachment.calls == []
+    assert fake_ctx.info_messages == []
+    assert fake_ctx.error_messages == []
+
+
+def test_upload_attachment_allows_relative_file_within_cwd(
+    monkeypatch,
+    tmp_path,
+    fake_ctx,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    file_path = tmp_path / "notes.txt"
+    file_path.write_text("hello")
+    add_attachment = RecordingMethod(
+        response=[
+            {
+                "id": "7",
+                "filename": "notes.txt",
+                "mimeType": "text/plain",
+                "size": 5,
+            }
+        ]
+    )
+    api = SimpleNamespace(attachments=SimpleNamespace(add_attachment=add_attachment))
+
+    result = asyncio.run(
+        attachment_tool.upload_attachment(
+            "PROJ-1",
+            "notes.txt",
+            ctx=cast(Any, fake_ctx),
+            api=cast(Any, api),
+        )
+    )
+
+    assert result == (
+        "Uploaded attachment to PROJ-1: notes.txt\n"
+        "Attachment ID: 7\n"
+        "Type: text/plain\n"
+        "Size: 5 bytes"
+    )
+    assert add_attachment.calls == [
+        {
+            "issue_id": "PROJ-1",
+            "filename": "notes.txt",
+            "content": b"hello",
+            "content_type": "text/plain",
+        }
+    ]
+    assert fake_ctx.info_messages == ["Uploading attachment to PROJ-1: notes.txt"]
+    assert fake_ctx.error_messages == []

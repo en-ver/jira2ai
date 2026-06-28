@@ -88,7 +88,7 @@ Attachment coverage is download-only and runs only when `JIRA_E2E_ATTACHMENT_ID`
 The stdio smoke tests launch the local checkout only:
 
 ```bash
-uv --directory /Users/enver/github/personal/jira2ai run --package jira2mcp jira2mcp
+uv --directory /Users/enver/github/personal/jira2ai run jira2mcp
 ```
 
 They do not use `uvx`.
@@ -106,7 +106,7 @@ The tests assert that MCP `structuredContent` stays dict-shaped and carries the 
 
 If you want extra confidence outside pytest, run manual CLI spot checks yourself. Keep them separate from this suite. Example ideas:
 
-- `uv run --package jira2cli jira2cli read PR-123`
-- `uv run --package jira2cli jira2cli search 'project = PR ORDER BY created DESC'`
+- `uv run jira2cli read PR-123`
+- `uv run jira2cli search 'project = PR ORDER BY created DESC'`
 
 These are notes only; the automated E2E tests never call the CLI.

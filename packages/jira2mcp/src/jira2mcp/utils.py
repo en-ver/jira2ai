@@ -3,16 +3,25 @@
 from __future__ import annotations
 
 import math
+import os
 
 from jira2py import JiraAPI
 
 MAX_OUTPUT_CHARS = 30_000
 TRUNCATION_SUFFIX = "\n\n... (output truncated)"
 
+_credentials_file: str | os.PathLike[str] | None = None
+
+
+def set_credentials_file(credentials_file: str | os.PathLike[str] | None) -> None:
+    """Configure an explicit Jira credentials file for server-launched tools."""
+    global _credentials_file
+    _credentials_file = credentials_file
+
 
 def get_api() -> JiraAPI:
-    """Create a JiraAPI instance from environment-based credentials."""
-    return JiraAPI()
+    """Create a JiraAPI instance from env vars or an explicit credentials file."""
+    return JiraAPI(credentials_file=_credentials_file)
 
 
 def truncate(text: str, max_chars: int = MAX_OUTPUT_CHARS) -> str:
@@ -53,5 +62,6 @@ __all__ = [
     "format_date",
     "format_size",
     "get_api",
+    "set_credentials_file",
     "truncate",
 ]

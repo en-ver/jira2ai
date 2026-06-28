@@ -31,7 +31,7 @@ make check
 make check-ci
 make build
 make build-all
-uv run --package jira2cli jira2cli --help
+uv run --locked jira2cli --help
 ```
 
 ## `jira2cli` skill/CLI alignment rule
@@ -43,7 +43,7 @@ Required alignment check:
 - compare the skill text against `packages/jira2cli/src/jira2cli/cli.py`
 - compare the skill text against `packages/jira2cli/src/jira2cli/commands/*.py`
 - compare the skill text against `packages/jira2cli/README.md`
-- verify the documented command surface and options against current help output from `uv run --package jira2cli jira2cli --help` and each command `--help`
+- verify the documented command surface and options against current help output from `uv run --locked jira2cli --help` and each command `--help`
 
 Do not merge `jira2cli` skill or CLI docs/implementation changes without this verification.
 
