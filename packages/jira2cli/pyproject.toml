@@ -9,7 +9,7 @@ authors = [
 requires-python = ">=3.13"
 dependencies = [
     "httpx>=0.28.1",
-    "jira2py==0.7.0",
+    "jira2py==0.8.0",
     "typer>=0.16.0",
 ]
 
