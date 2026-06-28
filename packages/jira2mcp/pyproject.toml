@@ -1,6 +1,6 @@
 [project]
 name = "jira2mcp"
-version = "0.1.5"
+version = "0.1.6"
 description = "MCP server exposing Jira Cloud tools via FastMCP"
 readme = "README.md"
 authors = [
