@@ -5,6 +5,7 @@ from typing import Any, cast
 
 import jira2cli.cli as cli_module
 import pytest
+from click.utils import strip_ansi
 from jira2cli import app
 from jira2cli import client as cli_client
 from jira2py.helpers import HelperResult
@@ -59,9 +60,10 @@ def test_get_api_defaults_to_env_based_credentials_when_no_file(
 
 def test_root_help_lists_stage9_commands_and_credentials_flag() -> None:
     result = runner.invoke(app, ["--help"])
+    help_output = strip_ansi(result.stdout)
 
     assert result.exit_code == 0
-    assert "--credentials-file" in result.stdout
+    assert "--credentials-file" in help_output
     for command_name in [
         "auth-status",
         "me",
@@ -85,7 +87,7 @@ def test_root_help_lists_stage9_commands_and_credentials_flag() -> None:
         "filters",
         "filter-run",
     ]:
-        assert command_name in result.stdout
+        assert command_name in help_output
 
 
 def test_callback_accepts_credentials_file_flag(

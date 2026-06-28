@@ -508,7 +508,7 @@ dev = [
 
 [[package]]
 name = "jira2cli"
-version = "0.1.4"
+version = "0.1.5"
 source = { editable = "packages/jira2cli" }
 dependencies = [
     { name = "httpx" },
