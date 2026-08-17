@@ -88,7 +88,7 @@ Attachment coverage is download-only and runs only when `JIRA_E2E_ATTACHMENT_ID`
 The stdio smoke tests launch the local checkout only:
 
 ```bash
-uv --directory /Users/enver/github/personal/jira2ai run jira2mcp
+uv --directory <path-to-jira2ai> run --package jira2mcp jira2mcp
 ```
 
 They do not use `uvx`.
