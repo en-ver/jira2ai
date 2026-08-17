@@ -1,19 +1,29 @@
 # jira2cli
 
-Flat CLI adapter for **Jira Cloud only**, powered by `jira2py` helpers.
+A flat CLI for **Jira Cloud** from a local source checkout. Requires Python 3.13+.
 
-`jira2cli` is currently intended for local and development use from this workspace. Do not assume a published `uvx jira2cli` or PyPI install path yet.
+`jira2cli` is not currently offered as a supported PyPI package or `uvx jira2cli` command. For checkout and workspace setup, see the [contributing guide](https://github.com/en-ver/jira2ai/blob/main/CONTRIBUTING.md).
 
-`jira2cli` does **not** target Jira Server/Data Center. It also does not add dedicated issue assign commands, issue delete/archive flows, sprint/board/epic operations, or admin-heavy Jira configuration tooling.
+It does not support Jira Server or Data Center, and does not provide dedicated issue assignment, issue delete/archive, sprint/board/epic, or admin-configuration operations.
 
-## Authentication
+## Authentication and local usage
 
-`jira2cli` supports two explicit credential modes:
+After setting up a checkout, authenticate with either an explicit credentials file or environment variables:
 
-1. `--credentials-file <path>` on the CLI
-2. `JIRA_URL`, `JIRA_USER`, and `JIRA_API_TOKEN` environment variables when the flag is omitted
+```bash
+export JIRA_URL="https://yourcompany.atlassian.net"
+export JIRA_USER="you@company.com"
+export JIRA_API_TOKEN="your-api-token"
 
-Optional explicit credentials file format:
+uv run --locked jira2cli auth-status
+uv run --locked jira2cli read PROJ-123 --json
+```
+
+An explicit credentials file takes precedence over the environment:
+
+```bash
+uv run --locked jira2cli --credentials-file ~/.config/jira-cloud.json me --json
+```
 
 ```json
 {
@@ -23,149 +33,67 @@ Optional explicit credentials file format:
 }
 ```
 
-If `--credentials-file` is omitted, `jira2cli` uses environment variables.
+There is no default credentials-file path and no `JIRA_CREDENTIALS_FILE` environment variable. Create a token in your [Atlassian account](https://id.atlassian.com/manage-profile/security/api-tokens); do not commit, print, or share it.
 
-There is **no** default credentials path and **no** implicit `JIRA_CREDENTIALS_FILE` behavior.
+## Commands
 
-Environment variable example:
-
-```bash
-export JIRA_URL="https://yourcompany.atlassian.net"
-export JIRA_USER="you@company.com"
-export JIRA_API_TOKEN="your-api-token"
-```
-
-## Local usage
-
-From the workspace root:
-
-```bash
-uv sync --all-packages --group dev
-uv run jira2cli --help
-uv run jira2cli auth-status
-uv run jira2cli --credentials-file ~/.config/jira-cloud.json me --json
-uv run jira2cli read PROJ-123
-uv run jira2cli transitions PROJ-123 --json
-uv run jira2cli filter-run 10400 --field key --field summary --json
-```
-
-Use `uv run --package jira2cli jira2cli ...` only when you want explicit advanced workspace-member selection.
-
-## Command surface
+Run `uv run --locked jira2cli --help` for the current command and option help.
 
 ### Identity
 
-| Command | Description |
-|---|---|
-| `auth-status` | Check whether the configured Jira Cloud credentials authenticate |
-| `me` | Show the currently authenticated Jira Cloud user |
+`auth-status`, `me`
 
 ### Reads, search, and transitions
 
-| Command | Description |
-|---|---|
-| `read` | Read a Jira issue by key with full details |
-| `comments` | List comments on an issue |
-| `search` | Search issues using JQL |
-| `transitions` | List available workflow transitions for an issue |
-| `transition` | Apply a workflow transition to an issue |
+`read`, `comments`, `search`, `transitions`, `transition`
 
 ### Metadata and saved filters
 
-| Command | Description |
-|---|---|
-| `fields` | Get field metadata for create/edit workflows |
-| `project` | Read one project by key or ID |
-| `projects` | List accessible projects |
-| `statuses` | List visible Jira statuses |
-| `priorities` | List visible Jira priorities |
-| `users` | Search users by name or email |
-| `link-types` | List available Jira issue link types |
-| `jql-syntax` | Print the shared JQL syntax reference |
-| `filters` | List or search saved filters visible to the current user |
-| `filter-run` | Resolve a saved filter's JQL and run the normal search flow |
+`fields`, `project`, `projects`, `statuses`, `priorities`, `users`, `link-types`, `jql-syntax`, `filters`, `filter-run`
 
-### Issue mutations and links
+### Issues, comments, and links
 
-| Command | Description |
-|---|---|
-| `create` | Create a new issue |
-| `edit` | Update an existing issue |
-| `comment` | Add a comment to an issue |
-| `comment-update` | Update an existing issue comment |
-| `comment-delete` | Delete an issue comment |
-| `issue-links` | List issue links on a specific issue |
-| `add-link` | Create a link between two issues |
-| `delete-link` | Delete an issue link |
+`create`, `edit`, `comment`, `comment-update`, `comment-delete`, `issue-links`, `add-link`, `delete-link`
 
 ### Attachments and worklogs
 
-| Command | Description |
-|---|---|
-| `attachment` | Download an attachment with the original simple surface |
-| `attachment-list` | List attachments on an issue |
-| `attachment-read` | Read attachment metadata by ID |
-| `attachment-download` | Download an attachment with structured/raw output support |
-| `attachment-upload` | Upload a local file as an issue attachment |
-| `attachment-delete` | Delete an attachment by ID |
-| `worklogs` | List worklogs on an issue |
-| `worklog-add` | Add a worklog to an issue |
-| `worklog-update` | Update an existing worklog |
-| `worklog-delete` | Delete a worklog |
-| `worklog-report` | Build a worklog report for JQL-selected issues within a UTC date range |
+`attachment`, `attachment-list`, `attachment-read`, `attachment-download`, `attachment-upload`, `attachment-delete`, `worklogs`, `worklog-add`, `worklog-update`, `worklog-delete`, `worklog-report`
 
-## Output modes
+Most structured commands accept `--json` for helper output or `--raw` for the untouched API payload; do not combine them. `filter-run` resolves a saved filter's JQL and returns the same search-shaped result as `search`.
 
-Most structured commands support:
+## Examples
 
-- `--json` for structured helper output
-- `--raw` for the untouched API payload
+```bash
+# Discover accessible projects and create/edit fields before a write.
+uv run --locked jira2cli projects --json
+uv run --locked jira2cli fields --project-key PROJ --issue-type Task --json
 
-Do not pass `--json` and `--raw` together.
+# Read and search.
+uv run --locked jira2cli read PROJ-123 --extra-field labels --json
+uv run --locked jira2cli search 'project = PROJ ORDER BY created DESC' --field key --field summary --json
 
-`filter-run` returns the same search-shaped result as `search` after resolving the saved filter's JQL.
+# Inspect workflow choices before applying one.
+uv run --locked jira2cli transitions PROJ-123 --json
+uv run --locked jira2cli transition PROJ-123 "Start Progress" --json
 
-## Worklog reports
+# Reuse a saved filter.
+uv run --locked jira2cli filters --query mine --json
+uv run --locked jira2cli filter-run 10400 --field key --field summary --json
 
-Use `jira2cli worklog-report` to build a report for issues selected by JQL.
-
-- Required options: `--start-date`, `--end-date`, and `--jql`
-- Optional options: `--account-id`, `--max-issues`, `--include-details`, `--json`, and `--raw`
-- Issue selection is JQL-only. For a single issue, use `--jql 'issue = PROJ-123'`
-- Dates are interpreted in UTC, and `--end-date` is inclusive
-- `--account-id` filters returned worklogs client-side by author `accountId`
-- `--max-issues` defaults to `100`, must be at least `1`, and limits how many JQL-matched issues are scanned; the report notes truncation when more issues match
-- Output rows use `displayName` as the friendly user name
-- Results depend on the configured Jira account's issue/worklog visibility and permissions
-
-## Pi skill reference
-
-The Pi skill reference lives at repo-root `skills/jira2cli/`.
-
-It is CLI-only, not a `jira2mcp`/MCP skill, and documents metadata-first Jira workflows plus safety rules for agents using `jira2cli`.
-
-Consumers can use it as a reference/template for building their own Pi or agent skills. Load it from a local source checkout via an explicit skill path, for example:
-
-```json
-{
-  "skills": ["/Users/enver/github/personal/jira2ai/skills/jira2cli"]
-}
+# Inspect attachments and worklogs.
+uv run --locked jira2cli attachment-list PROJ-123 --json
+uv run --locked jira2cli worklogs PROJ-123 --json
+uv run --locked jira2cli worklog-report --start-date 2026-06-12 --end-date 2026-06-13 --jql 'issue = PROJ-123' --json
 ```
 
-Do not assume Pi auto-discovers this skill from a Python wheel, PyPI install, or `uvx` install.
+Worklog-report dates are UTC and the end date is inclusive. It selects issues only with `--jql`; `--max-issues` defaults to 100 and limits the scanned issues. Results depend on the configured account's issue and worklog visibility.
 
-## Workspace layout
+## Safety and capabilities
 
-- `packages/jira2mcp` — MCP adapter published as `jira2mcp`
-- `packages/jira2cli` — CLI adapter package
+Descriptions and comments accept Markdown and rich-text Jira fields are returned as Markdown. Use `fields` before create or edit; `users` before choosing a user; `transitions` before changing status; and `link-types` before creating links. Read the current issue before an update or destructive action, use exact IDs, and confirm the intended fields, transition, comment, attachment, link, or worklog before mutating Jira. Jira permissions control what the configured account can read or write.
 
-For MCP installs and Claude setup, use `uvx jira2mcp` and `claude mcp add jira -- uvx jira2mcp` as documented in the repository root README.
+The optional [Pi skill](https://github.com/en-ver/jira2ai/tree/main/skills/jira2cli) is a CLI-only source-checkout template for agent workflows. Load it explicitly as `<path-to-jira2ai>/skills/jira2cli`; it is not auto-discovered from a wheel, PyPI, or `uvx` installation.
 
-## Maintainers
+## License
 
-Do not assume `uvx jira2cli` or `pip install jira2cli` is available yet. Keep using local workspace commands until the release gates in the maintainer docs are completed.
-
-Release sequencing, package tags, and Trusted Publishing boundaries:
-
-- <https://github.com/en-ver/jira2ai/blob/main/docs/releasing.md>
-- <https://github.com/en-ver/jira2ai/blob/main/CONTRIBUTING.md>
+MIT
