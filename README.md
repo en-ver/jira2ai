@@ -5,7 +5,7 @@ Jira Cloud integrations for AI clients and local automation. Requires Python 3.1
 ## Choose a product
 
 - **[jira2mcp](packages/jira2mcp/README.md)** — the published MCP server. Use it with any MCP client that supports a stdio server; Claude Code is one example.
-- **[jira2cli](packages/jira2cli/README.md)** — the flat CLI for a local source checkout. It is not currently offered as a supported PyPI or `uvx jira2cli` install.
+- **[jira2cli](packages/jira2cli/README.md)** — the published flat Jira Cloud CLI. Run it with `uvx jira2cli`; local checkout commands are for contributors.
 
 Both are **Jira Cloud only**. They do not support Jira Server or Data Center, and do not provide dedicated issue assignment, issue delete/archive, sprint/board/epic, or admin-configuration operations.
 
@@ -32,6 +32,16 @@ claude mcp add jira -- uvx jira2mcp
 
 See the [MCP guide](packages/jira2mcp/README.md) for client configuration, the complete `jira_*` tool inventory, and examples.
 
+## Use the CLI
+
+Install [uv](https://docs.astral.sh/uv/) on Python 3.13 or later, configure credentials below, then run the published CLI:
+
+```bash
+uvx jira2cli --help
+uvx jira2cli auth-status
+uvx jira2cli read PROJ-123 --json
+```
+
 ## Authentication and safety
 
 Set these environment variables for either product:
@@ -50,7 +60,7 @@ Keep API tokens out of source control, logs, prompts, and shared client configur
 
 The products support authentication checks, issue reads and JQL search, projects and field metadata, comments, transitions, saved filters, issue links, attachments, and worklogs. Descriptions and comments accept Markdown and rich-text Jira fields are returned as Markdown.
 
-For local development or contributions, see [CONTRIBUTING.md](CONTRIBUTING.md). The optional [Pi CLI skill](skills/jira2cli/SKILL.md) is a source-checkout template for agents using `jira2cli`.
+For local development or contributions, see [CONTRIBUTING.md](CONTRIBUTING.md). Contributors working from a repository checkout use `uv run --locked jira2cli ...` after workspace setup. The optional [Pi CLI skill](skills/jira2cli/SKILL.md) is a source-checkout template for agents using `jira2cli`; UVX runs the CLI but does not install or auto-discover the skill.
 
 ## License
 
