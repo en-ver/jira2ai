@@ -1,26 +1,32 @@
 # Install and Authenticate
 
-`jira2cli` is currently documented in this repo as local/dev-only and **Jira Cloud only**.
+`jira2cli` is a published **Jira Cloud-only** CLI. It requires Python >=3.13.
 
-## Supported Local Verification
+## Consumer Launch and Verification
 
-From the repository root:
+Install [uv](https://docs.astral.sh/uv/) and run:
+
+```sh
+uvx jira2cli --help
+```
+
+Use the same `uvx jira2cli ...` prefix for the other commands in this skill. UVX runs the CLI but does not install or auto-discover the Pi skill.
+
+## Repository-Local Maintainer Verification
+
+From the repository root after workspace setup, maintainers can verify the checked-out CLI with:
 
 ```sh
 uv sync --all-packages --group dev
 uv run --locked jira2cli --help
 ```
 
-Use the same `uv run jira2cli ...` prefix for the other commands in this skill.
-
-Do not claim or rely on `uvx jira2cli`, `pip install jira2cli`, or wheel/PyPI install paths unless the repo docs change first.
-
 ## Authentication
 
 Supported credential modes:
 
 1. Explicit CLI flag:
-   - `uv run jira2cli --credentials-file <path> auth-status`
+   - `uvx jira2cli --credentials-file <path> auth-status`
 2. Environment variables when the flag is omitted:
    - `JIRA_URL=https://<site>.atlassian.net`
    - `JIRA_USER=<email>`
@@ -49,9 +55,9 @@ Rules:
 
 After the environment is configured, verify access with a non-mutating command such as:
 
-- `uv run --locked jira2cli auth-status`
-- `uv run --locked jira2cli me --json`
-- `uv run --locked jira2cli projects --json`
-- `uv run --locked jira2cli projects --query <text> --json`
+- `uvx jira2cli auth-status`
+- `uvx jira2cli me --json`
+- `uvx jira2cli projects --json`
+- `uvx jira2cli projects --query <text> --json`
 
 If verification fails, fix the environment values or the explicit credentials file instead of guessing or exposing the token.

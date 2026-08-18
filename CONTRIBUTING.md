@@ -4,12 +4,12 @@ Thanks for contributing to the Jira AI workspace.
 
 ## Development checks
 
-This repository uses a root `uv` workspace and the root `Makefile` for local development commands.
+This repository uses a root `uv` workspace and the root `Makefile` for local development commands. The commands in this guide are repository-local contributor commands, not consumer installation commands.
 
 Current package layout:
 
 - `packages/jira2mcp` — FastMCP server/adapter package published as `jira2mcp`.
-- `packages/jira2cli` — CLI adapter package for local/dev use.
+- `packages/jira2cli` — published CLI adapter package.
 
 Both packages use the same Jira environment variables:
 
@@ -71,13 +71,13 @@ Do not use broad future `v*` tags.
 Current helper entry points:
 
 ```bash
-make release-prep PACKAGE=jira2mcp VERSION=0.1.2
-make release-prep PACKAGE=jira2cli VERSION=0.1.0
+make release-prep PACKAGE=jira2mcp VERSION=X.Y.Z
+make release-prep PACKAGE=jira2cli VERSION=X.Y.Z
 make release PACKAGE=jira2mcp
 make push-release-tag PACKAGE=jira2mcp
 ```
 
-For the current migration, stop before any tag push, GitHub release, or PyPI publish until the Trusted Publishing and repo-boundary checks in `docs/releasing.md` are verified.
+Before any tag push, GitHub release, or PyPI publish, follow the Trusted Publishing and repository-boundary checks in `docs/releasing.md`.
 
 To see the available development targets, run:
 

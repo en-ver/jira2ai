@@ -10,22 +10,18 @@ Future release tags must be package-specific:
 - `jira2mcp-vX.Y.Z`
 - `jira2cli-vX.Y.Z`
 
-Legacy `v0.1.0` and `v0.1.1` tags are historical only. Do not use broad future `v*` tags.
+Legacy broad `v*` tags are historical only. Do not use them for future releases.
 
-## Current stop gates
+## Release boundaries
 
-Do not tag, push release tags, create GitHub Releases, or publish to PyPI in this migration until the following are verified manually:
+Prepare each release on a feature branch and merge its pull request into `main` before tagging. Before tag, GitHub Release, or PyPI publish operations, verify:
 
-- `.github/workflows/publish.yml` is the workflow that will handle package publishing.
-- GitHub environment `pypi` exists for that workflow.
-- Publishing uses OIDC / Trusted Publishing only.
-- No PyPI API token fallback is configured or used.
-- The repository is now `en-ver/jira2ai`.
-- Before the first post-rename release, verify PyPI Trusted Publishers are configured for owner `en-ver`, repository `jira2ai`, workflow `.github/workflows/publish.yml`, and environment `pypi`.
-- The existing `jira2mcp` PyPI project publisher must be updated to repository `jira2ai` before the first post-rename release.
-- `jira2cli` must be registered in PyPI Trusted Publishing for repository `jira2ai` before its first publish.
+- package publishing uses `.github/workflows/publish.yml` and GitHub environment `pypi`;
+- the PyPI Trusted Publisher maps owner `en-ver`, repository `jira2ai`, workflow `.github/workflows/publish.yml`, and environment `pypi`;
+- publishing uses OIDC / Trusted Publishing only, with no PyPI API-token fallback; and
+- the release tag is created from clean, current `main`.
 
-These are boundaries to verify before release operations, not confirmation that setup is already complete.
+These are per-release operational checks; do not proceed if any mapping or boundary differs.
 
 ## Release readiness
 
@@ -40,22 +36,24 @@ make version-current PACKAGE=jira2mcp
 make version-current PACKAGE=jira2cli
 ```
 
-Prepare a package release on a working branch:
+Prepare a package release on its feature branch:
 
 ```bash
-make release-prep PACKAGE=jira2mcp VERSION=0.1.2
-make release-prep PACKAGE=jira2cli VERSION=0.1.0
+make release-prep PACKAGE=jira2mcp VERSION=X.Y.Z
+make release-prep PACKAGE=jira2cli VERSION=X.Y.Z
 ```
 
 `make release-prep PACKAGE=... VERSION=...` currently:
 
 1. validates the selected package,
-2. bumps the selected package version,
+2. bumps the selected package project version,
 3. runs `uv lock`,
 4. runs `make check-ci`, and
 5. builds only the selected package.
 
-Create the local annotated release tag from a clean `main` branch:
+For a `jira2cli` release, explicitly synchronize `packages/jira2cli/src/jira2cli/__init__.py` `__version__` with the selected release version: the helper does not update it. Then run `uv lock`, `make check-ci`, and `make build PACKAGE=jira2cli`, and confirm the source and package versions agree before opening the release-prep PR.
+
+After that PR is merged, create the local annotated release tag from clean `main`:
 
 ```bash
 make release PACKAGE=jira2mcp
@@ -69,22 +67,10 @@ make push-release-tag PACKAGE=jira2mcp
 make push-release-tag PACKAGE=jira2cli
 ```
 
-Those commands create and push tags in the forms documented above, for example `jira2mcp-v0.1.2`.
+Those commands create and push tags in the forms documented above, such as `jira2mcp-vX.Y.Z`.
 
 ## Trusted Publishing boundary
 
-Repository files now assume this release shape:
+The release workflow is `.github/workflows/publish.yml`, uses GitHub environment `pypi`, and must publish through OIDC / Trusted Publishing only. For each release, verify the Trusted Publisher mapping is owner `en-ver`, repository `jira2ai`, workflow `.github/workflows/publish.yml`, and environment `pypi`; do not add or use a PyPI API-token fallback unless policy changes explicitly.
 
-- workflow file: `.github/workflows/publish.yml`
-- GitHub environment: `pypi`
-- PyPI auth model: OIDC / Trusted Publishing only
-- PyPI auth fallback: none; do not add API tokens unless policy changes explicitly
-
-Operational notes:
-
-- The repository is now `en-ver/jira2ai`.
-- Before the first post-rename release, verify each PyPI Trusted Publisher is configured for owner `en-ver`, repository `jira2ai`, workflow `.github/workflows/publish.yml`, and environment `pypi`.
-- `jira2mcp` already has release history, but its existing PyPI Trusted Publisher settings must be updated to repository `jira2ai` before the first post-rename release.
-- `jira2cli` must be registered in PyPI Trusted Publishing for repository `jira2ai` before its first publish.
-
-Until those checks are complete, stop before `make release`, `make push-release-tag`, or any manual publish step.
+Stop before `make release`, `make push-release-tag`, or any manual publish step if those checks fail.

@@ -1,11 +1,11 @@
 ---
 name: jira2cli
-description: Jira Cloud workflows through local `jira2cli` in this repo. Use when verifying `jira2cli`, discovering Jira metadata, reading issues/comments/worklogs, working with saved filters and transitions, downloading/uploading attachments, or safely mutating Jira issues.
+description: Jira Cloud workflows through the published `jira2cli` CLI. Use when verifying `jira2cli`, discovering Jira metadata, reading issues/comments/worklogs, working with saved filters and transitions, downloading/uploading attachments, or safely mutating Jira issues.
 ---
 
 # jira2cli
 
-Use `jira2cli` for Jira Cloud workflows from a local checkout of this repository.
+Use the published `jira2cli` CLI for Jira Cloud workflows with `uvx jira2cli`. It requires Python >=3.13.
 
 `jira2cli` is **Jira Cloud only**. Do not treat it as Jira Server/Data Center support.
 
@@ -13,7 +13,7 @@ It also does **not** provide dedicated issue assign commands, issue delete/archi
 
 ## References
 
-- [references/install-auth.md](references/install-auth.md) — Load when you need the supported local/dev command prefix, CLI verification, or Jira auth setup.
+- [references/install-auth.md](references/install-auth.md) — Load when you need the consumer command prefix, CLI verification, Jira auth setup, or local maintainer verification.
 - [references/project-discovery.md](references/project-discovery.md) — Load when you need to resolve the right Jira project key or discover issue types with `fields --project-key`.
 - [references/field-metadata.md](references/field-metadata.md) — Load before create/edit work when you need required fields, editable fields, or allowed values.
 - [references/user-identity-lookup.md](references/user-identity-lookup.md) — Load when a Jira user field needs an `accountId` or exact display name.
@@ -37,7 +37,7 @@ Required verification:
 - compare this skill against `packages/jira2cli/src/jira2cli/cli.py`
 - compare this skill against `packages/jira2cli/src/jira2cli/commands/*.py`
 - compare this skill against `packages/jira2cli/README.md`
-- verify commands and options against current help output from `uv run --locked jira2cli --help`
+- as a maintainer source check, verify commands and options against current local help output from `uv run --locked jira2cli --help`
 - verify any documented command-specific options against that command's `--help`
 
 If the skill text and the CLI/help output disagree, fix or qualify the docs before proceeding.
@@ -46,7 +46,7 @@ If the skill text and the CLI/help output disagree, fix or qualify the docs befo
 
 Supported credential modes:
 
-- `uv run jira2cli --credentials-file <path> ...`
+- `uvx jira2cli --credentials-file <path> ...`
 - environment variables `JIRA_URL`, `JIRA_USER`, and `JIRA_API_TOKEN` when `--credentials-file` is omitted
 
 There is **no** default credentials path and **no** implicit `JIRA_CREDENTIALS_FILE` behavior.
@@ -63,9 +63,9 @@ Credentials file shape:
 
 ## Common Safety Rules
 
-- This repo currently supports local/dev `jira2cli` usage from the workspace root: `uv run jira2cli ...`.
-- `--package jira2cli` is optional advanced workspace-member selection, not the normal local command form.
-- Do not claim `uvx jira2cli`, PyPI install, or wheel auto-discovery support unless the repo docs and CLI release flow are updated first.
+- Use `uvx jira2cli ...` for consumer CLI commands.
+- UVX runs the CLI but does not install or auto-discover the Pi skill; load this source-checkout skill explicitly when needed.
+- For repository contributor or maintainer checks after workspace setup, use `uv run --locked jira2cli ...`; `--package jira2cli` is optional advanced workspace-member selection.
 - Never print `JIRA_API_TOKEN` or other secrets.
 - Do not guess project keys, issue types, user identities, required Jira fields, attachment IDs, comment IDs, worklog IDs, transition names, saved filter IDs, or link direction.
 - Before create, edit, transition, comment, comment-update, comment-delete, link, delete-link, attachment, attachment-upload, attachment-delete, worklog-add, worklog-update, or worklog-delete actions, gather the relevant issue state or metadata first.
@@ -129,39 +129,39 @@ Credentials file shape:
 
 ## Common commands
 
-- `uv run --locked jira2cli --help`
-- `uv run jira2cli auth-status`
-- `uv run jira2cli --credentials-file <path> me --json`
-- `uv run jira2cli projects --query <text> --json`
-- `uv run jira2cli fields --project-key <PROJECT> --json`
-- `uv run jira2cli fields --project-key <PROJECT> --issue-type <TYPE> --json`
-- `uv run jira2cli fields --issue-key <KEY> --json`
-- `uv run jira2cli users <query> --max-results <N> --json`
-- `uv run jira2cli jql-syntax`
-- `uv run jira2cli search '<JQL>' --field key --field summary --field status --max-results <N> --json`
-- `uv run jira2cli read <KEY> --extra-field <FIELD_ID> --json`
-- `uv run jira2cli comments <KEY> --start-at <N> --max-results <N> --order-by -created --json`
-- `uv run jira2cli transitions <KEY> --json`
-- `uv run jira2cli transition <KEY> <TRANSITION_ID_OR_NAME> --json`
-- `uv run jira2cli filters --query <text> --json`
-- `uv run jira2cli filter-run <FILTER_ID> --field key --field summary --json`
-- `uv run jira2cli worklogs <KEY> --json`
-- `uv run jira2cli worklog-add <KEY> '1h 30m' --comment <text> --json`
-- `uv run jira2cli worklog-update <KEY> <WORKLOG_ID> --time-spent '45m' --json`
-- `uv run jira2cli worklog-delete <KEY> <WORKLOG_ID> --json`
-- `uv run jira2cli worklog-report --start-date <YYYY-MM-DD> --end-date <YYYY-MM-DD> --jql '<JQL>' --account-id <ACCOUNT_ID> --max-issues <N> --include-details --json`
-- `uv run jira2cli attachment <ATTACHMENT_ID> --output-path <path>`
-- `uv run jira2cli attachment-list <KEY> --json`
-- `uv run jira2cli attachment-read <ATTACHMENT_ID> --json`
-- `uv run jira2cli attachment-download <ATTACHMENT_ID> --output-path <path> --json`
-- `uv run jira2cli attachment-upload <KEY> <PATH> --json`
-- `uv run jira2cli attachment-delete <ATTACHMENT_ID> --json`
-- `uv run jira2cli create <PROJECT> <TYPE> <SUMMARY> --description <text> --fields-json '<json>' --json`
-- `uv run jira2cli edit <KEY> --summary <text> --description <text> --fields-json '<json>' --json`
-- `uv run jira2cli comment <KEY> <BODY> --json`
-- `uv run jira2cli comment-update <KEY> <COMMENT_ID> <BODY> --json`
-- `uv run jira2cli comment-delete <KEY> <COMMENT_ID> --json`
-- `uv run jira2cli issue-links <KEY> --json`
-- `uv run jira2cli link-types --json`
-- `uv run jira2cli add-link <LINK_TYPE> <OUTWARD_KEY> <INWARD_KEY> --json`
-- `uv run jira2cli delete-link <LINK_ID> --json`
+- `uvx jira2cli --help`
+- `uvx jira2cli auth-status`
+- `uvx jira2cli --credentials-file <path> me --json`
+- `uvx jira2cli projects --query <text> --json`
+- `uvx jira2cli fields --project-key <PROJECT> --json`
+- `uvx jira2cli fields --project-key <PROJECT> --issue-type <TYPE> --json`
+- `uvx jira2cli fields --issue-key <KEY> --json`
+- `uvx jira2cli users <query> --max-results <N> --json`
+- `uvx jira2cli jql-syntax`
+- `uvx jira2cli search '<JQL>' --field key --field summary --field status --max-results <N> --json`
+- `uvx jira2cli read <KEY> --extra-field <FIELD_ID> --json`
+- `uvx jira2cli comments <KEY> --start-at <N> --max-results <N> --order-by -created --json`
+- `uvx jira2cli transitions <KEY> --json`
+- `uvx jira2cli transition <KEY> <TRANSITION_ID_OR_NAME> --json`
+- `uvx jira2cli filters --query <text> --json`
+- `uvx jira2cli filter-run <FILTER_ID> --field key --field summary --json`
+- `uvx jira2cli worklogs <KEY> --json`
+- `uvx jira2cli worklog-add <KEY> '1h 30m' --comment <text> --json`
+- `uvx jira2cli worklog-update <KEY> <WORKLOG_ID> --time-spent '45m' --json`
+- `uvx jira2cli worklog-delete <KEY> <WORKLOG_ID> --json`
+- `uvx jira2cli worklog-report --start-date <YYYY-MM-DD> --end-date <YYYY-MM-DD> --jql '<JQL>' --account-id <ACCOUNT_ID> --max-issues <N> --include-details --json`
+- `uvx jira2cli attachment <ATTACHMENT_ID> --output-path <path>`
+- `uvx jira2cli attachment-list <KEY> --json`
+- `uvx jira2cli attachment-read <ATTACHMENT_ID> --json`
+- `uvx jira2cli attachment-download <ATTACHMENT_ID> --output-path <path> --json`
+- `uvx jira2cli attachment-upload <KEY> <PATH> --json`
+- `uvx jira2cli attachment-delete <ATTACHMENT_ID> --json`
+- `uvx jira2cli create <PROJECT> <TYPE> <SUMMARY> --description <text> --fields-json '<json>' --json`
+- `uvx jira2cli edit <KEY> --summary <text> --description <text> --fields-json '<json>' --json`
+- `uvx jira2cli comment <KEY> <BODY> --json`
+- `uvx jira2cli comment-update <KEY> <COMMENT_ID> <BODY> --json`
+- `uvx jira2cli comment-delete <KEY> <COMMENT_ID> --json`
+- `uvx jira2cli issue-links <KEY> --json`
+- `uvx jira2cli link-types --json`
+- `uvx jira2cli add-link <LINK_TYPE> <OUTWARD_KEY> <INWARD_KEY> --json`
+- `uvx jira2cli delete-link <LINK_ID> --json`

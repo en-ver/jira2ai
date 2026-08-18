@@ -121,7 +121,7 @@ Descriptions and comments accept Markdown and are converted to Atlassian Documen
 
 Before a create or edit, call `jira_fields` for the target project and issue type. Before a transition, link, comment update/delete, attachment deletion, or worklog mutation, read the current state and use exact IDs or names. Attachment uploads must stay within the server working directory. Downloads must stay within advertised MCP roots, or the server working directory when roots are unavailable. All reads and writes remain subject to the configured Jira account's permissions.
 
-For a local CLI instead, see the [jira2cli guide](https://github.com/en-ver/jira2ai/blob/main/packages/jira2cli/README.md). Contribution and maintainer guidance is in the [repository contributing guide](https://github.com/en-ver/jira2ai/blob/main/CONTRIBUTING.md).
+For the published Jira CLI, see the [jira2cli guide](https://github.com/en-ver/jira2ai/blob/main/packages/jira2cli/README.md). Contribution and maintainer guidance is in the [repository contributing guide](https://github.com/en-ver/jira2ai/blob/main/CONTRIBUTING.md).
 
 ## License
 
