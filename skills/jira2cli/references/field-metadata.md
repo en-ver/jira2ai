@@ -15,7 +15,7 @@ Use this before issue creation or issue edits whenever required fields, editable
    - `defaultValue`
    - any extra raw Jira properties present in the output
 4. When `allowedValues` already includes components, versions, priorities, or option lists, use those exact values instead of guessing.
-5. If you need the untouched API payload, rerun with `--raw` instead of `--json`.
+5. If you need API-oriented output, rerun with `--raw` instead of `--json`. `--raw` renders API-oriented output by parsing JSON when needed, then pretty-printing it with recursively sorted object keys; it does not emit untouched HTTP bytes.
 
 ## Edit Metadata
 

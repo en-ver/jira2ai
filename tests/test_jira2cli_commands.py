@@ -21,6 +21,15 @@ from typer.testing import CliRunner
 
 runner = CliRunner()
 
+FIELD_SELECTION_HELP = (
+    "Repeat --field once per Jira field; values are not comma-split. "
+    "Selection is field-level; Jira envelope metadata may remain."
+)
+RAW_OUTPUT_HELP = (
+    "Render API-oriented output as normalized, pretty-printed JSON with sorted "
+    "object keys."
+)
+
 
 def _get_registered_command(command_name: str):
     return cast(Any, get_command(app)).commands[command_name]
@@ -33,6 +42,25 @@ def _patch_helpers(monkeypatch: pytest.MonkeyPatch, module_path: str, **groups) 
             **{name: SimpleNamespace(**methods) for name, methods in groups.items()}
         ),
     )
+
+
+def test_search_field_help_explains_field_level_selection() -> None:
+    command = _get_registered_command("search")
+    fields = next(param for param in command.params if param.name == "fields")
+
+    assert fields.help == FIELD_SELECTION_HELP
+
+
+def test_all_raw_output_options_describe_normalized_json() -> None:
+    raw_output_options = [
+        param
+        for command in get_command(app).commands.values()
+        for param in command.params
+        if param.name == "raw_output"
+    ]
+
+    assert raw_output_options
+    assert all(option.help == RAW_OUTPUT_HELP for option in raw_output_options)
 
 
 def test_root_help_lists_registered_commands() -> None:

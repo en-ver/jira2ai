@@ -29,6 +29,6 @@ After confirmation only, run:
 3. After confirmation only, run:
    - `uvx jira2cli delete-link <LINK_ID> --json`
 
-Use `--raw` instead of `--json` only when you need the untouched API payload.
+Use `--raw` instead of `--json` only when you need API-oriented output. `--raw` renders API-oriented output by parsing JSON when needed, then pretty-printing it with recursively sorted object keys; it does not emit untouched HTTP bytes.
 
 Never guess link direction or delete a link by description alone.

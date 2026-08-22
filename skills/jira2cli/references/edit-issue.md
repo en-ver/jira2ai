@@ -14,6 +14,6 @@ Use this only when the user has asked to change an existing Jira issue.
 5. Summarize the current values, intended edits, and exact `--fields-json` payload, plus any new summary or description text. Ask the user to confirm.
 6. After confirmation only, run:
    - `uvx jira2cli edit <KEY> --summary <text> --description <text> --fields-json '<json>' --json`
-7. If you need the untouched API payload instead of structured confirmation, rerun with `--raw` instead of `--json`.
+7. If you need API-oriented output instead of structured confirmation, rerun with `--raw` instead of `--json`. `--raw` renders API-oriented output by parsing JSON when needed, then pretty-printing it with recursively sorted object keys; it does not emit untouched HTTP bytes.
 
 Do not guess field IDs or values. If metadata does not show the field you need, stop and ask before editing.

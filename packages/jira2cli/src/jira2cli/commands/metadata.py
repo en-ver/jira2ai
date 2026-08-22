@@ -34,7 +34,7 @@ def fields_command(
     raw_output: bool = typer.Option(
         False,
         "--raw",
-        help="Render the raw API payload as JSON.",
+        help="Render API-oriented output as normalized, pretty-printed JSON with sorted object keys.",
     ),
     json_output: bool = typer.Option(
         False,
@@ -82,7 +82,7 @@ def project_command(
     raw_output: bool = typer.Option(
         False,
         "--raw",
-        help="Render the raw API payload as JSON.",
+        help="Render API-oriented output as normalized, pretty-printed JSON with sorted object keys.",
     ),
     json_output: bool = typer.Option(
         False,
@@ -117,7 +117,7 @@ def projects_command(
     raw_output: bool = typer.Option(
         False,
         "--raw",
-        help="Render the raw API payload as JSON.",
+        help="Render API-oriented output as normalized, pretty-printed JSON with sorted object keys.",
     ),
     json_output: bool = typer.Option(
         False,
@@ -147,7 +147,7 @@ def statuses_command(
     raw_output: bool = typer.Option(
         False,
         "--raw",
-        help="Render the raw API payload as JSON.",
+        help="Render API-oriented output as normalized, pretty-printed JSON with sorted object keys.",
     ),
     json_output: bool = typer.Option(
         False,
@@ -177,7 +177,7 @@ def priorities_command(
     raw_output: bool = typer.Option(
         False,
         "--raw",
-        help="Render the raw API payload as JSON.",
+        help="Render API-oriented output as normalized, pretty-printed JSON with sorted object keys.",
     ),
     json_output: bool = typer.Option(
         False,
@@ -215,7 +215,7 @@ def users_command(
     raw_output: bool = typer.Option(
         False,
         "--raw",
-        help="Render the raw API payload as JSON.",
+        help="Render API-oriented output as normalized, pretty-printed JSON with sorted object keys.",
     ),
     json_output: bool = typer.Option(
         False,
@@ -245,7 +245,7 @@ def link_types_command(
     raw_output: bool = typer.Option(
         False,
         "--raw",
-        help="Render the raw API payload as JSON.",
+        help="Render API-oriented output as normalized, pretty-printed JSON with sorted object keys.",
     ),
     json_output: bool = typer.Option(
         False,

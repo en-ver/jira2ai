@@ -16,6 +16,6 @@ Use this only when the user has asked for a new Jira issue.
 6. Summarize the chosen project, issue type, summary, description, and exact field choices. Ask the user to confirm.
 7. After confirmation only, run:
    - `uvx jira2cli create <PROJECT> <TYPE> <SUMMARY> --description <text> --fields-json '<json>' --json`
-8. If you need the untouched API payload instead of structured confirmation, rerun with `--raw` instead of `--json`.
+8. If you need API-oriented output instead of structured confirmation, rerun with `--raw` instead of `--json`. `--raw` renders API-oriented output by parsing JSON when needed, then pretty-printing it with recursively sorted object keys; it does not emit untouched HTTP bytes.
 
 Do not guess required fields or send placeholder values just to make the create succeed.
