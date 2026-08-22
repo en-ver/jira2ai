@@ -523,11 +523,15 @@ def test_filters_commands_delegate_to_helpers(monkeypatch: pytest.MonkeyPatch) -
                 calls.append(("search", (query, start_at, max_results)))
                 or HelperResult.text_only("filter search")
             ),
-            "run": lambda filter_id, *, max_results, fields: (
-                calls.append(("run", (filter_id, max_results, fields)))
+            "run": lambda filter_id, *, max_results, fields, next_page_token=None: (
+                calls.append(("run", (filter_id, max_results, fields, next_page_token)))
                 or HelperResult.with_data(
                     "ignored",
-                    {"filter_id": filter_id, "fields": fields},
+                    {
+                        "filter_id": filter_id,
+                        "fields": fields,
+                        "nextPageToken": "next-filter-page",
+                    },
                 )
             ),
         },
@@ -551,6 +555,8 @@ def test_filters_commands_delegate_to_helpers(monkeypatch: pytest.MonkeyPatch) -
             "summary",
             "--field",
             "status",
+            "--next-page-token",
+            "filter-token /?=+",
             "--raw",
         ],
     )
@@ -566,7 +572,8 @@ def test_filters_commands_delegate_to_helpers(monkeypatch: pytest.MonkeyPatch) -
         '    "summary",\n'
         '    "status"\n'
         "  ],\n"
-        '  "filter_id": "10400"\n'
+        '  "filter_id": "10400",\n'
+        '  "nextPageToken": "next-filter-page"\n'
         "}\n"
     )
     assert calls == [
@@ -575,7 +582,10 @@ def test_filters_commands_delegate_to_helpers(monkeypatch: pytest.MonkeyPatch) -
         ("get_api", None),
         ("search", ("mine", 3, 4)),
         ("get_api", None),
-        ("run", ("10400", 5, ["summary", "status"])),
+        (
+            "run",
+            ("10400", 5, ["summary", "status"], "filter-token /?=+"),
+        ),
     ]
 
 

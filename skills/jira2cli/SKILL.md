@@ -73,6 +73,7 @@ Credentials file shape:
 - Prefer `--json` for structured reads and structured mutation confirmations.
 - Use `--raw` only when you need the untouched API payload, and do not pass `--raw` and `--json` together.
 - `filter-run` returns the same search-shaped result as `search` after resolving the saved filter's JQL.
+- `search` and `filter-run` return one page per invocation. `--max-results` is per-page (default 20, maximum 50). With `--json`, continue only while `nextPageToken` is non-empty, forwarding it unchanged as `--next-page-token`; do not use `total` to decide. Keep the JQL (or saved filter), requested fields, and page size stable. Do not edit a saved filter during continuation. Atlassian expires each `nextPageToken` in seven days, so complete pagination within that window; if it expires, rerun the search or filter from the first page.
 
 ## Flat command surface
 
@@ -138,13 +139,13 @@ Credentials file shape:
 - `uvx jira2cli fields --issue-key <KEY> --json`
 - `uvx jira2cli users <query> --max-results <N> --json`
 - `uvx jira2cli jql-syntax`
-- `uvx jira2cli search '<JQL>' --field key --field summary --field status --max-results <N> --json`
+- `uvx jira2cli search '<JQL>' --field key --field summary --field status --max-results <N> --next-page-token '<TOKEN>' --json`
 - `uvx jira2cli read <KEY> --extra-field <FIELD_ID> --json`
 - `uvx jira2cli comments <KEY> --start-at <N> --max-results <N> --order-by -created --json`
 - `uvx jira2cli transitions <KEY> --json`
 - `uvx jira2cli transition <KEY> <TRANSITION_ID_OR_NAME> --json`
 - `uvx jira2cli filters --query <text> --json`
-- `uvx jira2cli filter-run <FILTER_ID> --field key --field summary --json`
+- `uvx jira2cli filter-run <FILTER_ID> --field key --field summary --max-results <N> --next-page-token '<TOKEN>' --json`
 - `uvx jira2cli worklogs <KEY> --json`
 - `uvx jira2cli worklog-add <KEY> '1h 30m' --comment <text> --json`
 - `uvx jira2cli worklog-update <KEY> <WORKLOG_ID> --time-spent '45m' --json`

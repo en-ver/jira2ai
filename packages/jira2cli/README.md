@@ -61,6 +61,30 @@ Run `uvx jira2cli --help` for the current command and option help.
 
 Most structured commands accept `--json` for helper output or `--raw` for the untouched API payload; do not combine them. `filter-run` resolves a saved filter's JQL and returns the same search-shaped result as `search`.
 
+## Search pagination
+
+Each `search` or `filter-run` invocation returns exactly one page. `--max-results` defaults to 20 and has a 50-item ceiling; it is a **per-page** limit. Structured `--json` output preserves the helper's `nextPageToken`. When it is non-empty, pass it unchanged as `--next-page-token` on the next invocation; stop when it is absent or empty. Do not use `total` to decide whether to continue. Atlassian expires each `nextPageToken` in seven days, so complete pagination within that window; if it expires, rerun the search or filter from the first page.
+
+Keep the JQL, requested `--field` values, and `--max-results` unchanged for every page. This Bash example uses arrays so the JQL and opaque token remain safely quoted:
+
+```bash
+jql='project = PROJ ORDER BY created DESC'
+page_size=20
+fields=(--field key --field summary)
+token=''
+
+while :; do
+  command=(uvx jira2cli search "$jql" --max-results "$page_size" "${fields[@]}" --json)
+  [[ -n "$token" ]] && command+=(--next-page-token "$token")
+  page="$("${command[@]}")" || exit $?
+  printf '%s\n' "$page"
+  token="$(jq -r '.nextPageToken // empty' <<<"$page")"
+  [[ -n "$token" ]] || break
+done
+```
+
+For saved filters, use the same loop with `filter-run <FILTER_ID>` in place of `search <JQL>`, retaining the exact filter ID, fields, and page size. Do not edit the saved filter until the continuation is complete.
+
 ## Examples
 
 ```bash

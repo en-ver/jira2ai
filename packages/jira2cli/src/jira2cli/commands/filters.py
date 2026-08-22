@@ -78,7 +78,12 @@ def filter_run_command(
         "--max-results",
         min=1,
         max=50,
-        help="Maximum issues to return.",
+        help="Maximum issues to return per page.",
+    ),
+    next_page_token: str | None = typer.Option(
+        None,
+        "--next-page-token",
+        help="Opaque token from the previous result page.",
     ),
     fields: list[str] | None = typer.Option(
         None,
@@ -101,11 +106,16 @@ def filter_run_command(
 
     try:
         api = client.get_api()
-        result = JiraHelpers(api).filters.run(
-            filter_id,
-            max_results=max_results,
-            fields=fields,
-        )
+        filters = JiraHelpers(api).filters
+        if next_page_token is None:
+            result = filters.run(filter_id, max_results=max_results, fields=fields)
+        else:
+            result = filters.run(
+                filter_id,
+                max_results=max_results,
+                fields=fields,
+                next_page_token=next_page_token,
+            )
     except Exception as exc:
         raise_cli_exception(exc)
 
