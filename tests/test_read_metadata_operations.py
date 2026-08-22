@@ -247,6 +247,7 @@ def test_search_operation_formats_results_and_caps_max_results(
             "jql": "project = PROJ",
             "max_results": 50,
             "fields": SEARCH_FIELDS,
+            "next_page_token": None,
         }
     ]
     assert result.data == search_response

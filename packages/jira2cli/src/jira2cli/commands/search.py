@@ -20,7 +20,12 @@ def search_command(
         "--max-results",
         min=1,
         max=50,
-        help="Maximum issues to return.",
+        help="Maximum issues to return per page.",
+    ),
+    next_page_token: str | None = typer.Option(
+        None,
+        "--next-page-token",
+        help="Opaque token from the previous result page.",
     ),
     fields: list[str] | None = typer.Option(
         None,
@@ -43,11 +48,16 @@ def search_command(
 
     try:
         api = client.get_api()
-        result = JiraHelpers(api).search.issues(
-            jql,
-            max_results=max_results,
-            fields=fields,
-        )
+        search = JiraHelpers(api).search
+        if next_page_token is None:
+            result = search.issues(jql, max_results=max_results, fields=fields)
+        else:
+            result = search.issues(
+                jql,
+                max_results=max_results,
+                fields=fields,
+                next_page_token=next_page_token,
+            )
     except Exception as exc:
         raise_cli_exception(exc)
 

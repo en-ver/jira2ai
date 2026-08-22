@@ -21,8 +21,25 @@ Do not guess transition names or assume a workflow state exists in the target pr
 2. Narrow by name when needed:
    - `uvx jira2cli filters --query <text> --json`
 3. Capture the exact saved filter ID before running it.
-4. Run the filter through the normal search flow:
-   - `uvx jira2cli filter-run <FILTER_ID> --field key --field summary --json`
+4. Run the filter through the normal search flow. `--max-results` is a per-page limit (default 20; maximum 50):
+   - `uvx jira2cli filter-run <FILTER_ID> --field key --field summary --max-results <N> --json`
 5. Add repeated `--field` options when you need more search fields.
+6. Continue only while structured `--json` output has a non-empty `nextPageToken`; forward it unchanged with `--next-page-token`. Do not use `total` to decide. Keep the exact filter ID, fields, and page size stable, and do not edit the saved filter while continuing. Atlassian expires each `nextPageToken` in seven days, so complete pagination within that window; if it expires, rerun the search or filter from the first page:
+
+   ```bash
+   filter_id=10400
+   page_size=20
+   fields=(--field key --field summary)
+   token=''
+
+   while :; do
+     command=(uvx jira2cli filter-run "$filter_id" --max-results "$page_size" "${fields[@]}" --json)
+     [[ -n "$token" ]] && command+=(--next-page-token "$token")
+     page="$("${command[@]}")" || exit $?
+     printf '%s\n' "$page"
+     token="$(jq -r '.nextPageToken // empty' <<<"$page")"
+     [[ -n "$token" ]] || break
+   done
+   ```
 
 `filter-run` returns the same search-shaped result as `search` after resolving the saved filter's JQL.

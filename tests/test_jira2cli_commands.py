@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+import json
 from textwrap import dedent
 from types import SimpleNamespace
 from typing import Any, cast
@@ -89,53 +90,62 @@ def test_read_command_delegates_to_helpers(monkeypatch: pytest.MonkeyPatch) -> N
     ]
 
 
-def test_search_command_json_output_uses_structured_data(
+def test_search_command_manually_continues_with_an_opaque_token(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    calls: list[tuple[str, dict[str, object]]] = []
+    token = "opaque token /?=+"
+
     monkeypatch.setattr("jira2cli.client.get_api", lambda: object())
+
+    def fake_issues(jql: str, **kwargs: object) -> HelperResult:
+        calls.append((jql, kwargs))
+        return HelperResult.with_data(
+            "ignored",
+            {
+                "issues": [],
+                "nextPageToken": token if len(calls) == 1 else None,
+            },
+        )
+
     _patch_helpers(
         monkeypatch,
         "jira2cli.commands.search",
-        search={
-            "issues": lambda jql, *, max_results, fields: HelperResult.with_data(
-                "ignored",
-                {
-                    "jql": jql,
-                    "max_results": max_results,
-                    "fields": fields,
-                    "api_matches": True,
-                },
-            )
-        },
+        search={"issues": fake_issues},
     )
 
-    result = runner.invoke(
-        app,
-        [
-            "search",
-            "project = PROJ",
-            "--max-results",
-            "7",
-            "--field",
-            "summary",
-            "--field",
-            "status",
-            "--json",
-        ],
-    )
+    argv = [
+        "search",
+        "project = PROJ ORDER BY created DESC",
+        "--max-results",
+        "7",
+        "--field",
+        "summary",
+        "--field",
+        "status",
+        "--json",
+    ]
+    first_result = runner.invoke(app, argv)
+    second_result = runner.invoke(app, [*argv, "--next-page-token", token])
 
-    assert result.exit_code == 0
-    assert result.stdout == (
-        "{\n"
-        '  "api_matches": true,\n'
-        '  "fields": [\n'
-        '    "summary",\n'
-        '    "status"\n'
-        "  ],\n"
-        '  "jql": "project = PROJ",\n'
-        '  "max_results": 7\n'
-        "}\n"
-    )
+    assert first_result.exit_code == 0
+    assert json.loads(first_result.stdout)["nextPageToken"] == token
+    assert second_result.exit_code == 0
+    assert json.loads(second_result.stdout)["nextPageToken"] is None
+    assert calls == [
+        (
+            "project = PROJ ORDER BY created DESC",
+            {"max_results": 7, "fields": ["summary", "status"]},
+        ),
+        (
+            "project = PROJ ORDER BY created DESC",
+            {
+                "max_results": 7,
+                "fields": ["summary", "status"],
+                "next_page_token": token,
+            },
+        ),
+    ]
 
 
 def test_worklog_report_command_help_is_jql_only() -> None:
