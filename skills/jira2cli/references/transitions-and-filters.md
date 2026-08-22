@@ -23,7 +23,7 @@ Do not guess transition names or assume a workflow state exists in the target pr
 3. Capture the exact saved filter ID before running it.
 4. Run the filter through the normal search flow. `--max-results` is a per-page limit (default 20; maximum 50):
    - `uvx jira2cli filter-run <FILTER_ID> --field key --field summary --max-results <N> --json`
-5. `--field` is singular and repeatable: `--field key --field summary`; `--fields` does not exist, and comma-separated and list-style values are not expanded. Each occurrence requests one whole Jira field, not a nested JSON path. Jira envelope metadata may remain. Plain output remains the helper's fixed compact view; use structured output and local reduction with `jq` for arbitrary requested fields.
+5. `--field` is singular and repeatable: `--field key --field summary`; `--fields` does not exist, and values are not comma-split. If omitted, fields default to `summary, status, assignee, priority, issuetype, created, updated`. Projection is whole-field: `assignee` may include Jira-permitted nested identity, email, and avatar data; envelope metadata may remain. Plain output remains the helper's fixed compact view; use structured output and local reduction with `jq` for arbitrary requested fields.
 6. Continue only while structured `--json` output has a non-empty `nextPageToken`; forward it unchanged with `--next-page-token`. Do not use `total` to decide. Keep the exact filter ID, fields, and page size stable, and do not edit the saved filter while continuing. Atlassian expires each `nextPageToken` in seven days, so complete pagination within that window; if it expires, rerun the search or filter from the first page. This loop captures each complete page and emits only issue keys:
 
    ```bash

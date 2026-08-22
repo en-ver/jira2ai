@@ -88,7 +88,13 @@ def filter_run_command(
     fields: list[str] | None = typer.Option(
         None,
         "--field",
-        help="Repeat --field once per Jira field; values are not comma-split. Selection is field-level; Jira envelope metadata may remain.",
+        help=(
+            "Repeat --field per Jira field; values are not comma-split. "
+            "If omitted, fields default to summary, status, assignee, priority, "
+            "issuetype, created, updated. Projection is whole-field: assignee may "
+            "include Jira-permitted nested identity, email, and avatar data; "
+            "envelope metadata may remain."
+        ),
     ),
     raw_output: bool = typer.Option(
         False,

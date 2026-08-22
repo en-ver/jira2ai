@@ -22,8 +22,11 @@ from typer.testing import CliRunner
 runner = CliRunner()
 
 FIELD_SELECTION_HELP = (
-    "Repeat --field once per Jira field; values are not comma-split. "
-    "Selection is field-level; Jira envelope metadata may remain."
+    "Repeat --field per Jira field; values are not comma-split. "
+    "If omitted, fields default to summary, status, assignee, priority, "
+    "issuetype, created, updated. Projection is whole-field: assignee may "
+    "include Jira-permitted nested identity, email, and avatar data; "
+    "envelope metadata may remain."
 )
 RAW_OUTPUT_HELP = (
     "Render API-oriented output as normalized, pretty-printed JSON with sorted "
