@@ -31,7 +31,7 @@ def worklogs_command(
     raw_output: bool = typer.Option(
         False,
         "--raw",
-        help="Render the raw API payload as JSON.",
+        help="Render API-oriented output as normalized, pretty-printed JSON with sorted object keys.",
     ),
     json_output: bool = typer.Option(
         False,
@@ -80,7 +80,7 @@ def worklog_add_command(
     raw_output: bool = typer.Option(
         False,
         "--raw",
-        help="Render the raw API payload as JSON.",
+        help="Render API-oriented output as normalized, pretty-printed JSON with sorted object keys.",
     ),
     json_output: bool = typer.Option(
         False,
@@ -132,7 +132,7 @@ def worklog_update_command(
     raw_output: bool = typer.Option(
         False,
         "--raw",
-        help="Render the raw API payload as JSON.",
+        help="Render API-oriented output as normalized, pretty-printed JSON with sorted object keys.",
     ),
     json_output: bool = typer.Option(
         False,
@@ -170,7 +170,7 @@ def worklog_delete_command(
     raw_output: bool = typer.Option(
         False,
         "--raw",
-        help="Render the raw API payload as JSON.",
+        help="Render API-oriented output as normalized, pretty-printed JSON with sorted object keys.",
     ),
     json_output: bool = typer.Option(
         False,
@@ -237,7 +237,7 @@ def worklog_report_command(
     raw_output: bool = typer.Option(
         False,
         "--raw",
-        help="Render the raw API payload as JSON.",
+        help="Render API-oriented output as normalized, pretty-printed JSON with sorted object keys.",
     ),
     json_output: bool = typer.Option(
         False,

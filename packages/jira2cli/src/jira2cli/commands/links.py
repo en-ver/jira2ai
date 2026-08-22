@@ -18,7 +18,7 @@ def issue_links_command(
     raw_output: bool = typer.Option(
         False,
         "--raw",
-        help="Render the raw API payload as JSON.",
+        help="Render API-oriented output as normalized, pretty-printed JSON with sorted object keys.",
     ),
     json_output: bool = typer.Option(
         False,
@@ -51,7 +51,7 @@ def add_link_command(
     raw_output: bool = typer.Option(
         False,
         "--raw",
-        help="Render the raw API payload as JSON.",
+        help="Render API-oriented output as normalized, pretty-printed JSON with sorted object keys.",
     ),
     json_output: bool = typer.Option(
         False,
@@ -86,7 +86,7 @@ def delete_link_command(
     raw_output: bool = typer.Option(
         False,
         "--raw",
-        help="Render the raw API payload as JSON.",
+        help="Render API-oriented output as normalized, pretty-printed JSON with sorted object keys.",
     ),
     json_output: bool = typer.Option(
         False,

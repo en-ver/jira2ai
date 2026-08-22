@@ -8,23 +8,37 @@ Use this to inspect Jira issues before deciding on edits, comments, links, workl
    - `uvx jira2cli jql-syntax`
 2. Search for candidate issues. `--max-results` is a per-page limit (default 20; maximum 50):
    - `uvx jira2cli search '<JQL>' --field key --field summary --field status --max-results <N> --json`
-3. Continue a search only while the structured output has a non-empty `nextPageToken`. Forward that opaque value unchanged with `--next-page-token`, retaining the exact JQL, fields, and page size; do not use `total` to decide. Atlassian expires each `nextPageToken` in seven days, so complete pagination within that window; if it expires, rerun the search or filter from the first page. This Bash loop keeps values safely quoted:
+
+   `--field` is singular and repeatable: `--field key --field summary`; `--fields` does not exist. Comma-separated and list-style values are not expanded. Each occurrence requests one whole Jira field, not a nested JSON path: `--field assignee` may return the complete nested assignee object, not only `assignee.displayName`. Jira may retain issue-envelope members such as `id`, `key`, and `self`, plus search metadata such as `isLast`, `nextPageToken`, and optional `warnings`, `names`, or `schema`. Plain output remains the helper's fixed compact view; use structured output and local reduction with `jq` for arbitrary requested fields.
+3. Continue a search only while the structured output has a non-empty `nextPageToken`. Forward that opaque value unchanged with `--next-page-token`, retaining the exact JQL, fields, and page size; do not use `total` to decide. Atlassian expires each `nextPageToken` in seven days, so complete pagination within that window; if it expires, rerun the search or filter from the first page. This Bash loop keeps values safely quoted, captures each complete page, and emits only issue keys:
 
    ```bash
    jql='project = PROJ ORDER BY created DESC'
    page_size=20
-   fields=(--field key --field summary --field status)
+   fields=(--field key)
    token=''
+   rows_received=0
 
    while :; do
      command=(uvx jira2cli search "$jql" --max-results "$page_size" "${fields[@]}" --json)
      [[ -n "$token" ]] && command+=(--next-page-token "$token")
+
      page="$("${command[@]}")" || exit $?
-     printf '%s\n' "$page"
-     token="$(jq -r '.nextPageToken // empty' <<<"$page")"
+
+     page_rows="$(jq '.issues | length' <<<"$page")" || exit $?
+     rows_received=$((rows_received + page_rows))
+
+     jq -r '.issues[].key' <<<"$page" || exit $?
+     jq -c '.warnings[]? | {jira_warning: .}' <<<"$page" >&2 || exit $?
+
+     token="$(jq -r '.nextPageToken // empty' <<<"$page")" || exit $?
      [[ -n "$token" ]] || break
    done
+
+   printf '{"rows_received":%d}\n' "$rows_received" >&2
    ```
+
+   `page_rows` is the number of issue rows received on that page, and `rows_received` is the sum of rows observed across fetched pages. It is not an authoritative Jira-wide `total` or necessarily a unique-issue count: search results can change while paging, so duplicates or omissions remain possible. `.warnings` contains optional Jira/API warnings; they do not report clipping imposed by an agent harness, terminal, or other external consumer. Absence of Jira warnings does not prove that an external display retained all output. This technique protects callers when clipping occurs after shell capture. If a harness terminates or limits subprocess output before command substitution completes, reduction must happen inside that boundary; this option deliberately adds no built-in compact mode.
 
 4. Read a specific issue in detail:
    - `uvx jira2cli read <KEY> --json`
@@ -34,7 +48,7 @@ Use this to inspect Jira issues before deciding on edits, comments, links, workl
    - `uvx jira2cli comments <KEY> --json`
 7. Use pagination or reverse ordering when the thread is long or you need the newest entries first:
    - `uvx jira2cli comments <KEY> --start-at <N> --max-results <N> --order-by -created --json`
-8. If you need the untouched API payload for a search, issue read, or comments read, rerun the same command with `--raw` instead of `--json`.
+8. If you need API-oriented output for a search, issue read, or comments read, rerun the same command with `--raw` instead of `--json`. `--raw` renders API-oriented output by parsing JSON when needed, then pretty-printing it with recursively sorted object keys; it does not emit untouched HTTP bytes.
 9. If the search is still too broad, refine the JQL and rerun instead of acting on partial context.
 
 Summarize the current issue state before any later mutation.

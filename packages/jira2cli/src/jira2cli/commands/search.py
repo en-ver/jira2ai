@@ -30,12 +30,12 @@ def search_command(
     fields: list[str] | None = typer.Option(
         None,
         "--field",
-        help="Field to include in the search response. May be repeated.",
+        help="Repeat --field once per Jira field; values are not comma-split. Selection is field-level; Jira envelope metadata may remain.",
     ),
     raw_output: bool = typer.Option(
         False,
         "--raw",
-        help="Render the raw API payload as JSON.",
+        help="Render API-oriented output as normalized, pretty-printed JSON with sorted object keys.",
     ),
     json_output: bool = typer.Option(
         False,

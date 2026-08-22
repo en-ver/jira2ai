@@ -12,7 +12,7 @@ Use this when you need a worklog report for issues selected by JQL within a UTC 
 3. Use `--account-id <ACCOUNT_ID>` when the report should include worklogs from only one Jira user.
 4. Use `--max-issues <N>` when you need a smaller or larger scan limit than the default `100`.
 5. Add `--include-details` when you need optional detail fields such as `updateAuthor`, `visibility`, `comment`, or `properties`.
-6. Use `--raw` instead of `--json` when you need the untouched API payload.
+6. Use `--raw` instead of `--json` when you need API-oriented output. `--raw` renders API-oriented output by parsing JSON when needed, then pretty-printing it with recursively sorted object keys; it does not emit untouched HTTP bytes.
 
 ## Notes
 

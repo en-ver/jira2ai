@@ -90,6 +90,16 @@ def test_root_help_lists_stage9_commands_and_credentials_flag() -> None:
         assert command_name in help_output
 
 
+def test_filter_run_field_help_explains_field_level_selection() -> None:
+    command = _get_registered_command("filter-run")
+    fields = next(param for param in command.params if param.name == "fields")
+
+    assert fields.help == (
+        "Repeat --field once per Jira field; values are not comma-split. "
+        "Selection is field-level; Jira envelope metadata may remain."
+    )
+
+
 def test_callback_accepts_credentials_file_flag(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

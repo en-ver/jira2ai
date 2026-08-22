@@ -32,6 +32,6 @@ After confirmation only, run:
 
 - `uvx jira2cli comment-delete <KEY> <COMMENT_ID> --json`
 
-Use `--raw` instead of `--json` only when you need the untouched API payload.
+Use `--raw` instead of `--json` only when you need API-oriented output. `--raw` renders API-oriented output by parsing JSON when needed, then pretty-printing it with recursively sorted object keys; it does not emit untouched HTTP bytes.
 
 Do not post, overwrite, or delete a comment before checking the current issue and recent comments.
