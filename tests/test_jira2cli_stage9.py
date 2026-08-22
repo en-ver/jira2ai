@@ -95,8 +95,11 @@ def test_filter_run_field_help_explains_field_level_selection() -> None:
     fields = next(param for param in command.params if param.name == "fields")
 
     assert fields.help == (
-        "Repeat --field once per Jira field; values are not comma-split. "
-        "Selection is field-level; Jira envelope metadata may remain."
+        "Repeat --field per Jira field; values are not comma-split. "
+        "If omitted, fields default to summary, status, assignee, priority, "
+        "issuetype, created, updated. Projection is whole-field: assignee may "
+        "include Jira-permitted nested identity, email, and avatar data; "
+        "envelope metadata may remain."
     )
 
 
