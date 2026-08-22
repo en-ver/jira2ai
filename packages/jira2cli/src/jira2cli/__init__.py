@@ -2,6 +2,6 @@
 
 from .cli import app, main
 
-__version__ = "0.1.6"
+__version__ = "0.1.7"
 
 __all__ = ["__version__", "app", "main"]
