@@ -5,12 +5,12 @@ Use this when the user wants to inspect, add, or remove a relationship between J
 ## Workflow
 
 1. Read the issue first when you need current links:
-   - `uvx jira2cli read <KEY> --json`
+   - `uvx jira2cli read <KEY> --fields issuelinks --json`
 2. List issue links directly when you need a focused link view:
    - `uvx jira2cli issue-links <KEY> --json`
 3. Read both issues before changing links:
-   - `uvx jira2cli read <OUTWARD_KEY> --json`
-   - `uvx jira2cli read <INWARD_KEY> --json`
+   - `uvx jira2cli read <OUTWARD_KEY> --fields summary --json`
+   - `uvx jira2cli read <INWARD_KEY> --fields summary --json`
 4. Discover valid link types:
    - `uvx jira2cli link-types --json`
 5. Confirm the exact link type and direction. Use the outward and inward labels from the link type output to decide which issue key belongs in each position.

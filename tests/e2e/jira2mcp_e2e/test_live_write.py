@@ -114,11 +114,11 @@ def _issue_keys_from_search_payload(payload: Mapping[str, object]) -> set[str]:
 def _labels_from_issue_payload(payload: Mapping[str, object]) -> list[str]:
     fields = payload.get("fields")
     if not isinstance(fields, Mapping):
-        raise AssertionError("Expected jira_read raw payload to include fields")
+        raise AssertionError("Expected jira_read payload to include fields")
 
     labels = fields.get("labels")
     if not isinstance(labels, list):
-        raise AssertionError("Expected jira_read raw payload to include labels")
+        raise AssertionError("Expected jira_read payload to include labels")
     if not all(isinstance(label, str) for label in labels):
         raise AssertionError("Expected every Jira label to be a string")
     return list(labels)
@@ -163,11 +163,11 @@ def _with_test_label(fields: dict[str, object], label: str) -> dict[str, object]
 def _link_id_for_issue(payload: Mapping[str, object], other_issue_key: str) -> str:
     fields = payload.get("fields")
     if not isinstance(fields, Mapping):
-        raise AssertionError("Expected jira_read raw payload to include fields")
+        raise AssertionError("Expected jira_read payload to include fields")
 
     issue_links = fields.get("issuelinks")
     if not isinstance(issue_links, list):
-        raise AssertionError("Expected jira_read raw payload to include issuelinks")
+        raise AssertionError("Expected jira_read payload to include issuelinks")
 
     for issue_link in issue_links:
         if not isinstance(issue_link, Mapping):
@@ -244,7 +244,7 @@ def test_write_issue_lifecycle_creates_two_tasks_and_leaves_them_in_jira(
                 await call_tool_mcp(
                     client,
                     "jira_read",
-                    {"issue_key": first_key, "raw": True},
+                    {"issue_key": first_key, "fields": ["labels"]},
                 )
             )
             first_read_payload = assert_structured_content(first_read)
@@ -257,7 +257,7 @@ def test_write_issue_lifecycle_creates_two_tasks_and_leaves_them_in_jira(
                 await call_tool_mcp(
                     client,
                     "jira_read",
-                    {"issue_key": second_key, "raw": True},
+                    {"issue_key": second_key, "fields": ["labels"]},
                 )
             )
             second_read_payload = assert_structured_content(second_read)
@@ -292,13 +292,13 @@ def test_write_issue_lifecycle_creates_two_tasks_and_leaves_them_in_jira(
                 await call_tool_mcp(
                     client,
                     "jira_read",
-                    {"issue_key": first_key, "raw": True},
+                    {"issue_key": first_key, "fields": ["summary"]},
                 )
             )
             updated_payload = assert_structured_content(updated_read)
             updated_fields = updated_payload.get("fields")
             if not isinstance(updated_fields, Mapping):
-                raise AssertionError("Expected jira_read raw payload to include fields")
+                raise AssertionError("Expected jira_read payload to include fields")
             assert updated_fields.get("summary") == edited_summary
 
             comment_result = assert_non_error_result(
@@ -354,7 +354,7 @@ def test_write_issue_lifecycle_creates_two_tasks_and_leaves_them_in_jira(
                 await call_tool_mcp(
                     client,
                     "jira_read",
-                    {"issue_key": first_key, "raw": True},
+                    {"issue_key": first_key, "fields": ["issuelinks"]},
                 )
             )
             link_id = _link_id_for_issue(

@@ -26,8 +26,7 @@ from .server import tools
 async def delete_link(
     link_id: Annotated[
         str,
-        "The ID of the issue link to delete. "
-        "Visible in jira_read output as '(link id: ...)'.",
+        "The ID of the issue link to delete. Use jira_issue_links to discover it.",
     ],
     raw: Annotated[bool, "Return raw JSON from the API"] = False,
     ctx: Context = CurrentContext(),
@@ -35,8 +34,7 @@ async def delete_link(
 ) -> str | ToolResult:
     """Delete an issue link by its ID.
 
-    The link ID can be found in the jira_read tool output, shown as
-    '(link id: 12345)' next to each issue link.
+    Use jira_issue_links to find the exact link ID before deletion.
     """
     await ctx.info(f"Deleting issue link {link_id}")
 

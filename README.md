@@ -39,7 +39,7 @@ Install [uv](https://docs.astral.sh/uv/) on Python 3.13 or later, configure cred
 ```bash
 uvx jira2cli --help
 uvx jira2cli auth-status
-uvx jira2cli read PROJ-123 --json
+uvx jira2cli read PROJ-123 --fields summary,status --json
 ```
 
 ## Authentication and safety
@@ -58,7 +58,7 @@ Keep API tokens out of source control, logs, prompts, and shared client configur
 
 ## What you can do
 
-The products support authentication checks, issue reads and JQL search, projects and field metadata, comments, transitions, saved filters, issue links, attachments, and worklogs. Descriptions and comments accept Markdown and rich-text Jira fields are returned as Markdown.
+The products support authentication checks, issue reads and JQL search, projects and field metadata, comments, transitions, saved filters, issue links, attachments, and worklogs. Descriptions and comments accept Markdown. Plain CLI issue reads can render selected rich-text fields, while JSON and MCP structured issue reads preserve Jira's raw field data.
 
 For local development or contributions, see [CONTRIBUTING.md](CONTRIBUTING.md). Contributors working from a repository checkout use `uv run --locked jira2cli ...` after workspace setup. The optional [Pi CLI skill](skills/jira2cli/SKILL.md) is a source-checkout template for agents using `jira2cli`; UVX runs the CLI but does not install or auto-discover the skill.
 

@@ -5,7 +5,7 @@ Use this when the user wants to add, update, or delete a comment on an existing 
 ## Workflow
 
 1. Read the current issue:
-   - `uvx jira2cli read <KEY> --json`
+   - `uvx jira2cli read <KEY> --fields summary,status --json`
 2. Review the existing discussion first:
    - `uvx jira2cli comments <KEY> --json`
 3. If the thread is long, page or reorder comment reads before drafting the reply:

@@ -18,7 +18,7 @@ It also does **not** provide dedicated issue assign commands, issue delete/archi
 - [references/field-metadata.md](references/field-metadata.md) — Load before create/edit work when you need required fields, editable fields, or allowed values.
 - [references/user-identity-lookup.md](references/user-identity-lookup.md) — Load when a Jira user field needs an `accountId` or exact display name.
 - [references/jql-syntax.md](references/jql-syntax.md) — Load when composing or debugging JQL.
-- [references/search-and-read-issues.md](references/search-and-read-issues.md) — Load when you need to search issues, read details, request extra fields, or page through comments.
+- [references/search-and-read-issues.md](references/search-and-read-issues.md) — Load when you need to search issues, choose explicit issue fields, read details, or page through comments.
 - [references/transitions-and-filters.md](references/transitions-and-filters.md) — Load when you need workflow transitions, saved filter discovery, or `filter-run` guidance.
 - [references/worklog-report.md](references/worklog-report.md) — Load when you need JQL-based worklog reporting details.
 - [references/worklog-management.md](references/worklog-management.md) — Load when you need issue-specific worklog list/add/update/delete workflows.
@@ -71,8 +71,9 @@ Credentials file shape:
 - Before create, edit, transition, comment, comment-update, comment-delete, link, delete-link, attachment, attachment-upload, attachment-delete, worklog-add, worklog-update, or worklog-delete actions, gather the relevant issue state or metadata first.
 - Before mutating Jira, summarize the intended action, the exact field choices or IDs, and ask the user to confirm.
 - Prefer `--json` for structured reads and structured mutation confirmations.
-- Use `--raw` only when you need API-oriented output. `--raw` renders API-oriented output by parsing JSON when needed, then pretty-printing it with recursively sorted object keys; it does not emit untouched HTTP bytes. Do not pass `--raw` and `--json` together.
-- For `search` and `filter-run`, `--field` is singular and repeatable (`--field key --field summary`); `--fields` does not exist and values are not comma-split. If omitted, fields default to `summary, status, assignee, priority, issuetype, created, updated`. Projection is whole-field: `assignee` may include Jira-permitted nested identity, email, and avatar data; envelope metadata may remain. Plain output is the helper's fixed compact view; use `--json` and local `jq` reduction for arbitrary requested fields.
+- Use `--raw` only when you need API-oriented output on commands that support it. `read` does not support `--raw`; use `read --json` for its unchanged Jira response. `--raw` renders API-oriented output by parsing JSON when needed, then pretty-printing it with recursively sorted object keys; it does not emit untouched HTTP bytes. Do not pass `--raw` and `--json` together on commands that support both.
+- `read` requires exactly one `--fields FIELD[,FIELD...]` option. CSV segments are trimmed, must be non-empty, and are forwarded in order as Jira field keys, IDs, or endpoint-supported selectors. `--json` bypasses formatting and preserves raw Jira data, including ADF. Wildcard and negative selectors can still return broad responses.
+- For `search` and `filter-run`, `--fields` is optional and may appear at most once as comma-delimited selectors (`--fields key,summary`). If omitted, fields default to `summary, status, assignee, priority, issuetype, created, updated`. Projection is whole-field: `assignee` may include Jira-permitted nested identity, email, and avatar data; envelope metadata may remain. Plain output is the helper's fixed compact view; use `--json` and local `jq` reduction for arbitrary requested fields.
 - `filter-run` returns the same search-shaped result as `search` after resolving the saved filter's JQL.
 - `search` and `filter-run` return one page per invocation. `--max-results` is per-page (default 20, maximum 50). With `--json`, continue only while `nextPageToken` is non-empty, forwarding it unchanged as `--next-page-token`; do not use `total` to decide. Keep the JQL (or saved filter), requested fields, and page size stable. Do not edit a saved filter during continuation. Atlassian expires each `nextPageToken` in seven days, so complete pagination within that window; if it expires, rerun the search or filter from the first page.
 
@@ -140,13 +141,13 @@ Credentials file shape:
 - `uvx jira2cli fields --issue-key <KEY> --json`
 - `uvx jira2cli users <query> --max-results <N> --json`
 - `uvx jira2cli jql-syntax`
-- `uvx jira2cli search '<JQL>' --field key --field summary --field status --max-results <N> --next-page-token '<TOKEN>' --json`
-- `uvx jira2cli read <KEY> --extra-field <FIELD_ID> --json`
+- `uvx jira2cli search '<JQL>' --fields key,summary,status --max-results <N> --next-page-token '<TOKEN>' --json`
+- `uvx jira2cli read <KEY> --fields summary,<FIELD_ID> --json`
 - `uvx jira2cli comments <KEY> --start-at <N> --max-results <N> --order-by -created --json`
 - `uvx jira2cli transitions <KEY> --json`
 - `uvx jira2cli transition <KEY> <TRANSITION_ID_OR_NAME> --json`
 - `uvx jira2cli filters --query <text> --json`
-- `uvx jira2cli filter-run <FILTER_ID> --field key --field summary --max-results <N> --next-page-token '<TOKEN>' --json`
+- `uvx jira2cli filter-run <FILTER_ID> --fields key,summary --max-results <N> --next-page-token '<TOKEN>' --json`
 - `uvx jira2cli worklogs <KEY> --json`
 - `uvx jira2cli worklog-add <KEY> '1h 30m' --comment <text> --json`
 - `uvx jira2cli worklog-update <KEY> <WORKLOG_ID> --time-spent '45m' --json`

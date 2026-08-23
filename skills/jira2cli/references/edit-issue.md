@@ -5,7 +5,7 @@ Use this only when the user has asked to change an existing Jira issue.
 ## Workflow
 
 1. Read the current issue state:
-   - `uvx jira2cli read <KEY> --json`
+   - `uvx jira2cli read <KEY> --fields summary,description --json`
 2. Fetch edit metadata before choosing fields to change:
    - `uvx jira2cli fields --issue-key <KEY> --json`
 3. Inspect `required`, `allowedValues`, `schema`, `defaultValue`, and whether the target field is present for editing.

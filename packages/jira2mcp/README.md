@@ -76,7 +76,7 @@ All tools use the `jira_*` namespace.
 |---|---|
 | `jira_auth_status` | Check configured credentials. |
 | `jira_me` | Show the authenticated Jira user. |
-| `jira_read` | Read an issue by key. |
+| `jira_read` | Read explicitly requested issue fields as raw structured data. |
 | `jira_search` | Search issues with JQL. |
 | `jira_comments` | List issue comments. |
 | `jira_transitions` | List available issue transitions. |
@@ -117,7 +117,9 @@ The server also provides the `data://jira/link-types` resource and the `jira_jql
 
 ## Usage and safety
 
-Descriptions and comments accept Markdown and are converted to Atlassian Document Format (ADF); rich-text Jira fields are returned as Markdown. `jira_run_filter` returns the same search-shaped result as `jira_search` after resolving the filter's JQL. `jira_download_attachment` provides structured/raw-friendly output, while `jira_attachment` remains available for its original simple download surface.
+Descriptions and comments accept Markdown and are converted to Atlassian Document Format (ADF). `jira_read` returns selected Jira fields unchanged, including ADF, as structured content and a compact JSON text fallback; it does not format or truncate the response. `jira_run_filter` returns the same search-shaped result as `jira_search` after resolving the filter's JQL. `jira_download_attachment` provides structured/raw-friendly output, while `jira_attachment` remains available for its original simple download surface.
+
+`jira_read` requires both `issue_key` and a non-empty native `fields` array, for example `jira_read(issue_key="PROJ-123", fields=["summary", "description"])`. Each array item is one field key, ID, or endpoint-supported selector; do not use comma-separated items or surrounding whitespace. It has no `raw` mode because it always returns structured Jira data. Selectors such as `*all`, `*navigable`, or negative selectors can still return broad responses, so request only what is needed.
 
 Before a create or edit, call `jira_fields` for the target project and issue type. Before a transition, link, comment update/delete, attachment deletion, or worklog mutation, read the current state and use exact IDs or names. Attachment uploads must stay within the server working directory. Downloads must stay within advertised MCP roots, or the server working directory when roots are unavailable. All reads and writes remain subject to the configured Jira account's permissions.
 

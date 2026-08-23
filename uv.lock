@@ -519,7 +519,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "httpx", specifier = ">=0.28.1" },
-    { name = "jira2py", specifier = "==0.8.1" },
+    { name = "jira2py", specifier = "==0.9.0" },
     { name = "typer", specifier = ">=0.16.0" },
 ]
 
@@ -540,7 +540,7 @@ dependencies = [
 requires-dist = [
     { name = "fastmcp", specifier = ">=3.1.0" },
     { name = "httpx", specifier = ">=0.28.1" },
-    { name = "jira2py", specifier = "==0.8.1" },
+    { name = "jira2py", specifier = "==0.9.0" },
     { name = "marklassian", specifier = ">=0.1.0" },
     { name = "pyadf", specifier = ">=0.3.0" },
     { name = "pydantic", specifier = ">=2.12.5" },
@@ -548,7 +548,7 @@ requires-dist = [
 
 [[package]]
 name = "jira2py"
-version = "0.8.1"
+version = "0.9.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx", extra = ["http2"] },
@@ -557,9 +557,9 @@ dependencies = [
     { name = "pydantic" },
     { name = "tenacity" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/53/bf/020906da4fb1a3df74b51c2231358c6f439dc55ef9107c7eff5a6b3193e6/jira2py-0.8.1.tar.gz", hash = "sha256:f0fba6bf7cc4163d3d197cfa2924edb064d8c1d5249b0017f1bfc517ee7dec1d", size = 66293, upload-time = "2026-08-22T13:04:43.301Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/3a/34/59082d6c3461ac047a507b362991850a7ada8b34015f8416fe40b78fc711/jira2py-0.9.0.tar.gz", hash = "sha256:ed43bd68fd8dcc30f40c27b786e4aa269c571915e2cff3f8608e2f5d1da78bc1", size = 69430, upload-time = "2026-08-23T14:03:48.666Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/41/fd/8fa629f2509a368b0b093fd7330e1275bcc324565ea319af6d752d301a4a/jira2py-0.8.1-py3-none-any.whl", hash = "sha256:d4c139e17115047c17bf462845574f97d6a163ad6e05c73a235c2893f9b91ef8", size = 56773, upload-time = "2026-08-22T13:04:42.046Z" },
+    { url = "https://files.pythonhosted.org/packages/5c/b7/bbf616c66da63a91c0f9af5a48f1f17453fd4ba086658affc0c93b1feb75/jira2py-0.9.0-py3-none-any.whl", hash = "sha256:6a414c8c4d1a8ff373e014015644ac5bfa713d56717d574bad68346154e844f2", size = 58277, upload-time = "2026-08-23T14:03:47.218Z" },
 ]
 
 [[package]]

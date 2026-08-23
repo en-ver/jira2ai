@@ -16,7 +16,7 @@ export JIRA_USER="you@company.com"
 export JIRA_API_TOKEN="your-api-token"
 
 uvx jira2cli auth-status
-uvx jira2cli read PROJ-123 --json
+uvx jira2cli read PROJ-123 --fields summary,status --json
 ```
 
 An explicit credentials file takes precedence over the environment:
@@ -59,20 +59,22 @@ Run `uvx jira2cli --help` for the current command and option help.
 
 `attachment`, `attachment-list`, `attachment-read`, `attachment-download`, `attachment-upload`, `attachment-delete`, `worklogs`, `worklog-add`, `worklog-update`, `worklog-delete`, `worklog-report`
 
-Most structured commands accept `--json` for helper output. `--raw` renders API-oriented output by parsing JSON when needed, then pretty-printing it with recursively sorted object keys; it does not emit untouched HTTP bytes. Do not combine `--raw` and `--json`. `filter-run` resolves a saved filter's JQL and returns the same search-shaped result as `search`.
+Most structured commands accept `--json` for helper output. `--raw` renders API-oriented output by parsing JSON when needed, then pretty-printing it with recursively sorted object keys; it does not emit untouched HTTP bytes. `read` does not support `--raw`; use its `--json` option for the unchanged Jira response. Do not combine `--raw` and `--json` on commands that support both. `filter-run` resolves a saved filter's JQL and returns the same search-shaped result as `search`.
+
+`read` requires exactly one `--fields FIELD[,FIELD...]` option. Its CSV segments are trimmed, must be non-empty, and are forwarded in order as Jira field keys, IDs, or endpoint-supported selectors. `--json` bypasses text formatting and preserves the returned Jira object, including ADF. Selectors such as `*all`, `*navigable`, or negative selectors can still return broad responses; request only what is needed.
 
 ## Search pagination
 
 Each `search` or `filter-run` invocation returns exactly one page. `--max-results` defaults to 20 and has a 50-item ceiling; it is a **per-page** limit. Structured `--json` output preserves the helper's `nextPageToken`. When it is non-empty, pass it unchanged as `--next-page-token` on the next invocation; stop when it is absent or empty. Do not use `total` to decide whether to continue. Atlassian expires each `nextPageToken` in seven days, so complete pagination within that window; if it expires, rerun the search or filter from the first page.
 
-Keep the JQL, requested `--field` values, and `--max-results` unchanged for every page. `--field` is singular and repeatable: `--field key --field summary`; `--fields` does not exist, and values are not comma-split. If omitted, fields default to `summary, status, assignee, priority, issuetype, created, updated`. Projection is whole-field: `assignee` may include Jira-permitted nested identity, email, and avatar data. Jira envelope metadata may remain, including issue-envelope members such as `id`, `key`, and `self`, plus search metadata such as `isLast`, `nextPageToken`, and optional `warnings`, `names`, or `schema`. Plain output remains the helper's fixed compact view; use structured output and local reduction with `jq` for arbitrary requested fields.
+Keep the JQL, requested `--fields` value, and `--max-results` unchanged for every page. `--fields` is optional and may appear at most once as comma-delimited selectors, for example `--fields key,summary`; values are trimmed and empty CSV segments are rejected. If omitted, fields default to `summary, status, assignee, priority, issuetype, created, updated`. Projection is whole-field: `assignee` may include Jira-permitted nested identity, email, and avatar data. Jira envelope metadata may remain, including issue-envelope members such as `id`, `key`, and `self`, plus search metadata such as `isLast`, `nextPageToken`, and optional `warnings`, `names`, or `schema`. Plain output remains the helper's fixed compact view; use structured output and local reduction with `jq` for arbitrary requested fields.
 
 This Bash example uses arrays so the JQL and opaque token remain safely quoted, captures each complete page, and emits only issue keys:
 
 ```bash
 jql='project = PROJ ORDER BY created DESC'
 page_size=20
-fields=(--field key)
+fields=(--fields key)
 token=''
 rows_received=0
 
@@ -107,8 +109,8 @@ uvx jira2cli projects --json
 uvx jira2cli fields --project-key PROJ --issue-type Task --json
 
 # Read and search.
-uvx jira2cli read PROJ-123 --extra-field labels --json
-uvx jira2cli search 'project = PROJ ORDER BY created DESC' --field key --field summary --json
+uvx jira2cli read PROJ-123 --fields summary,labels --json
+uvx jira2cli search 'project = PROJ ORDER BY created DESC' --fields key,summary --json
 
 # Inspect workflow choices before applying one.
 uvx jira2cli transitions PROJ-123 --json
@@ -116,7 +118,7 @@ uvx jira2cli transition PROJ-123 "Start Progress" --json
 
 # Reuse a saved filter.
 uvx jira2cli filters --query mine --json
-uvx jira2cli filter-run 10400 --field key --field summary --json
+uvx jira2cli filter-run 10400 --fields key,summary --json
 
 # Inspect attachments and worklogs.
 uvx jira2cli attachment-list PROJ-123 --json
@@ -136,7 +138,7 @@ uv run --locked jira2cli --help
 
 ## Safety and capabilities
 
-Descriptions and comments accept Markdown and rich-text Jira fields are returned as Markdown. Use `fields` before create or edit; `users` before choosing a user; `transitions` before changing status; and `link-types` before creating links. Read the current issue before an update or destructive action, use exact IDs, and confirm the intended fields, transition, comment, attachment, link, or worklog before mutating Jira. Jira permissions control what the configured account can read or write.
+Descriptions and comments accept Markdown. Plain `read` output renders selected rich-text Jira fields as Markdown, while `read --json` preserves the raw Jira data. Use `fields` before create or edit; `users` before choosing a user; `transitions` before changing status; and `link-types` before creating links. Read the current issue before an update or destructive action, use exact IDs, and confirm the intended fields, transition, comment, attachment, link, or worklog before mutating Jira. Jira permissions control what the configured account can read or write.
 
 The optional [Pi skill](https://github.com/en-ver/jira2ai/tree/main/skills/jira2cli) is a source-checkout template for agent workflows. Load it explicitly as `<path-to-jira2ai>/skills/jira2cli`; UVX runs the CLI but does not install or auto-discover the skill.
 

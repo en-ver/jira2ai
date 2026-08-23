@@ -106,7 +106,7 @@ The tests assert that MCP `structuredContent` stays dict-shaped and carries the 
 
 If you want extra confidence outside pytest, run manual CLI spot checks yourself. Keep them separate from this suite. Example ideas:
 
-- `uv run jira2cli read PR-123`
+- `uv run jira2cli read PR-123 --fields summary,status`
 - `uv run jira2cli search 'project = PR ORDER BY created DESC'`
 
 These are notes only; the automated E2E tests never call the CLI.

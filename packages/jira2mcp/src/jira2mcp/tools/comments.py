@@ -38,8 +38,7 @@ async def comments(
 ) -> str | ToolResult:
     """List comments on a Jira issue with pagination support.
 
-    For most cases, the comments included in jira_read (first 50) are sufficient.
-    Use this tool when you need all comments, a specific page, or reverse
+    Use this focused tool for comment details, a specific page, or reverse
     chronological order.
     """
     await ctx.info(f"Fetching comments for {issue_key}")

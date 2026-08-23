@@ -10,10 +10,10 @@ import pytest
 from jira2cli import app
 from jira2cli.commands.worklogs import worklog_report_command
 from jira2cli.jql import JQL_REFERENCE
+from jira2py import JiraError
 from jira2py.helpers import HelperResult
 from jira2py.helpers.errors import (
     AttachmentDownloadError,
-    JiraHelperOperationError,
     JiraHelperValidationError,
 )
 from typer.main import get_command
@@ -22,11 +22,11 @@ from typer.testing import CliRunner
 runner = CliRunner()
 
 FIELD_SELECTION_HELP = (
-    "Repeat --field per Jira field; values are not comma-split. "
-    "If omitted, fields default to summary, status, assignee, priority, "
-    "issuetype, created, updated. Projection is whole-field: assignee may "
-    "include Jira-permitted nested identity, email, and avatar data; "
-    "envelope metadata may remain."
+    "Comma-separated Jira field keys, IDs, or selectors. Provide --fields "
+    "at most once. If omitted, fields default to summary, status, assignee, "
+    "priority, issuetype, created, updated. Projection is whole-field: "
+    "assignee may include Jira-permitted nested identity, email, and avatar "
+    "data; envelope metadata may remain."
 )
 RAW_OUTPUT_HELP = (
     "Render API-oriented output as normalized, pretty-printed JSON with sorted "
@@ -90,35 +90,179 @@ def test_root_help_lists_registered_commands() -> None:
         assert command_name in result.stdout
 
 
-def test_read_command_delegates_to_helpers(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_read_command_normalizes_padded_issue_key_before_api_and_formats_response(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     calls: list[tuple[str, object]] = []
+    data = {"key": "PROJ-123", "fields": {"summary": "Formatted issue"}}
 
+    def fake_get_issue(*, issue_id: str, fields: list[str]) -> dict[str, object]:
+        calls.append(("get_issue", (issue_id, fields)))
+        return data
+
+    api = SimpleNamespace(
+        credentials=SimpleNamespace(url="https://example.atlassian.net"),
+        issues=SimpleNamespace(get_issue=fake_get_issue),
+    )
     monkeypatch.setattr(
         "jira2cli.client.get_api",
-        lambda: calls.append(("get_api", None)) or object(),
+        lambda: calls.append(("get_api", None)) or api,
     )
 
-    def fake_read(issue_key: str, *, extra_fields):
-        calls.append(("read", (issue_key, extra_fields)))
-        return HelperResult.text_only("formatted issue")
+    def fake_format_issue(
+        received_data: dict[str, object],
+        *,
+        browse_url: str,
+    ) -> str:
+        calls.append(("format_issue", (received_data, browse_url)))
+        return "formatted issue"
 
-    _patch_helpers(
-        monkeypatch,
-        "jira2cli.commands.read",
-        issues={"read": fake_read},
-    )
+    monkeypatch.setattr("jira2cli.commands.read.format_issue", fake_format_issue)
 
     result = runner.invoke(
         app,
-        ["read", "PROJ-123", "--extra-field", "customfield_10001"],
+        ["read", "  PROJ-123  ", "--fields", "summary, customfield_10001"],
     )
 
     assert result.exit_code == 0
     assert result.stdout == "formatted issue\n"
     assert calls == [
         ("get_api", None),
-        ("read", ("PROJ-123", ["customfield_10001"])),
+        ("get_issue", ("PROJ-123", ["summary", "customfield_10001"])),
+        (
+            "format_issue",
+            (
+                data,
+                "https://example.atlassian.net/browse/PROJ-123",
+            ),
+        ),
     ]
+
+
+def test_read_command_json_bypasses_formatter_and_browse_url(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    data = {
+        "key": "PROJ-123",
+        "fields": {
+            "description": {"type": "doc", "version": 1, "content": []},
+            "summary": "Unformatted",
+        },
+    }
+    calls: list[dict[str, object]] = []
+
+    def fake_get_issue(**kwargs: object) -> dict[str, object]:
+        calls.append(kwargs)
+        return data
+
+    api = SimpleNamespace(issues=SimpleNamespace(get_issue=fake_get_issue))
+    monkeypatch.setattr("jira2cli.client.get_api", lambda: api)
+    monkeypatch.setattr(
+        "jira2cli.commands.read.format_issue",
+        lambda *_args, **_kwargs: pytest.fail("formatter must not be called"),
+    )
+
+    result = runner.invoke(
+        app,
+        ["read", "PROJ-123", "--fields", "description,summary", "--json"],
+    )
+
+    assert result.exit_code == 0
+    assert json.loads(result.stdout) == data
+    assert calls == [
+        {
+            "issue_id": "PROJ-123",
+            "fields": ["description", "summary"],
+        }
+    ]
+
+
+@pytest.mark.parametrize(
+    "argv",
+    [
+        ["read", "PROJ-123"],
+        ["read", "PROJ-123", "--fields", "summary", "--fields", "status"],
+        ["read", "PROJ-123", "--fields", "summary,,status"],
+        ["read", "PROJ-123", "--fields", "summary", "--raw"],
+        ["read", "PROJ-123", "--fields", "summary", "--extra-field", "labels"],
+    ],
+)
+def test_read_command_rejects_invalid_or_removed_options_before_api(
+    monkeypatch: pytest.MonkeyPatch,
+    argv: list[str],
+) -> None:
+    monkeypatch.setattr(
+        "jira2cli.client.get_api",
+        lambda: pytest.fail("get_api should not be called"),
+    )
+
+    result = runner.invoke(app, argv)
+
+    assert result.exit_code == 2
+    assert result.stdout == ""
+
+
+def test_read_command_rejects_blank_issue_key_before_api(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "jira2cli.client.get_api",
+        lambda: pytest.fail("get_api should not be called"),
+    )
+
+    result = runner.invoke(app, ["read", "   ", "--fields", "summary"])
+
+    assert result.exit_code == 2
+    assert result.stdout == ""
+
+
+def test_read_command_preserves_jira_error_context(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    api = SimpleNamespace(
+        issues=SimpleNamespace(
+            get_issue=lambda **_kwargs: (_ for _ in ()).throw(JiraError("boom"))
+        )
+    )
+    monkeypatch.setattr("jira2cli.client.get_api", lambda: api)
+
+    result = runner.invoke(app, ["read", "  PROJ-404  ", "--fields", "summary"])
+
+    assert result.exit_code == 1
+    assert result.stdout == ""
+    assert result.stderr == "Failed to fetch issue PROJ-404: boom\n"
+
+
+def test_read_command_surfaces_formatter_failures(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    api = SimpleNamespace(
+        credentials=SimpleNamespace(url="https://example.atlassian.net"),
+        issues=SimpleNamespace(
+            get_issue=lambda **_kwargs: {"key": "PROJ-123", "fields": {}}
+        ),
+    )
+    monkeypatch.setattr("jira2cli.client.get_api", lambda: api)
+    monkeypatch.setattr(
+        "jira2cli.commands.read.format_issue",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(ValueError("format failed")),
+    )
+
+    result = runner.invoke(app, ["read", "PROJ-123", "--fields", "summary"])
+
+    assert result.exit_code == 1
+    assert result.stdout == ""
+    assert result.stderr == "format failed\n"
+
+
+def test_read_help_requires_fields_and_omits_legacy_options() -> None:
+    result = runner.invoke(app, ["read", "--help"])
+
+    assert result.exit_code == 0
+    assert "--fields" in result.stdout
+    assert "[required]" in result.stdout
+    assert "--extra-field" not in result.stdout
+    assert "--raw" not in result.stdout
 
 
 def test_search_command_manually_continues_with_an_opaque_token(
@@ -150,10 +294,8 @@ def test_search_command_manually_continues_with_an_opaque_token(
         "project = PROJ ORDER BY created DESC",
         "--max-results",
         "7",
-        "--field",
-        "summary",
-        "--field",
-        "status",
+        "--fields",
+        "summary,status",
         "--json",
     ]
     first_result = runner.invoke(app, argv)
@@ -177,6 +319,71 @@ def test_search_command_manually_continues_with_an_opaque_token(
             },
         ),
     ]
+
+
+@pytest.mark.parametrize(
+    "argv",
+    [
+        ["search", "project = PROJ", "--fields", "summary", "--fields", "status"],
+        ["filter-run", "10400", "--fields", "summary", "--fields", "status"],
+    ],
+)
+def test_search_and_filter_run_reject_repeated_fields_before_api(
+    monkeypatch: pytest.MonkeyPatch,
+    argv: list[str],
+) -> None:
+    monkeypatch.setattr(
+        "jira2cli.client.get_api",
+        lambda: pytest.fail("get_api should not be called"),
+    )
+
+    result = runner.invoke(app, argv)
+
+    assert result.exit_code == 2
+    assert result.stdout == ""
+    assert result.stderr == "--fields: may be provided only once\n"
+
+
+def test_search_omits_fields_to_preserve_helper_defaults(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[dict[str, object]] = []
+    monkeypatch.setattr("jira2cli.client.get_api", lambda: object())
+    _patch_helpers(
+        monkeypatch,
+        "jira2cli.commands.search",
+        search={
+            "issues": lambda _jql, **kwargs: (
+                calls.append(kwargs) or HelperResult.text_only("search result")
+            )
+        },
+    )
+
+    result = runner.invoke(app, ["search", "project = PROJ"])
+
+    assert result.exit_code == 0
+    assert calls == [{"max_results": 20, "fields": None}]
+
+
+def test_filter_run_omits_fields_to_preserve_helper_defaults(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[dict[str, object]] = []
+    monkeypatch.setattr("jira2cli.client.get_api", lambda: object())
+    _patch_helpers(
+        monkeypatch,
+        "jira2cli.commands.filters",
+        filters={
+            "run": lambda _filter_id, **kwargs: (
+                calls.append(kwargs) or HelperResult.text_only("filter result")
+            )
+        },
+    )
+
+    result = runner.invoke(app, ["filter-run", "10400"])
+
+    assert result.exit_code == 0
+    assert calls == [{"max_results": 20, "fields": None}]
 
 
 def test_worklog_report_command_help_is_jql_only() -> None:
@@ -1058,19 +1265,6 @@ def test_create_command_rejects_invalid_fields_json(
     ("argv", "module_path", "helpers_patch", "error", "expected_code"),
     [
         (
-            ["read", "PROJ-404"],
-            "jira2cli.commands.read",
-            {
-                "issues": {
-                    "read": lambda issue_key, *, extra_fields: (_ for _ in ()).throw(
-                        JiraHelperOperationError("request failed")
-                    )
-                }
-            },
-            JiraHelperOperationError("request failed"),
-            1,
-        ),
-        (
             ["projects"],
             "jira2cli.commands.metadata",
             {
@@ -1111,7 +1305,10 @@ def test_commands_reject_conflicting_output_modes(
         lambda: pytest.fail("get_api should not be called"),
     )
 
-    result = runner.invoke(app, ["read", "PROJ-1", "--json", "--raw"])
+    result = runner.invoke(
+        app,
+        ["search", "project = PROJ", "--json", "--raw"],
+    )
 
     assert result.exit_code == 2
     assert "Use only one of --json or --raw." in result.stderr

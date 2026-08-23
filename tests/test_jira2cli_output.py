@@ -9,6 +9,7 @@ from jira2cli.output import (
     format_cli_error,
     raise_cli_error,
     raise_cli_exception,
+    render_json_payload,
     render_operation_result,
     validate_output_options,
 )
@@ -18,6 +19,17 @@ from jira2py.helpers.errors import (
     JiraHelperOperationError,
     JiraHelperValidationError,
 )
+
+
+def test_render_json_payload_uses_normalized_pretty_json() -> None:
+    payload = {"z": 1, "a": ["x", "y"]}
+
+    assert render_json_payload(payload) == json.dumps(
+        payload,
+        indent=2,
+        sort_keys=True,
+        default=str,
+    )
 
 
 def test_render_operation_result_returns_text_by_default() -> None:
@@ -98,6 +110,22 @@ def test_raise_cli_exception_handles_non_helper_errors(
 
     assert exc_info.value.exit_code == 1
     assert captured.err == "missing credentials\n"
+    assert captured.out == ""
+
+
+def test_raise_cli_exception_adds_optional_context(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    with pytest.raises(typer.Exit) as exc_info:
+        raise_cli_exception(
+            RuntimeError("request failed"),
+            context="Failed to fetch issue PROJ-1",
+        )
+
+    captured = capsys.readouterr()
+
+    assert exc_info.value.exit_code == 1
+    assert captured.err == "Failed to fetch issue PROJ-1: request failed\n"
     assert captured.out == ""
 
 

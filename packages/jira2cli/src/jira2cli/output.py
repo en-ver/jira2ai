@@ -10,6 +10,11 @@ from jira2py.helpers import HelperResult
 from jira2py.helpers.errors import JiraHelperError, JiraHelperValidationError
 
 
+def render_json_payload(payload: Any) -> str:
+    """Render a structured payload using the CLI's normalized JSON convention."""
+    return json.dumps(payload, indent=2, sort_keys=True, default=str)
+
+
 def render_operation_result(
     result: HelperResult,
     *,
@@ -18,12 +23,7 @@ def render_operation_result(
 ) -> str:
     """Render an operation result for CLI stdout."""
     if json_output or raw_output:
-        return json.dumps(
-            _json_payload(result),
-            indent=2,
-            sort_keys=True,
-            default=str,
-        )
+        return render_json_payload(_json_payload(result))
     return result.text
 
 
@@ -87,12 +87,17 @@ def raise_cli_error(error: JiraHelperError) -> NoReturn:
     raise typer.Exit(code=error_exit_code(error))
 
 
-def raise_cli_exception(error: Exception) -> NoReturn:
+def raise_cli_exception(
+    error: Exception,
+    *,
+    context: str | None = None,
+) -> NoReturn:
     """Write a CLI-friendly error message to stderr and exit."""
     if isinstance(error, JiraHelperError):
         raise_cli_error(error)
 
-    typer.echo(str(error), err=True)
+    message = f"{context}: {error}" if context else str(error)
+    typer.echo(message, err=True)
     raise typer.Exit(code=1)
 
 
@@ -102,6 +107,7 @@ __all__ = [
     "raise_cli_error",
     "raise_cli_exception",
     "raise_cli_usage_error",
+    "render_json_payload",
     "render_operation_result",
     "validate_output_options",
 ]

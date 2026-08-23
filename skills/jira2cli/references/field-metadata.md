@@ -20,7 +20,7 @@ Use this before issue creation or issue edits whenever required fields, editable
 ## Edit Metadata
 
 1. Read the current issue state first:
-   - `uvx jira2cli read <KEY> --json`
+   - `uvx jira2cli read <KEY> --fields summary --json`
 2. Fetch edit metadata:
    - `uvx jira2cli fields --issue-key <KEY> --json`
 3. Inspect the same metadata keys before deciding which fields can be changed.

@@ -7,7 +7,7 @@ Use this when metadata or current issue state shows that a Jira user field needs
 1. Confirm which field needs a user value from metadata or the current issue:
    - `uvx jira2cli fields --project-key <PROJECT> --issue-type <TYPE> --json`
    - `uvx jira2cli fields --issue-key <KEY> --json`
-   - `uvx jira2cli read <KEY> --json`
+   - `uvx jira2cli read <KEY> --fields summary,assignee,reporter --json`
 2. Search for likely identities:
    - `uvx jira2cli users <query>`
 3. Prefer structured output when you need account IDs or exact display names, and raise `--max-results` if you need a wider candidate set:

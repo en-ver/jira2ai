@@ -5,7 +5,7 @@ Use this when the issue context already identifies the Jira issue key or attachm
 ## Workflow
 
 1. Read the issue first so the target is explicit:
-   - `uvx jira2cli read <KEY> --json`
+   - `uvx jira2cli read <KEY> --fields summary --json`
 2. List attachments on the issue when you need IDs or file names:
    - `uvx jira2cli attachment-list <KEY> --json`
 3. Read attachment metadata when you need details for one attachment:

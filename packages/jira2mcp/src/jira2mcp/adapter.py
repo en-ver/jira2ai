@@ -27,6 +27,22 @@ def _structured_content_for_mcp(data: Any) -> dict[str, Any] | None:
     return {"data": data}
 
 
+def to_data_tool_result(
+    data: Any,
+    *,
+    raw_content: str | None = None,
+) -> ToolResult:
+    """Convert structured data into a FastMCP ToolResult."""
+    content = raw_content
+    if content is None:
+        content = json.dumps(data, separators=(",", ":"), default=str)
+
+    return ToolResult(
+        content=content,
+        structured_content=_structured_content_for_mcp(data),
+    )
+
+
 def to_tool_result(result: HelperResult) -> ToolResult:
     """Convert a raw-capable helper result into a FastMCP ToolResult."""
     if not result.has_raw_output:
@@ -36,10 +52,7 @@ def to_tool_result(result: HelperResult) -> ToolResult:
     if content is None:
         content = json.dumps(result.data, indent=2, default=str)
 
-    return ToolResult(
-        content=content,
-        structured_content=_structured_content_for_mcp(result.data),
-    )
+    return to_data_tool_result(result.data, raw_content=content)
 
 
 def adapt_operation_result(
@@ -58,4 +71,9 @@ def adapt_operation_result(
     return text
 
 
-__all__ = ["adapt_operation_result", "to_tool_error", "to_tool_result"]
+__all__ = [
+    "adapt_operation_result",
+    "to_data_tool_result",
+    "to_tool_error",
+    "to_tool_result",
+]

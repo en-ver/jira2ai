@@ -11,6 +11,7 @@ from jira2cli.output import (
     render_operation_result,
     validate_output_options,
 )
+from jira2cli.parsing import parse_fields_option
 
 
 def search_command(
@@ -29,13 +30,13 @@ def search_command(
     ),
     fields: list[str] | None = typer.Option(
         None,
-        "--field",
+        "--fields",
         help=(
-            "Repeat --field per Jira field; values are not comma-split. "
-            "If omitted, fields default to summary, status, assignee, priority, "
-            "issuetype, created, updated. Projection is whole-field: assignee may "
-            "include Jira-permitted nested identity, email, and avatar data; "
-            "envelope metadata may remain."
+            "Comma-separated Jira field keys, IDs, or selectors. Provide --fields "
+            "at most once. If omitted, fields default to summary, status, assignee, "
+            "priority, issuetype, created, updated. Projection is whole-field: "
+            "assignee may include Jira-permitted nested identity, email, and avatar "
+            "data; envelope metadata may remain."
         ),
     ),
     raw_output: bool = typer.Option(
@@ -51,17 +52,22 @@ def search_command(
 ) -> None:
     """Search Jira issues using JQL."""
     validate_output_options(json_output=json_output, raw_output=raw_output)
+    selected_fields = parse_fields_option(fields)
 
     try:
         api = client.get_api()
         search = JiraHelpers(api).search
         if next_page_token is None:
-            result = search.issues(jql, max_results=max_results, fields=fields)
+            result = search.issues(
+                jql,
+                max_results=max_results,
+                fields=selected_fields,
+            )
         else:
             result = search.issues(
                 jql,
                 max_results=max_results,
-                fields=fields,
+                fields=selected_fields,
                 next_page_token=next_page_token,
             )
     except Exception as exc:
