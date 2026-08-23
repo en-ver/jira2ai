@@ -13,6 +13,15 @@ bump_version = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(bump_version)
 
 
+def expected_next_minor_version(version: str) -> str:
+    major, minor, _patch = version.split(".")
+    return f"{major}.{int(minor) + 1}.0"
+
+
+def test_minor_bump_resets_nonzero_patch() -> None:
+    assert bump_version.bump_version("1.2.3", "minor") == "1.3.0"
+
+
 @pytest.mark.parametrize("package", ["jira2mcp", "jira2cli"])
 def test_current_reads_selected_package_version(
     package: str, capsys: pytest.CaptureFixture[str]
@@ -30,7 +39,11 @@ def test_current_reads_selected_package_version(
     ("package", "argv", "expected_version"),
     [
         ("jira2mcp", ["--package", "jira2mcp", "--version", "1.2.3"], "1.2.3"),
-        ("jira2cli", ["--package", "jira2cli", "--part", "minor"], "0.2.0"),
+        (
+            "jira2cli",
+            ["--package", "jira2cli", "--part", "minor"],
+            expected_next_minor_version(bump_version.read_package_version("jira2cli")),
+        ),
     ],
 )
 def test_version_updates_only_selected_package(
