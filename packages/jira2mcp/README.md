@@ -121,6 +121,21 @@ Descriptions and comments accept Markdown and are converted to Atlassian Documen
 
 Before a create or edit, call `jira_fields` for the target project and issue type. Before a transition, link, comment update/delete, attachment deletion, or worklog mutation, read the current state and use exact IDs or names. Attachment uploads must stay within the server working directory. Downloads must stay within advertised MCP roots, or the server working directory when roots are unavailable. All reads and writes remain subject to the configured Jira account's permissions.
 
+### Search pagination and raw output
+
+Each `jira_search` or `jira_run_filter` invocation returns exactly one issue page; `jira_search` fetches one issue page, while `jira_run_filter` resolves its saved filter and then fetches one issue page. `max_results` is per page, defaults to `20`, and is capped at `50`. To continue, pass the non-empty response `nextPageToken` as the next request's `next_page_token`; the names intentionally differ. Keep the same JQL (or saved filter ID), `fields`, and page size for every call. For example:
+
+```text
+jira_search(jql="project = PROJ", max_results=20, fields=["summary"], raw=True)
+jira_search(jql="project = PROJ", max_results=20, fields=["summary"], next_page_token="<nextPageToken>", raw=True)
+```
+
+Use `raw=True` from the first page. Raw mode returns the complete API-shaped page as both MCP structured content and a JSON text fallback, including `nextPageToken` and arbitrary requested fields. Normal formatted text has a fixed issue view and is server-truncated at 30,000 characters; raw mode is not server-truncated, but an MCP client or harness can still clip its result. If a current page was externally clipped, continuing with its token can skip issues that were not displayed.
+
+Field selection is whole-field projection, not nested projection or redaction. Omitting `fields` requests all seven defaults: `summary`, `status`, `assignee`, `priority`, `issuetype`, `created`, and `updated`. In particular, `assignee` can include nested identity, email, and avatar data allowed by the Jira account. Request explicit fields when that data is not wanted. Arbitrary fields are available in raw mode; normal formatted text remains the fixed issue view.
+
+Continue whenever `nextPageToken` is non-empty, including when an intermediate page has no issues. Stop only when the token is absent or empty, not when `total` is reached or reported. Tokens expire after seven days; restart from the first page when one expires. `jira_run_filter` resolves the saved filter on every call, so do not edit the filter while paging. Jira result-set changes, including a changed saved filter, can otherwise produce duplicates or omissions.
+
 For the published Jira CLI, see the [jira2cli guide](https://github.com/en-ver/jira2ai/blob/main/packages/jira2cli/README.md). Contribution and maintainer guidance is in the [repository contributing guide](https://github.com/en-ver/jira2ai/blob/main/CONTRIBUTING.md).
 
 ## License
