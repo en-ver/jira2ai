@@ -95,11 +95,11 @@ def test_filter_run_field_help_explains_field_level_selection() -> None:
     fields = next(param for param in command.params if param.name == "fields")
 
     assert fields.help == (
-        "Repeat --field per Jira field; values are not comma-split. "
-        "If omitted, fields default to summary, status, assignee, priority, "
-        "issuetype, created, updated. Projection is whole-field: assignee may "
-        "include Jira-permitted nested identity, email, and avatar data; "
-        "envelope metadata may remain."
+        "Comma-separated Jira field keys, IDs, or selectors. Provide --fields "
+        "at most once. If omitted, fields default to summary, status, assignee, "
+        "priority, issuetype, created, updated. Projection is whole-field: "
+        "assignee may include Jira-permitted nested identity, email, and avatar "
+        "data; envelope metadata may remain."
     )
 
 
@@ -564,10 +564,8 @@ def test_filters_commands_delegate_to_helpers(monkeypatch: pytest.MonkeyPatch) -
             "10400",
             "--max-results",
             "5",
-            "--field",
-            "summary",
-            "--field",
-            "status",
+            "--fields",
+            "summary,status",
             "--next-page-token",
             "filter-token /?=+",
             "--raw",

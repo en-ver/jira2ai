@@ -5,7 +5,7 @@ Use this when the user wants to inspect or mutate worklogs on a specific Jira is
 ## Workflow
 
 1. Read the current issue:
-   - `uvx jira2cli read <KEY> --json`
+   - `uvx jira2cli read <KEY> --fields summary --json`
 2. List current worklogs and capture the exact worklog ID when needed:
    - `uvx jira2cli worklogs <KEY> --json`
 3. Summarize the exact issue key, worklog ID when applicable, time-spent value, optional started timestamp, and optional comment.

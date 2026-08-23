@@ -191,7 +191,7 @@ async def attachment(
 ) -> str:
     """Download a Jira attachment by its ID.
 
-    Use jira_read to get attachment IDs and metadata first.
+    Use jira_attachments to find IDs and jira_attachment_metadata for details.
     The attachment is saved to the specified output path (or current directory).
     """
     _validate_attachment_id(attachment_id=attachment_id, api=api)

@@ -247,7 +247,7 @@ def test_inmemory_read_and_comments_use_fixture_or_discovered_issue(
                 await call_tool_mcp(
                     client,
                     "jira_read",
-                    {"issue_key": issue_key, "raw": True},
+                    {"issue_key": issue_key, "fields": ["summary"]},
                 )
             )
             read_payload = assert_structured_content(read_result)

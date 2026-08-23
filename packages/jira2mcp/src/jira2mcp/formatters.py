@@ -1,157 +1,26 @@
-"""Compatibility shim for moved shared formatters."""
+"""Compatibility shim for retained shared text formatters."""
 
 from __future__ import annotations
 
 import json
 from typing import Any
 
-from jira2py.helpers.issues import DEFAULT_FIELDS
-
 from .adf import adf_to_markdown, is_adf_value
 from .models import (
     FieldMeta,
     IssueType,
     JiraComment,
-    JiraIssue,
     JiraUser,
     SearchResult,
     WorklogReport,
     WorklogReportRow,
     user_display,
 )
-from .utils import format_date, format_size
-
-_FORMATTED_FIELDS = set(DEFAULT_FIELDS)
+from .utils import format_date
 
 
 def _section(title: str) -> str:
     return f"--- [{title.upper()}] ---"
-
-
-def _field_label(field_id: str, names_map: dict[str, str]) -> str:
-    display = names_map.get(field_id)
-    if display and display != field_id:
-        return f"{display} ({field_id})"
-    return field_id
-
-
-def format_issue_full(
-    issue: JiraIssue,
-    *,
-    url: str = "",
-    requested_fields: list[str] | None = None,
-    field_names: dict[str, str] | None = None,
-) -> str:
-    """Format a Jira issue for readable helper output."""
-    fields = issue.fields
-    lines: list[str] = [
-        f"Key: {issue.key}",
-        f"Summary: {fields.summary}",
-        f"Status: {_named(fields.status)}",
-        f"Type: {_named(fields.issuetype)}",
-        f"Priority: {_named(fields.priority)}",
-        f"Assignee: {user_display(fields.assignee)}",
-        f"Reporter: {user_display(fields.reporter)}",
-        f"Created: {format_date(fields.created)}",
-        f"Updated: {format_date(fields.updated)}",
-    ]
-
-    if fields.labels:
-        lines.append(f"Labels: {', '.join(fields.labels)}")
-
-    if fields.components:
-        lines.append(
-            f"Components: {', '.join(component.name for component in fields.components)}"
-        )
-
-    if fields.fixVersions:
-        lines.append(
-            f"Fix Versions: {', '.join(version.name for version in fields.fixVersions)}"
-        )
-
-    if url:
-        lines.append(f"URL: {url}")
-
-    comment_page = fields.comment
-    comment_total = comment_page.total if comment_page else 0
-    lines.append(f"Comments: {comment_total}" if comment_total else "Comments: none")
-
-    if fields.attachment:
-        lines.append("")
-        lines.append(_section(f"Attachments ({len(fields.attachment)})"))
-        for attachment in fields.attachment:
-            lines.append(
-                f"- {attachment.filename or '?'} (id: {attachment.id}, {attachment.mimeType}, {format_size(attachment.size)})"
-            )
-
-    if fields.subtasks:
-        lines.append("")
-        lines.append(_section(f"Subtasks ({len(fields.subtasks)})"))
-        for subtask in fields.subtasks:
-            status = _named(subtask.fields.status)
-            lines.append(f"- {subtask.key}: {subtask.fields.summary} [{status}]")
-
-    if fields.issuelinks:
-        lines.append("")
-        lines.append(_section(f"Issue Links ({len(fields.issuelinks)})"))
-        for link in fields.issuelinks:
-            if link.outwardIssue:
-                target = link.outwardIssue
-                direction = link.type.outward
-            elif link.inwardIssue:
-                target = link.inwardIssue
-                direction = link.type.inward
-            else:
-                continue
-            status = _named(target.fields.status)
-            lines.append(
-                f"- {direction} {target.key}: {target.fields.summary} [{status}] (link id: {link.id})"
-            )
-
-    lines.append("")
-    lines.append(_section("Description"))
-    lines.append(adf_to_markdown(fields.description))
-
-    if requested_fields:
-        extra_names = [
-            name for name in requested_fields if name not in _FORMATTED_FIELDS
-        ]
-        if extra_names:
-            extra_data: dict[str, Any] = {}
-            raw_fields = issue.fields.model_extra or {}
-            for name in extra_names:
-                if name in raw_fields:
-                    extra_data[name] = raw_fields[name]
-                elif hasattr(issue.fields, name):
-                    value = getattr(issue.fields, name)
-                    if value is not None:
-                        extra_data[name] = value
-            if extra_data:
-                names_map = field_names or {}
-                lines.append("")
-                lines.append(_section("Additional Fields"))
-                adf_extra: dict[str, Any] = {}
-                plain_fields: dict[str, Any] = {}
-                for key, value in extra_data.items():
-                    if is_adf_value(value):
-                        adf_extra[key] = value
-                    else:
-                        plain_fields[key] = value
-                for key, value in adf_extra.items():
-                    label = _field_label(key, names_map)
-                    lines.append(_section(label))
-                    lines.append(adf_to_markdown(value))
-                    lines.append("")
-                if plain_fields:
-                    labeled = {
-                        _field_label(key, names_map): value
-                        for key, value in plain_fields.items()
-                    }
-                    lines.append("```json")
-                    lines.append(json.dumps(labeled, indent=2, default=str))
-                    lines.append("```")
-
-    return "\n".join(lines)
 
 
 def format_comment(comment: JiraComment) -> str:
@@ -360,10 +229,8 @@ def _format_field(field: FieldMeta) -> list[str]:
 
 
 __all__ = [
-    "DEFAULT_FIELDS",
     "format_comment",
     "format_field_metadata",
-    "format_issue_full",
     "format_issue_type_list",
     "format_search_results",
     "format_worklog_report",

@@ -6,7 +6,7 @@ Use this when you need a worklog report for issues selected by JQL within a UTC 
 
 1. If the JQL is new or uncertain, validate it first:
    - `uvx jira2cli jql-syntax`
-   - `uvx jira2cli search '<JQL>' --field key --field summary --max-results <N> --json`
+   - `uvx jira2cli search '<JQL>' --fields key,summary --max-results <N> --json`
 2. Run the report:
    - `uvx jira2cli worklog-report --start-date <YYYY-MM-DD> --end-date <YYYY-MM-DD> --jql '<JQL>' --json`
 3. Use `--account-id <ACCOUNT_ID>` when the report should include worklogs from only one Jira user.

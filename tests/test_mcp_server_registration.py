@@ -50,6 +50,32 @@ def test_mcp_registers_existing_and_new_jira_tools() -> None:
     assert EXPECTED_JIRA_TOOLS <= names
 
 
+def test_read_tool_requires_nonempty_field_selectors() -> None:
+    tools = asyncio.run(mcp.list_tools(run_middleware=False))
+    tool = next(tool for tool in tools if tool.name == "jira_read")
+    parameters = cast(dict[str, Any], tool.parameters)
+    properties = cast(dict[str, dict[str, Any]], parameters["properties"])
+
+    assert set(parameters["required"]) == {"issue_key", "fields"}
+    assert set(properties) == {"issue_key", "fields"}
+    assert parameters["additionalProperties"] is False
+
+    issue_key = properties["issue_key"]
+    assert issue_key["type"] == "string"
+    assert issue_key["minLength"] == 1
+
+    fields = properties["fields"]
+    assert fields["type"] == "array"
+    assert fields["minItems"] == 1
+    assert "default" not in fields
+
+    item = fields["items"]
+    assert item["type"] == "string"
+    assert item["minLength"] == 1
+    assert "pattern" in item
+    assert "comma" in item["description"].lower()
+
+
 def test_search_tools_expose_manual_cursor_paging_schema() -> None:
     tools = asyncio.run(mcp.list_tools(run_middleware=False))
     expected = {

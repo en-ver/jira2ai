@@ -5,7 +5,7 @@ Use this when you need workflow transition metadata, need to apply a transition,
 ## Workflow transitions
 
 1. Read the issue first:
-   - `uvx jira2cli read <KEY> --json`
+   - `uvx jira2cli read <KEY> --fields summary,status --json`
 2. List the available transitions:
    - `uvx jira2cli transitions <KEY> --json`
 3. Confirm the exact transition ID or exact transition name.
@@ -22,14 +22,14 @@ Do not guess transition names or assume a workflow state exists in the target pr
    - `uvx jira2cli filters --query <text> --json`
 3. Capture the exact saved filter ID before running it.
 4. Run the filter through the normal search flow. `--max-results` is a per-page limit (default 20; maximum 50):
-   - `uvx jira2cli filter-run <FILTER_ID> --field key --field summary --max-results <N> --json`
-5. `--field` is singular and repeatable: `--field key --field summary`; `--fields` does not exist, and values are not comma-split. If omitted, fields default to `summary, status, assignee, priority, issuetype, created, updated`. Projection is whole-field: `assignee` may include Jira-permitted nested identity, email, and avatar data; envelope metadata may remain. Plain output remains the helper's fixed compact view; use structured output and local reduction with `jq` for arbitrary requested fields.
+   - `uvx jira2cli filter-run <FILTER_ID> --fields key,summary --max-results <N> --json`
+5. `--fields` is optional and may appear at most once as comma-delimited selectors, for example `--fields key,summary`. If omitted, fields default to `summary, status, assignee, priority, issuetype, created, updated`. Projection is whole-field: `assignee` may include Jira-permitted nested identity, email, and avatar data; envelope metadata may remain. Plain output remains the helper's fixed compact view; use structured output and local reduction with `jq` for arbitrary requested fields.
 6. Continue only while structured `--json` output has a non-empty `nextPageToken`; forward it unchanged with `--next-page-token`. Do not use `total` to decide. Keep the exact filter ID, fields, and page size stable, and do not edit the saved filter while continuing. Atlassian expires each `nextPageToken` in seven days, so complete pagination within that window; if it expires, rerun the search or filter from the first page. This loop captures each complete page and emits only issue keys:
 
    ```bash
    filter_id=10400
    page_size=20
-   fields=(--field key)
+   fields=(--fields key)
    token=''
    rows_received=0
 

@@ -6,9 +6,28 @@ from typing import Any, cast
 import pytest
 from fastmcp.exceptions import ToolError
 from fastmcp.tools.tool import ToolResult
-from jira2mcp.adapter import adapt_operation_result, to_tool_error, to_tool_result
+from jira2mcp.adapter import (
+    adapt_operation_result,
+    to_data_tool_result,
+    to_tool_error,
+    to_tool_result,
+)
 from jira2py.helpers import HelperResult
 from jira2py.helpers.errors import JiraHelperValidationError
+
+
+def test_to_data_tool_result_preserves_data_with_compact_json_fallback() -> None:
+    payload = {"key": "PROJ-123", "labels": ["backend", "urgent"]}
+
+    adapted = to_data_tool_result(payload)
+
+    assert adapted.structured_content == payload
+    assert len(adapted.content) == 1
+    assert cast(Any, adapted.content[0]).text == json.dumps(
+        payload,
+        separators=(",", ":"),
+        default=str,
+    )
 
 
 def test_adapt_operation_result_returns_plain_text_for_text_only_results() -> None:
