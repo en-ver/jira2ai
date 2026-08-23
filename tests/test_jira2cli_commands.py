@@ -7,6 +7,7 @@ from types import SimpleNamespace
 from typing import Any, cast
 
 import pytest
+from click.utils import strip_ansi
 from jira2cli import app
 from jira2cli.commands.worklogs import worklog_report_command
 from jira2cli.jql import JQL_REFERENCE
@@ -257,12 +258,13 @@ def test_read_command_surfaces_formatter_failures(
 
 def test_read_help_requires_fields_and_omits_legacy_options() -> None:
     result = runner.invoke(app, ["read", "--help"])
+    help_output = strip_ansi(result.stdout)
 
     assert result.exit_code == 0
-    assert "--fields" in result.stdout
-    assert "[required]" in result.stdout
-    assert "--extra-field" not in result.stdout
-    assert "--raw" not in result.stdout
+    assert "--fields" in help_output
+    assert "[required]" in help_output
+    assert "--extra-field" not in help_output
+    assert "--raw" not in help_output
 
 
 def test_search_command_manually_continues_with_an_opaque_token(
