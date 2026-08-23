@@ -72,17 +72,27 @@ async def run_filter(
     filter_id: Annotated[str, "Saved filter ID"],
     max_results: Annotated[
         int,
-        Field(description="Max issues to return", ge=1, le=50),
+        Field(description="Maximum issues to return per page", ge=1, le=50),
     ] = 20,
     fields: Annotated[
         list[str] | None,
-        "Optional issue fields to include in the resolved search",
+        "Fields to include in the resolved search. Selection is whole-field; when omitted, uses summary, status, assignee, priority, issuetype, created, and updated. Assignee may contain nested identity, email, and avatar data.",
     ] = None,
-    raw: Annotated[bool, "Return raw JSON from the search helper"] = False,
+    next_page_token: Annotated[
+        str | None,
+        "Opaque nextPageToken from the previous raw response, forwarded unchanged. Keep the filter, fields, and per-page max_results stable while paging.",
+    ] = None,
+    raw: Annotated[
+        bool,
+        "Return the complete API-shaped page as structured content and a JSON text fallback, including arbitrary requested fields and nextPageToken. This bypasses normal 30,000-character server text clipping, but MCP clients may still clip results.",
+    ] = False,
     ctx: Context = CurrentContext(),
     api: JiraAPI = Depends(get_api),
 ) -> str | ToolResult:
-    """Resolve a saved filter's JQL and run the normal Jira issue search flow."""
+    """Resolve a saved filter's JQL and return exactly one page of issues.
+
+    The filter is resolved on every call, so it must not change while paging.
+    """
     await ctx.info(f"Running saved filter {filter_id}")
 
     try:
@@ -90,6 +100,7 @@ async def run_filter(
             filter_id,
             max_results=max_results,
             fields=fields,
+            next_page_token=next_page_token,
         )
     except JiraHelperOperationError as exc:
         await ctx.error(str(exc))

@@ -13,6 +13,7 @@ from jira2mcp.tools import fields as fields_tool_module
 from jira2mcp.tools import projects as projects_tool_module
 from jira2mcp.tools.comments import comments
 from jira2mcp.tools.fields import fields
+from jira2mcp.tools.filters import run_filter
 from jira2mcp.tools.link_types_resource import (
     list_link_types as list_link_types_resource,
 )
@@ -49,6 +50,7 @@ class RecordingMethod:
 def make_api(
     *,
     search_response=None,
+    filter_response=None,
     comments_response=None,
     edit_metadata_response=None,
     issue_types_response=None,
@@ -70,6 +72,7 @@ def make_api(
             response=search_response,
             error=search_error,
         ),
+        "get_filter": RecordingMethod(response=filter_response),
         "get_comments": RecordingMethod(
             response=comments_response,
             error=comments_error,
@@ -103,6 +106,7 @@ def make_api(
     return SimpleNamespace(
         credentials=SimpleNamespace(url="https://example.atlassian.net"),
         search=SimpleNamespace(enhanced_search=methods["enhanced_search"]),
+        filters=SimpleNamespace(get_filter=methods["get_filter"]),
         comments=SimpleNamespace(get_comments=methods["get_comments"]),
         issues=SimpleNamespace(
             get_edit_metadata=methods["get_edit_metadata"],
@@ -375,20 +379,96 @@ def test_projects_users_and_link_types_operations_format_current_output(
     )
 
 
-def test_search_tool_uses_helper_adapter_for_raw_output(
-    fake_ctx,
-    search_response: dict[str, object],
-) -> None:
-    api = make_api(search_response=search_response)
+def test_search_tool_forwards_cursor_and_returns_complete_raw_page(fake_ctx) -> None:
+    response = {
+        "issues": [
+            {
+                "key": "PROJ-101",
+                "fields": {
+                    "summary": "Ship the feature",
+                    "assignee": {
+                        "displayName": "Alice",
+                        "emailAddress": "alice@example.com",
+                        "avatarUrls": {"48x48": "https://avatar.example/alice"},
+                    },
+                    "customfield_12345": {"nested": ["unchanged"]},
+                },
+            }
+        ],
+        "nextPageToken": "next opaque token /?=+",
+    }
+    api = make_api(search_response=response)
 
-    result = asyncio.run(search("project = PROJ", raw=True, ctx=fake_ctx, api=api))
+    result = asyncio.run(
+        search(
+            "project = PROJ",
+            max_results=37,
+            fields=["summary", "assignee", "customfield_12345"],
+            next_page_token="opaque token /?=+",
+            raw=True,
+            ctx=fake_ctx,
+            api=api,
+        )
+    )
 
     assert fake_ctx.info_messages == ["Searching issues: project = PROJ"]
     assert fake_ctx.error_messages == []
+    assert api._methods["enhanced_search"].calls == [
+        {
+            "jql": "project = PROJ",
+            "max_results": 37,
+            "fields": ["summary", "assignee", "customfield_12345"],
+            "next_page_token": "opaque token /?=+",
+        }
+    ]
     assert isinstance(result, ToolResult)
-    assert result.structured_content == search_response
+    assert result.structured_content == response
+    assert (
+        result.structured_content["issues"][0]["fields"]
+        == response["issues"][0]["fields"]
+    )
     assert cast(Any, result.content[0]).text == json.dumps(
-        search_response, indent=2, default=str
+        response, indent=2, default=str
+    )
+
+
+def test_run_filter_forwards_cursor_and_returns_complete_final_raw_page(
+    fake_ctx,
+) -> None:
+    response = {"issues": []}
+    api = make_api(
+        filter_response={"id": "12345", "jql": " project = PROJ "},
+        search_response=response,
+    )
+
+    result = asyncio.run(
+        run_filter(
+            "12345",
+            max_results=23,
+            fields=["summary", "customfield_12345"],
+            next_page_token="opaque token /?=+",
+            raw=True,
+            ctx=fake_ctx,
+            api=api,
+        )
+    )
+
+    assert fake_ctx.info_messages == ["Running saved filter 12345"]
+    assert fake_ctx.error_messages == []
+    assert api._methods["get_filter"].calls == [{"filter_id": "12345", "expand": "jql"}]
+    assert api._methods["enhanced_search"].calls == [
+        {
+            "jql": "project = PROJ",
+            "max_results": 23,
+            "fields": ["summary", "customfield_12345"],
+            "next_page_token": "opaque token /?=+",
+        }
+    ]
+    assert isinstance(result, ToolResult)
+    assert result.structured_content == response
+    assert "nextPageToken" not in result.structured_content
+    assert cast(Any, result.content[0]).text == json.dumps(
+        response, indent=2, default=str
     )
 
 

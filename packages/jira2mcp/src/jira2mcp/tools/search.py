@@ -23,20 +23,27 @@ from .server import tools
 async def search(
     jql: Annotated[str, "JQL query string (e.g. 'project = PROJ AND status = Open')"],
     max_results: Annotated[
-        int, Field(description="Max issues to return", ge=1, le=50)
+        int, Field(description="Maximum issues to return per page", ge=1, le=50)
     ] = 20,
     fields: Annotated[
         list[str] | None,
-        "Fields to include (default: summary, status, assignee, priority, issuetype, created, updated)",
+        "Fields to include. Selection is whole-field; when omitted, uses summary, status, assignee, priority, issuetype, created, and updated. Assignee may contain nested identity, email, and avatar data.",
     ] = None,
-    raw: Annotated[bool, "Return raw JSON from the API"] = False,
+    next_page_token: Annotated[
+        str | None,
+        "Opaque nextPageToken from the previous raw response, forwarded unchanged. Keep JQL, fields, and per-page max_results stable while paging.",
+    ] = None,
+    raw: Annotated[
+        bool,
+        "Return the complete API-shaped page as structured content and a JSON text fallback, including arbitrary requested fields and nextPageToken. This bypasses normal 30,000-character server text clipping, but MCP clients may still clip results.",
+    ] = False,
     ctx: Context = CurrentContext(),
     api: JiraAPI = Depends(get_api),
 ) -> str | ToolResult:
     """Search Jira issues using JQL.
 
-    Returns a formatted list of matching issues with key, summary, status,
-    type, priority, and assignee.
+    Returns exactly one page of matching issues, formatted with key, summary,
+    status, type, priority, and assignee.
 
     Use the jql_syntax prompt for full JQL syntax reference.
 
@@ -54,6 +61,7 @@ async def search(
             jql,
             max_results=max_results,
             fields=fields,
+            next_page_token=next_page_token,
         )
     except JiraHelperOperationError as exc:
         await ctx.error(str(exc))

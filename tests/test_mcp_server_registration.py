@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from typing import Any, cast
 
 from jira2mcp import mcp
 
@@ -47,3 +48,76 @@ def test_mcp_registers_existing_and_new_jira_tools() -> None:
     names = {tool.name for tool in tools}
 
     assert EXPECTED_JIRA_TOOLS <= names
+
+
+def test_search_tools_expose_manual_cursor_paging_schema() -> None:
+    tools = asyncio.run(mcp.list_tools(run_middleware=False))
+    expected = {
+        "jira_search": (
+            {"jql"},
+            {"jql", "max_results", "fields", "next_page_token", "raw"},
+        ),
+        "jira_run_filter": (
+            {"filter_id"},
+            {"filter_id", "max_results", "fields", "next_page_token", "raw"},
+        ),
+    }
+
+    for name, (required, property_names) in expected.items():
+        tool = next(tool for tool in tools if tool.name == name)
+        parameters = cast(dict[str, Any], tool.parameters)
+        properties = cast(dict[str, dict[str, Any]], parameters["properties"])
+
+        assert "exactly one page" in tool.description.lower()
+        assert set(parameters["required"]) == required
+        assert set(properties) == property_names
+        assert parameters["additionalProperties"] is False
+
+        token = properties["next_page_token"]
+        assert {entry["type"] for entry in token["anyOf"]} == {"string", "null"}
+        assert token["default"] is None
+        token_description = token["description"].lower()
+        assert "opaque" in token_description
+        assert "nextpagetoken" in token_description
+        assert "forwarded unchanged" in token_description
+        assert "stable" in token_description
+
+        max_results = properties["max_results"]
+        assert max_results["type"] == "integer"
+        assert max_results["default"] == 20
+        assert max_results["minimum"] == 1
+        assert max_results["maximum"] == 50
+        assert "per page" in max_results["description"].lower()
+
+        fields = properties["fields"]
+        array_schema = next(
+            entry for entry in fields["anyOf"] if entry["type"] == "array"
+        )
+        assert array_schema["items"]["type"] == "string"
+        assert fields["default"] is None
+        fields_description = fields["description"].lower()
+        for field in (
+            "summary",
+            "status",
+            "assignee",
+            "priority",
+            "issuetype",
+            "created",
+            "updated",
+        ):
+            assert field in fields_description
+        assert "whole-field" in fields_description
+        assert "identity" in fields_description
+        assert "email" in fields_description
+        assert "avatar" in fields_description
+
+        raw = properties["raw"]
+        assert raw["type"] == "boolean"
+        assert raw["default"] is False
+        raw_description = raw["description"].lower()
+        assert "api-shaped" in raw_description
+        assert "structured content" in raw_description
+        assert "json text fallback" in raw_description
+        assert "nextpagetoken" in raw_description
+        assert "30,000" in raw_description
+        assert "client" in raw_description
