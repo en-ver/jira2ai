@@ -2,4 +2,4 @@
 
 from fastmcp import FastMCP
 
-tools = FastMCP("Jira Tools")
+tools = FastMCP("Jira Tools", mask_error_details=True)
