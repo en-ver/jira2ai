@@ -90,17 +90,21 @@ def test_root_help_lists_stage9_commands_and_credentials_flag() -> None:
         assert command_name in help_output
 
 
-def test_filter_run_field_help_explains_field_level_selection() -> None:
-    command = _get_registered_command("filter-run")
-    fields = next(param for param in command.params if param.name == "fields")
+def test_filter_run_help_explains_multi_issue_projected_reads() -> None:
+    result = runner.invoke(app, ["filter-run", "--help"])
+    help_output = " ".join(strip_ansi(result.stdout).replace("│", " ").split())
 
-    assert fields.help == (
-        "Comma-separated Jira field keys, IDs, or selectors. Provide --fields "
-        "at most once. If omitted, fields default to summary, status, assignee, "
-        "priority, issuetype, created, updated. Projection is whole-field: "
-        "assignee may include Jira-permitted nested identity, email, and avatar "
-        "data; envelope metadata may remain."
-    )
+    assert result.exit_code == 0
+    for expected in [
+        "Read one page",
+        "multiple issues",
+        "every issue in the returned page",
+        "may be absent or null",
+        "--json or --raw",
+        "plain output is fixed",
+        "Forward a non-empty opaque nextPageToken unchanged",
+    ]:
+        assert expected in help_output
 
 
 def test_callback_accepts_credentials_file_flag(

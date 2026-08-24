@@ -35,7 +35,7 @@ def read_command(
         help="Render the unchanged Jira response as JSON.",
     ),
 ) -> None:
-    """Read a Jira issue using an explicit field projection."""
+    """Read one Jira issue; use search or filter-run for multi-issue projected reads."""
     if not issue_key.strip():
         raise_cli_usage_error("issue_key is required and cannot be empty")
     issue_key = issue_key.strip()

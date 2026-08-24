@@ -22,13 +22,6 @@ from typer.testing import CliRunner
 
 runner = CliRunner()
 
-FIELD_SELECTION_HELP = (
-    "Comma-separated Jira field keys, IDs, or selectors. Provide --fields "
-    "at most once. If omitted, fields default to summary, status, assignee, "
-    "priority, issuetype, created, updated. Projection is whole-field: "
-    "assignee may include Jira-permitted nested identity, email, and avatar "
-    "data; envelope metadata may remain."
-)
 RAW_OUTPUT_HELP = (
     "Render API-oriented output as normalized, pretty-printed JSON with sorted "
     "object keys."
@@ -48,11 +41,23 @@ def _patch_helpers(monkeypatch: pytest.MonkeyPatch, module_path: str, **groups) 
     )
 
 
-def test_search_field_help_explains_field_level_selection() -> None:
-    command = _get_registered_command("search")
-    fields = next(param for param in command.params if param.name == "fields")
+def test_search_help_explains_multi_issue_projected_reads() -> None:
+    result = runner.invoke(app, ["search", "--help"])
+    help_output = " ".join(strip_ansi(result.stdout).replace("│", " ").split())
 
-    assert fields.help == FIELD_SELECTION_HELP
+    assert result.exit_code == 0
+    for expected in [
+        "Read one page",
+        "multiple Jira issues",
+        "key IN (...)",
+        "known issue lists",
+        "every issue in the returned page",
+        "may be absent or null",
+        "--json or --raw",
+        "plain output is fixed",
+        "Forward a non-empty opaque nextPageToken unchanged",
+    ]:
+        assert expected in help_output
 
 
 def test_all_raw_output_options_describe_normalized_json() -> None:
@@ -258,13 +263,15 @@ def test_read_command_surfaces_formatter_failures(
 
 def test_read_help_requires_fields_and_omits_legacy_options() -> None:
     result = runner.invoke(app, ["read", "--help"])
-    help_output = strip_ansi(result.stdout)
+    help_output = " ".join(strip_ansi(result.stdout).replace("│", " ").split())
 
     assert result.exit_code == 0
     assert "--fields" in help_output
     assert "[required]" in help_output
     assert "--extra-field" not in help_output
     assert "--raw" not in help_output
+    assert "one Jira issue" in help_output
+    assert "search or filter-run for multi-issue projected reads" in help_output
 
 
 def test_search_command_manually_continues_with_an_opaque_token(

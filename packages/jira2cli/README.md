@@ -63,11 +63,22 @@ Most structured commands accept `--json` for helper output. `--raw` renders API-
 
 `read` requires exactly one `--fields FIELD[,FIELD...]` option. Its CSV segments are trimmed, must be non-empty, and are forwarded in order as Jira field keys, IDs, or endpoint-supported selectors. `--json` bypasses text formatting and preserves the returned Jira object, including ADF. Selectors such as `*all`, `*navigable`, or negative selectors can still return broad responses; request only what is needed.
 
-## Search pagination
+## Multi-issue projected search and pagination
 
-Each `search` or `filter-run` invocation returns exactly one page. `--max-results` defaults to 20 and has a 50-item ceiling; it is a **per-page** limit. Structured `--json` output preserves the helper's `nextPageToken`. When it is non-empty, pass it unchanged as `--next-page-token` on the next invocation; stop when it is absent or empty. Do not use `total` to decide whether to continue. Atlassian expires each `nextPageToken` in seven days, so complete pagination within that window; if it expires, rerun the search or filter from the first page.
+Unlike singular `read`, `search` and `filter-run` are multi-issue projected reads. Each invocation returns one page and requests the selected `--fields` for every issue in that page. A requested field can still be absent or null. Use structured `--json` or `--raw` to inspect arbitrary projected fields: plain output is a fixed compact view.
 
-Keep the JQL, requested `--fields` value, and `--max-results` unchanged for every page. `--fields` is optional and may appear at most once as comma-delimited selectors, for example `--fields key,summary`; values are trimmed and empty CSV segments are rejected. If omitted, fields default to `summary, status, assignee, priority, issuetype, created, updated`. Projection is whole-field: `assignee` may include Jira-permitted nested identity, email, and avatar data. Jira envelope metadata may remain, including issue-envelope members such as `id`, `key`, and `self`, plus search metadata such as `isLast`, `nextPageToken`, and optional `warnings`, `names`, or `schema`. Plain output remains the helper's fixed compact view; use structured output and local reduction with `jq` for arbitrary requested fields.
+Each `search` or `filter-run` invocation returns exactly one page. `--max-results` defaults to 20 and has a 50-item ceiling; it is a **per-page** limit. Structured output preserves the opaque `nextPageToken`. When it is non-empty, pass it unchanged as `--next-page-token` on the next invocation; stop when it is absent or empty. Do not use `total` to decide whether to continue. Keep the JQL (or saved filter), requested `--fields` value, and `--max-results` unchanged for every page. Atlassian expires each `nextPageToken` in seven days, so complete pagination within that window; if it expires, rerun the search or filter from the first page.
+
+`--fields` is optional and may appear at most once as comma-delimited selectors, for example `--fields key,summary`; values are trimmed and empty CSV segments are rejected. If omitted, fields default to `summary, status, assignee, priority, issuetype, created, updated`. Projection is whole-field: `assignee` may include Jira-permitted nested identity, email, and avatar data. Jira envelope metadata may remain, including issue-envelope members such as `id`, `key`, and `self`, plus search metadata such as `isLast`, `nextPageToken`, and optional `warnings`, `names`, or `schema`.
+
+For a known issue list, search it as a batch with JQL. If Jira rejects a large query, split the keys into smaller `key IN (...)` batches and paginate each batch:
+
+```bash
+uvx jira2cli search 'key IN (PROJ-1, PROJ-2, PROJ-3) ORDER BY key' \
+  --fields key,summary,status,customfield_12345 --max-results 50 --json
+```
+
+An embedded `comment` or `worklog` field in a search projection may be partial. For complete per-issue collections, use the dedicated paginated `comments <KEY>` or `worklogs <KEY>` command instead.
 
 This Bash example uses arrays so the JQL and opaque token remain safely quoted, captures each complete page, and emits only issue keys:
 
