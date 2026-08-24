@@ -15,7 +15,10 @@ from jira2cli.parsing import parse_fields_option
 
 
 def search_command(
-    jql: str = typer.Argument(..., help="JQL query string"),
+    jql: str = typer.Argument(
+        ...,
+        help="JQL query for a multi-issue projected read; use key IN (...) for known issue lists.",
+    ),
     max_results: int = typer.Option(
         20,
         "--max-results",
@@ -26,7 +29,7 @@ def search_command(
     next_page_token: str | None = typer.Option(
         None,
         "--next-page-token",
-        help="Opaque token from the previous result page.",
+        help="Forward a non-empty opaque nextPageToken unchanged with the same query, fields, and page size.",
     ),
     fields: list[str] | None = typer.Option(
         None,
@@ -34,9 +37,9 @@ def search_command(
         help=(
             "Comma-separated Jira field keys, IDs, or selectors. Provide --fields "
             "at most once. If omitted, fields default to summary, status, assignee, "
-            "priority, issuetype, created, updated. Projection is whole-field: "
-            "assignee may include Jira-permitted nested identity, email, and avatar "
-            "data; envelope metadata may remain."
+            "priority, issuetype, created, updated. Requested fields apply to every "
+            "issue in the returned page, but may be absent or null. Projection is "
+            "whole-field; envelope metadata may remain."
         ),
     ),
     raw_output: bool = typer.Option(
@@ -47,10 +50,10 @@ def search_command(
     json_output: bool = typer.Option(
         False,
         "--json",
-        help="Render structured output as JSON.",
+        help="Render structured output as JSON; use --json or --raw for arbitrary projected fields because plain output is fixed.",
     ),
 ) -> None:
-    """Search Jira issues using JQL."""
+    """Read one page of projected fields for multiple Jira issues using JQL."""
     validate_output_options(json_output=json_output, raw_output=raw_output)
     selected_fields = parse_fields_option(fields)
 

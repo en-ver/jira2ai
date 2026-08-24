@@ -84,7 +84,7 @@ def filter_run_command(
     next_page_token: str | None = typer.Option(
         None,
         "--next-page-token",
-        help="Opaque token from the previous result page.",
+        help="Forward a non-empty opaque nextPageToken unchanged with the same filter, fields, and page size.",
     ),
     fields: list[str] | None = typer.Option(
         None,
@@ -92,9 +92,9 @@ def filter_run_command(
         help=(
             "Comma-separated Jira field keys, IDs, or selectors. Provide --fields "
             "at most once. If omitted, fields default to summary, status, assignee, "
-            "priority, issuetype, created, updated. Projection is whole-field: "
-            "assignee may include Jira-permitted nested identity, email, and avatar "
-            "data; envelope metadata may remain."
+            "priority, issuetype, created, updated. Requested fields apply to every "
+            "issue in the returned page, but may be absent or null. Projection is "
+            "whole-field; envelope metadata may remain."
         ),
     ),
     raw_output: bool = typer.Option(
@@ -105,10 +105,10 @@ def filter_run_command(
     json_output: bool = typer.Option(
         False,
         "--json",
-        help="Render structured output as JSON.",
+        help="Render structured output as JSON; use --json or --raw for arbitrary projected fields because plain output is fixed.",
     ),
 ) -> None:
-    """Resolve a saved filter's JQL and run the normal Jira issue search flow."""
+    """Read one page of projected fields for multiple issues from a saved filter."""
     validate_output_options(json_output=json_output, raw_output=raw_output)
     selected_fields = parse_fields_option(fields)
 
