@@ -1,17 +1,21 @@
 from __future__ import annotations
 
+import asyncio
 import json
 from typing import Any, cast
 
 import pytest
+from fastmcp import Client
 from fastmcp.exceptions import ToolError
 from fastmcp.tools.tool import ToolResult
+from jira2mcp import mcp
 from jira2mcp.adapter import (
     adapt_operation_result,
     to_data_tool_result,
     to_tool_error,
     to_tool_result,
 )
+from jira2mcp.tools import auth
 from jira2py.helpers import HelperResult
 from jira2py.helpers.errors import JiraHelperValidationError
 
@@ -95,3 +99,36 @@ def test_to_tool_error_maps_helper_errors_to_fastmcp_toolerror() -> None:
 
     assert isinstance(adapted, ToolError)
     assert str(adapted) == "missing project key"
+
+
+def test_mounted_tool_masks_unexpected_error_details(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    sentinel = "UNEXPECTED_INTERNAL_SENTINEL_4d629"
+
+    class FakeAuth:
+        def status(self) -> None:
+            raise RuntimeError(sentinel)
+
+    class FakeJiraHelpers:
+        def __init__(self, api: object) -> None:
+            self.auth = FakeAuth()
+
+    monkeypatch.setattr(auth, "JiraHelpers", FakeJiraHelpers)
+    api_dependency = auth.auth_status.__defaults__[-1]
+    monkeypatch.setattr(api_dependency, "factory", lambda: object())
+
+    async def call_tool():
+        async with Client(mcp) as client:
+            return await client.call_tool_mcp("jira_auth_status", {})
+
+    result = asyncio.run(call_tool())
+    error_text = "\n".join(
+        content.text
+        for content in result.content
+        if getattr(content, "type", None) == "text"
+    )
+
+    assert result.isError
+    assert sentinel not in error_text
+    assert error_text == "Error calling tool 'auth_status'"
