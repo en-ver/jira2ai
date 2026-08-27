@@ -21,7 +21,8 @@ mcp = FastMCP(
         "- Before assigning: use jira_users to look up account IDs\n"
         "- Descriptions and comments accept markdown (auto-converted to ADF)\n"
         "- jira_read requires a non-empty fields array; request only the Jira fields needed\n"
-        "- Use jira_comments for comments, jira_issue_links for link IDs, and jira_attachments or jira_attachment_metadata for attachment metadata\n"
+        "- Use jira_comments for comments, jira_changelogs for complete issue history, jira_changelogs_by_ids for known changelog IDs, jira_issue_links for link IDs, and jira_attachments or jira_attachment_metadata for attachment metadata\n"
+        "- jira_changelogs fetches every GET page before applying optional local timestamp bounds\n"
         "- Read the data://jira/link-types resource before creating issue links\n"
         "- Use the jql_syntax prompt for JQL syntax reference when building search queries"
     ),

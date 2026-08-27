@@ -3,6 +3,8 @@ from __future__ import annotations
 import pytest
 import typer
 from jira2cli.parsing import (
+    parse_changelog_ids_csv,
+    parse_changelog_ids_option,
     parse_fields_csv,
     parse_fields_json,
     parse_fields_option,
@@ -96,6 +98,42 @@ def test_parse_fields_option_rejects_repeated_occurrences(
 
     assert exc_info.value.exit_code == 2
     assert captured.err == "--fields: may be provided only once\n"
+    assert captured.out == ""
+
+
+def test_parse_changelog_ids_csv_trims_segments_and_preserves_order() -> None:
+    assert parse_changelog_ids_csv(" 10001, 10002,10001 ") == [10001, 10002, 10001]
+
+
+@pytest.mark.parametrize(
+    "value", ["", "   ", ",10001", "10001,", "10001,,10002", "1.5", "[1,2]", "abc"]
+)
+def test_parse_changelog_ids_csv_rejects_invalid_segments(
+    value: str,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    with pytest.raises(typer.Exit) as exc_info:
+        parse_changelog_ids_csv(value)
+
+    captured = capsys.readouterr()
+
+    assert exc_info.value.exit_code == 2
+    assert captured.err == (
+        "--changelog-ids: must contain comma-separated non-empty base-10 integer IDs\n"
+    )
+    assert captured.out == ""
+
+
+def test_parse_changelog_ids_option_rejects_repeated_occurrences(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    with pytest.raises(typer.Exit) as exc_info:
+        parse_changelog_ids_option(["10001", "10002"])
+
+    captured = capsys.readouterr()
+
+    assert exc_info.value.exit_code == 2
+    assert captured.err == "--changelog-ids: may be provided only once\n"
     assert captured.out == ""
 
 

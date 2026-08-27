@@ -134,6 +134,57 @@ def _json_contains_text(value: object, needle: str) -> bool:
     return False
 
 
+def _updated_changelog_id_and_created(
+    payload: Mapping[str, object],
+    *,
+    updated_summary: str,
+) -> tuple[int, str]:
+    changelogs = payload.get("changelogs")
+    if not isinstance(changelogs, list):
+        raise AssertionError("Expected jira_changelogs payload to include changelogs")
+
+    for changelog in changelogs:
+        if not isinstance(changelog, Mapping):
+            continue
+        items = changelog.get("items")
+        if not isinstance(items, list):
+            continue
+        if not any(
+            isinstance(item, Mapping)
+            and item.get("field") == "summary"
+            and item.get("toString") == updated_summary
+            for item in items
+        ):
+            continue
+
+        changelog_id = changelog.get("id")
+        created = changelog.get("created")
+        if isinstance(changelog_id, bool) or not isinstance(changelog_id, (int, str)):
+            continue
+        if not isinstance(created, str) or not created:
+            continue
+        try:
+            return int(changelog_id), created
+        except ValueError:
+            continue
+
+    raise AssertionError(
+        "Expected the edited summary to produce a changelog with an integer ID "
+        "and created timestamp"
+    )
+
+
+def _changelog_ids(payload: Mapping[str, object]) -> set[str]:
+    changelogs = payload.get("changelogs")
+    if not isinstance(changelogs, list):
+        raise AssertionError("Expected jira_changelogs payload to include changelogs")
+    return {
+        str(changelog["id"])
+        for changelog in changelogs
+        if isinstance(changelog, Mapping) and "id" in changelog
+    }
+
+
 def _first_link_type(resource_text: str) -> str:
     match = re.search(r"\*\*(.+?)\*\*", resource_text)
     if match is None:
@@ -300,6 +351,63 @@ def test_write_issue_lifecycle_creates_two_tasks_and_leaves_them_in_jira(
             if not isinstance(updated_fields, Mapping):
                 raise AssertionError("Expected jira_read payload to include fields")
             assert updated_fields.get("summary") == edited_summary
+
+            changelogs_result = assert_non_error_result(
+                await call_tool_mcp(
+                    client,
+                    "jira_changelogs",
+                    {"issue_key": first_key, "raw": True},
+                )
+            )
+            changelog_id, changelog_created = _updated_changelog_id_and_created(
+                assert_structured_content(changelogs_result),
+                updated_summary=edited_summary,
+            )
+
+            known_id_result = assert_non_error_result(
+                await call_tool_mcp(
+                    client,
+                    "jira_changelogs_by_ids",
+                    {
+                        "issue_key": first_key,
+                        "changelog_ids": [changelog_id],
+                        "raw": True,
+                    },
+                )
+            )
+            assert str(changelog_id) in _changelog_ids(
+                assert_structured_content(known_id_result)
+            )
+
+            lower_bound_result = assert_non_error_result(
+                await call_tool_mcp(
+                    client,
+                    "jira_changelogs",
+                    {
+                        "issue_key": first_key,
+                        "created_at_or_after": changelog_created,
+                        "raw": True,
+                    },
+                )
+            )
+            assert str(changelog_id) in _changelog_ids(
+                assert_structured_content(lower_bound_result)
+            )
+
+            upper_bound_result = assert_non_error_result(
+                await call_tool_mcp(
+                    client,
+                    "jira_changelogs",
+                    {
+                        "issue_key": first_key,
+                        "created_before": changelog_created,
+                        "raw": True,
+                    },
+                )
+            )
+            assert str(changelog_id) not in _changelog_ids(
+                assert_structured_content(upper_bound_result)
+            )
 
             comment_result = assert_non_error_result(
                 await call_tool_mcp(

@@ -1,6 +1,6 @@
 ---
 name: jira2cli
-description: Jira Cloud workflows through the published `jira2cli` CLI. Use when verifying `jira2cli`, discovering Jira metadata, reading issues/comments/worklogs, working with saved filters and transitions, downloading/uploading attachments, or safely mutating Jira issues.
+description: Jira Cloud workflows through the published `jira2cli` CLI. Use when verifying `jira2cli`, discovering Jira metadata, reading issues, comments, changelog histories, or worklogs, working with saved filters and transitions, downloading/uploading attachments, or safely mutating Jira issues.
 ---
 
 # jira2cli
@@ -19,6 +19,7 @@ It also does **not** provide dedicated issue assign commands, issue delete/archi
 - [references/user-identity-lookup.md](references/user-identity-lookup.md) — Load when a Jira user field needs an `accountId` or exact display name.
 - [references/jql-syntax.md](references/jql-syntax.md) — Load when composing or debugging JQL.
 - [references/search-and-read-issues.md](references/search-and-read-issues.md) — Load when you need to search issues, choose explicit issue fields, read details, or page through comments.
+- [references/changelog-history.md](references/changelog-history.md) — Load when you need complete issue change history, local timestamp filtering, or retrieval by known changelog IDs.
 - [references/transitions-and-filters.md](references/transitions-and-filters.md) — Load when you need workflow transitions, saved filter discovery, or `filter-run` guidance.
 - [references/worklog-report.md](references/worklog-report.md) — Load when you need JQL-based worklog reporting details.
 - [references/worklog-management.md](references/worklog-management.md) — Load when you need issue-specific worklog list/add/update/delete workflows.
@@ -77,6 +78,7 @@ Credentials file shape:
 - For `search` and `filter-run`, `--fields` is optional and may appear at most once as comma-delimited selectors (`--fields key,summary`). If omitted, fields default to `summary, status, assignee, priority, issuetype, created, updated`. Projection is whole-field: `assignee` may include Jira-permitted nested identity, email, and avatar data; envelope metadata may remain. Plain output is the helper's fixed compact view; use structured `--json` or `--raw` and local `jq` reduction for arbitrary requested fields.
 - `search` and `filter-run` return one page per invocation. `--max-results` is per-page (default 20, maximum 50). With structured output, continue only while the opaque `nextPageToken` is non-empty, forwarding it unchanged as `--next-page-token`; do not use `total` to decide. Keep the JQL (or saved filter), requested fields, and page size stable. Do not edit a saved filter during continuation. Atlassian expires each `nextPageToken` in seven days, so complete pagination within that window; if it expires, rerun the search or filter from the first page.
 - For known issue keys, use JQL `key IN (...)`; split a large key list into batches if Jira rejects the query. An embedded `comment` or `worklog` field may be partial; use the dedicated paginated `comments <KEY>` or `worklogs <KEY>` commands for complete collections.
+- `changelogs <KEY>` fetches every Jira GET page before returning complete history. Optional `--created-at-or-after` and `--created-before` filter locally with `created_at_or_after <= created < created_before`; they do not limit Jira GET requests. Use `changelogs-by-ids <KEY> --changelog-ids ID[,ID...]` only for known IDs: it uses Jira's distinct POST endpoint. The one required plural CSV option is trimmed, requires non-empty base-10 integer segments, and preserves order and duplicates. Both `--json` and `--raw` return normalized helper-owned structured output rather than untouched HTTP output; full histories may be large or externally clipped.
 
 ## Flat command surface
 
@@ -85,10 +87,12 @@ Credentials file shape:
 - `auth-status`
 - `me`
 
-### Reads, search, and transitions
+### Reads, changelog history, search, and transitions
 
 - `read`
 - `comments`
+- `changelogs`
+- `changelogs-by-ids`
 - `search`
 - `transitions`
 - `transition`
@@ -145,6 +149,8 @@ Credentials file shape:
 - `uvx jira2cli search '<JQL>' --fields key,summary,status --max-results <N> --next-page-token '<TOKEN>' --json`
 - `uvx jira2cli read <KEY> --fields summary,<FIELD_ID> --json`
 - `uvx jira2cli comments <KEY> --start-at <N> --max-results <N> --order-by -created --json`
+- `uvx jira2cli changelogs <KEY> --created-at-or-after <ISO-8601> --created-before <ISO-8601> --json`
+- `uvx jira2cli changelogs-by-ids <KEY> --changelog-ids <ID[,ID...]> --json`
 - `uvx jira2cli transitions <KEY> --json`
 - `uvx jira2cli transition <KEY> <TRANSITION_ID_OR_NAME> --json`
 - `uvx jira2cli filters --query <text> --json`
