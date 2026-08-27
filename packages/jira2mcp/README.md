@@ -79,6 +79,8 @@ All tools use the `jira_*` namespace.
 | `jira_read` | Read explicitly requested issue fields as raw structured data. |
 | `jira_search` | Search issues with JQL. |
 | `jira_comments` | List issue comments. |
+| `jira_changelogs` | Retrieve complete issue changelog history, with optional local timestamp filtering. |
+| `jira_changelogs_by_ids` | Retrieve entries for known changelog IDs through Jira's distinct POST endpoint. |
 | `jira_transitions` | List available issue transitions. |
 | `jira_transition` | Apply an explicit transition. |
 
@@ -122,6 +124,12 @@ Descriptions and comments accept Markdown and are converted to Atlassian Documen
 `jira_read` requires both `issue_key` and a non-empty native `fields` array, for example `jira_read(issue_key="PROJ-123", fields=["summary", "description"])`. Each array item is one field key, ID, or endpoint-supported selector; do not use comma-separated items or surrounding whitespace. It has no `raw` mode because it always returns structured Jira data. Selectors such as `*all`, `*navigable`, or negative selectors can still return broad responses, so request only what is needed.
 
 Before a create or edit, call `jira_fields` for the target project and issue type. Before a transition, link, comment update/delete, attachment deletion, or worklog mutation, read the current state and use exact IDs or names. Attachment uploads must stay within the server working directory. Downloads must stay within advertised MCP roots, or the server working directory when roots are unavailable. All reads and writes remain subject to the configured Jira account's permissions.
+
+### Changelog history
+
+`jira_changelogs` retrieves every Jira GET page for an issue before returning one helper-owned structured envelope, `{"issue_key": "<KEY>", "changelogs": [...]}`. Its optional timestamp bounds are client-side filters applied after complete retrieval with `created_at_or_after <= created < created_before`; they do not limit Jira's GET requests. Use `jira_changelogs_by_ids` only for IDs already known from that history. It uses Jira's distinct known-ID POST endpoint, and Jira controls the returned order.
+
+Normal text is condensed and server-truncated at 30,000 characters. With `raw=True`, both changelog tools return the untruncated helper-owned envelope as MCP structured content plus JSON text fallback, not untouched API pages. Complete histories and raw results may be large and can still be clipped by an MCP client or harness.
 
 ### Search pagination and raw output
 

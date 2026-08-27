@@ -80,6 +80,8 @@ def test_root_help_lists_registered_commands() -> None:
         "read",
         "search",
         "worklog-report",
+        "changelogs",
+        "changelogs-by-ids",
         "comments",
         "fields",
         "projects",

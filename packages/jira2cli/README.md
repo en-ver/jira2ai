@@ -43,9 +43,9 @@ Run `uvx jira2cli --help` for the current command and option help.
 
 `auth-status`, `me`
 
-### Reads, search, and transitions
+### Reads, changelog history, search, and transitions
 
-`read`, `comments`, `search`, `transitions`, `transition`
+`read`, `comments`, `changelogs`, `changelogs-by-ids`, `search`, `transitions`, `transition`
 
 ### Metadata and saved filters
 
@@ -112,6 +112,14 @@ printf '{"rows_received":%d}\n' "$rows_received" >&2
 
 For saved filters, use the same loop with `filter-run <FILTER_ID>` in place of `search <JQL>`, retaining the exact filter ID, fields, and page size. The same counts and warning limitations apply. Do not edit the saved filter until the continuation is complete.
 
+## Changelog history
+
+`changelogs <KEY>` retrieves the complete issue history: it follows every Jira GET page before returning one helper-owned envelope, `{"issue_key": "<KEY>", "changelogs": [...]}`. Optional `--created-at-or-after` and `--created-before` are client-side ISO-8601 filters applied only after retrieval with the half-open interval `created_at_or_after <= created < created_before`; they do not restrict Jira's GET requests.
+
+Use `changelogs-by-ids <KEY> --changelog-ids ID[,ID...]` only when the exact changelog IDs are already known, normally from `changelogs`. It uses Jira's distinct known-ID POST endpoint. The plural CSV option is required exactly once; segments are trimmed base-10 integers and preserve order and duplicates. Jira controls the POST response order.
+
+Both commands render condensed text normally. `--json` and `--raw` render the same normalized helper-owned envelope, not untouched HTTP pages or bytes. Complete history and structured output can be large; neither command applies a result-size cap, and terminals or external harnesses can still clip output.
+
 ## Examples
 
 ```bash
@@ -131,7 +139,9 @@ uvx jira2cli transition PROJ-123 "Start Progress" --json
 uvx jira2cli filters --query mine --json
 uvx jira2cli filter-run 10400 --fields key,summary --json
 
-# Inspect attachments and worklogs.
+# Inspect changelog history, attachments, and worklogs.
+uvx jira2cli changelogs PROJ-123 --created-at-or-after 2026-08-01T00:00:00Z --json
+uvx jira2cli changelogs-by-ids PROJ-123 --changelog-ids 10001,10002 --json
 uvx jira2cli attachment-list PROJ-123 --json
 uvx jira2cli worklogs PROJ-123 --json
 uvx jira2cli worklog-report --start-date 2026-06-12 --end-date 2026-06-13 --jql 'issue = PROJ-123' --json

@@ -5,6 +5,7 @@ from . import (  # noqa: F401
     add_link,
     attachment,
     auth,
+    changelogs,
     comment,
     comments,
     create,

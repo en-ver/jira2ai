@@ -25,6 +25,8 @@ EXPECTED_JIRA_TOOLS = [
     "jira_attachment_metadata",
     "jira_attachments",
     "jira_auth_status",
+    "jira_changelogs",
+    "jira_changelogs_by_ids",
     "jira_comment",
     "jira_comments",
     "jira_create",

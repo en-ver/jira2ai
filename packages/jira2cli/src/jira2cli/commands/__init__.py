@@ -6,6 +6,7 @@ import typer
 
 from .attachments import register_attachment_commands
 from .auth import register_auth_commands
+from .changelogs import register_changelog_commands
 from .filters import register_filter_commands
 from .links import register_link_commands
 from .metadata import register_metadata_commands
@@ -20,6 +21,7 @@ def register_commands(app: typer.Typer) -> None:
     """Register jira2cli commands on the root Typer app."""
     register_auth_commands(app)
     register_read_commands(app)
+    register_changelog_commands(app)
     register_search_commands(app)
     register_transition_commands(app)
     register_worklog_commands(app)
