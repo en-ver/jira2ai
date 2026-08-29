@@ -183,8 +183,9 @@ async def attachment(
     attachment_id: Annotated[str, "Attachment ID (e.g. 63899)"],
     output_path: Annotated[
         str | None,
-        "Path to save the attachment. Can be a directory (filename from Jira is used) "
-        "or a full file path. Defaults to current directory",
+        "Path to save the attachment. An existing directory or path ending in '/' or "
+        "'\\' uses the Jira filename; otherwise, a nonexistent path is an exact file "
+        "destination. Defaults to current directory",
     ] = None,
     ctx: Context = CurrentContext(),
     api: JiraAPI = Depends(get_api),
@@ -222,8 +223,9 @@ async def download_attachment(
     attachment_id: Annotated[str, "Attachment ID (e.g. 63899)"],
     output_path: Annotated[
         str | None,
-        "Path to save the attachment. Can be a directory (filename from Jira is used) "
-        "or a full file path. Defaults to current directory",
+        "Path to save the attachment. An existing directory or path ending in '/' or "
+        "'\\' uses the Jira filename; otherwise, a nonexistent path is an exact file "
+        "destination. Defaults to current directory",
     ] = None,
     raw: Annotated[
         bool, "Return raw structured output describing the download"
