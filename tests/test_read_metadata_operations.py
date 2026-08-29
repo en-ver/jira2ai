@@ -12,7 +12,7 @@ from fastmcp.tools.tool import ToolResult
 from jira2mcp.tools import fields as fields_tool_module
 from jira2mcp.tools import projects as projects_tool_module
 from jira2mcp.tools.comments import comments
-from jira2mcp.tools.fields import fields
+from jira2mcp.tools.fields import fields, list_fields
 from jira2mcp.tools.filters import run_filter
 from jira2mcp.tools.link_types_resource import (
     list_link_types as list_link_types_resource,
@@ -20,7 +20,7 @@ from jira2mcp.tools.link_types_resource import (
 from jira2mcp.tools.projects import projects
 from jira2mcp.tools.search import search
 from jira2mcp.tools.users import users
-from jira2py.helpers import JiraHelpers
+from jira2py.helpers import HelperResult, JiraHelpers
 from jira2py.helpers.errors import JiraHelperError, JiraHelperValidationError
 
 SEARCH_FIELDS = [
@@ -486,6 +486,71 @@ def test_comments_tool_uses_helper_adapter_for_raw_output(
     assert result.structured_content == comments_response
     assert cast(Any, result.content[0]).text == json.dumps(
         comments_response,
+        indent=2,
+        default=str,
+    )
+
+
+def test_list_fields_tool_forwards_one_server_page_and_raw_envelope(
+    fake_ctx,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[tuple[str | None, dict[str, object]]] = []
+    payload = {
+        "startAt": 2,
+        "maxResults": 3,
+        "total": 6,
+        "isLast": False,
+        "values": [{"id": "summary", "name": "Summary"}],
+    }
+
+    class FakeMetadata:
+        def list_fields(
+            self,
+            project_key: str | None,
+            **kwargs: object,
+        ) -> HelperResult:
+            calls.append((project_key, kwargs))
+            return HelperResult.with_data("field catalog", payload)
+
+    class FakeJiraHelpers:
+        def __init__(self, _api: object) -> None:
+            self.metadata = FakeMetadata()
+
+    monkeypatch.setattr(fields_tool_module, "JiraHelpers", FakeJiraHelpers)
+
+    result = asyncio.run(
+        list_fields(
+            project_key="PROJ",
+            query="estimate",
+            field_ids=["summary", "customfield_10001"],
+            field_types=["system", "custom"],
+            start_at=2,
+            max_results=3,
+            raw=True,
+            ctx=fake_ctx,
+            api=cast(Any, object()),
+        )
+    )
+
+    assert calls == [
+        (
+            "PROJ",
+            {
+                "query": "estimate",
+                "field_ids": ["summary", "customfield_10001"],
+                "field_types": ["system", "custom"],
+                "start_at": 2,
+                "max_results": 3,
+            },
+        )
+    ]
+    assert fake_ctx.info_messages == ["Listing Jira field catalog"]
+    assert fake_ctx.error_messages == []
+    assert isinstance(result, ToolResult)
+    assert result.structured_content == payload
+    assert cast(Any, result.content[0]).text == json.dumps(
+        payload,
         indent=2,
         default=str,
     )

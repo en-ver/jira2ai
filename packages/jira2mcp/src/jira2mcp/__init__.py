@@ -18,11 +18,12 @@ mcp = FastMCP(
         "Jira Cloud integration server. All tools are prefixed with 'jira_'.\n"
         "Key workflows:\n"
         "- Before creating: use jira_fields with project_key + issue_type to discover required fields\n"
+        "- Use jira_list_fields for one server-paged field catalog; its project context does not determine issue-type or screen applicability\n"
         "- Before assigning: use jira_users to look up account IDs\n"
         "- Descriptions and comments accept markdown (auto-converted to ADF)\n"
         "- jira_read requires a non-empty fields array; request only the Jira fields needed\n"
         "- Use jira_comments for comments, jira_changelogs for complete issue history, jira_changelogs_by_ids for known changelog IDs, jira_issue_links for link IDs, and jira_attachments or jira_attachment_metadata for attachment metadata\n"
-        "- jira_changelogs fetches every GET page before applying optional local timestamp bounds\n"
+        "- jira_changelogs fetches every GET page before applying optional local timestamp and fieldId filters; result pagination is local\n"
         "- Read the data://jira/link-types resource before creating issue links\n"
         "- Use the jql_syntax prompt for JQL syntax reference when building search queries"
     ),

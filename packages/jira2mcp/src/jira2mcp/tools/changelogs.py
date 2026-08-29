@@ -19,6 +19,15 @@ from jira2mcp.utils import get_api
 
 from .server import tools
 
+CanonicalFieldId = Annotated[
+    str,
+    Field(
+        min_length=1,
+        pattern=r"^[^\s,](?:[^\r\n,]*[^\s,])?$",
+        description="One canonical Jira field ID without surrounding whitespace or commas.",
+    ),
+]
+
 
 @tools.tool(
     tags={"read"},
@@ -40,6 +49,33 @@ async def changelogs(
             "before this local filter is applied."
         ),
     ] = None,
+    field_ids: Annotated[
+        list[CanonicalFieldId] | None,
+        Field(
+            min_length=1,
+            description="Canonical fieldId values to retain. Each array item is one ID.",
+        ),
+    ] = None,
+    result_start_at: Annotated[
+        int,
+        Field(
+            ge=0,
+            description=(
+                "Index of the first locally filtered changelog event to return after "
+                "Jira's complete history is fetched; requires result_max_results when nonzero."
+            ),
+        ),
+    ] = 0,
+    result_max_results: Annotated[
+        int | None,
+        Field(
+            ge=1,
+            description=(
+                "Maximum locally filtered changelog events to return after Jira's "
+                "complete history is fetched."
+            ),
+        ),
+    ] = None,
     raw: Annotated[
         bool,
         (
@@ -52,8 +88,8 @@ async def changelogs(
 ) -> str | ToolResult:
     """Retrieve complete changelog history for a Jira issue.
 
-    Optional timestamp bounds use ``created_at_or_after <= created <
-    created_before`` and are applied locally after all Jira GET pages are fetched.
+    Optional timestamp and exact ``fieldId`` filters are applied after all Jira
+    GET pages are fetched. Result pagination slices those retained events locally.
     """
     await ctx.info(f"Fetching complete changelog history for {issue_key}")
 
@@ -62,6 +98,9 @@ async def changelogs(
             issue_key,
             created_at_or_after=created_at_or_after,
             created_before=created_before,
+            field_ids=field_ids,
+            result_start_at=result_start_at,
+            result_max_results=result_max_results,
         )
     except JiraHelperValidationError as exc:
         raise to_tool_error(exc) from exc
@@ -87,6 +126,13 @@ async def changelogs_by_ids(
             description="Known Jira changelog IDs; each array item is one integer ID.",
         ),
     ],
+    field_ids: Annotated[
+        list[CanonicalFieldId] | None,
+        Field(
+            min_length=1,
+            description="Canonical fieldId values to retain. Each array item is one ID.",
+        ),
+    ] = None,
     raw: Annotated[
         bool,
         (
@@ -100,12 +146,16 @@ async def changelogs_by_ids(
     """Retrieve known changelog IDs through Jira's distinct POST endpoint.
 
     Use ``changelogs`` to discover a complete history first. Jira controls the
-    response order for this known-ID request.
+    response order for this known-ID request. This operation has no result pagination.
     """
     await ctx.info(f"Fetching known changelog IDs for {issue_key}")
 
     try:
-        result = JiraHelpers(api).changelogs.list_by_ids(issue_key, changelog_ids)
+        result = JiraHelpers(api).changelogs.list_by_ids(
+            issue_key,
+            changelog_ids,
+            field_ids=field_ids,
+        )
     except JiraHelperValidationError as exc:
         raise to_tool_error(exc) from exc
     except JiraHelperOperationError as exc:

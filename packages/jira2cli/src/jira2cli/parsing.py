@@ -32,28 +32,86 @@ def parse_json_object(
     return parsed
 
 
-def parse_fields_csv(value: str | None) -> list[str] | None:
-    """Parse one comma-delimited Jira field selector option."""
+def _parse_string_csv(
+    value: str | None,
+    *,
+    option_name: str,
+    item_label: str,
+) -> list[str] | None:
+    """Parse one comma-delimited option containing non-empty strings."""
     if value is None:
         return None
 
-    fields = [field.strip() for field in value.split(",")]
-    if any(not field for field in fields):
+    values = [item.strip() for item in value.split(",")]
+    if any(not item for item in values):
         raise_cli_usage_error(
-            "must contain comma-separated non-empty field selectors",
-            param_hint="--fields",
+            f"must contain comma-separated non-empty {item_label}",
+            param_hint=option_name,
         )
+    return values
 
-    return fields
+
+def _parse_single_csv_option(
+    values: list[str] | None,
+    *,
+    option_name: str,
+    item_label: str,
+) -> list[str] | None:
+    """Parse a zero-or-one comma-delimited option occurrence."""
+    if values is None:
+        return None
+    if len(values) != 1:
+        raise_cli_usage_error("may be provided only once", param_hint=option_name)
+    return _parse_string_csv(
+        values[0],
+        option_name=option_name,
+        item_label=item_label,
+    )
+
+
+def parse_fields_csv(value: str | None) -> list[str] | None:
+    """Parse one comma-delimited Jira field selector option."""
+    return _parse_string_csv(
+        value,
+        option_name="--fields",
+        item_label="field selectors",
+    )
 
 
 def parse_fields_option(values: list[str] | None) -> list[str] | None:
     """Parse a zero-or-one ``--fields`` option occurrence."""
-    if values is None:
-        return None
-    if len(values) != 1:
-        raise_cli_usage_error("may be provided only once", param_hint="--fields")
-    return parse_fields_csv(values[0])
+    return _parse_single_csv_option(
+        values,
+        option_name="--fields",
+        item_label="field selectors",
+    )
+
+
+def parse_field_ids_csv(value: str | None) -> list[str] | None:
+    """Parse one comma-delimited canonical Jira field-ID option."""
+    return _parse_string_csv(
+        value,
+        option_name="--field-ids",
+        item_label="field IDs",
+    )
+
+
+def parse_field_ids_option(values: list[str] | None) -> list[str] | None:
+    """Parse a zero-or-one ``--field-ids`` option occurrence."""
+    return _parse_single_csv_option(
+        values,
+        option_name="--field-ids",
+        item_label="field IDs",
+    )
+
+
+def parse_field_types_option(values: list[str] | None) -> list[str] | None:
+    """Parse a zero-or-one ``--field-types`` option occurrence."""
+    return _parse_single_csv_option(
+        values,
+        option_name="--field-types",
+        item_label="field types",
+    )
 
 
 def parse_fields_json(value: str | None) -> dict[str, Any] | None:
@@ -91,6 +149,9 @@ def parse_changelog_ids_option(values: list[str] | None) -> list[int] | None:
 __all__ = [
     "parse_changelog_ids_csv",
     "parse_changelog_ids_option",
+    "parse_field_ids_csv",
+    "parse_field_ids_option",
+    "parse_field_types_option",
     "parse_fields_csv",
     "parse_fields_json",
     "parse_fields_option",

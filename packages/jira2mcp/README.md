@@ -89,6 +89,7 @@ All tools use the `jira_*` namespace.
 | Tool | Description |
 |---|---|
 | `jira_fields` | Get create/edit field metadata. |
+| `jira_list_fields` | Return one searchable Jira field catalog page. |
 | `jira_projects` / `jira_project` | List projects or read one by key or ID. |
 | `jira_users` | Search users by name or email. |
 | `jira_statuses` / `jira_priorities` | List visible statuses or priorities. |
@@ -125,9 +126,19 @@ Descriptions and comments accept Markdown and are converted to Atlassian Documen
 
 Before a create or edit, call `jira_fields` for the target project and issue type. Before a transition, link, comment update/delete, attachment deletion, or worklog mutation, read the current state and use exact IDs or names. Attachment uploads must stay within the server working directory. Downloads must stay within advertised MCP roots, or the server working directory when roots are unavailable. All reads and writes remain subject to the configured Jira account's permissions.
 
+### Field catalog
+
+`jira_list_fields` returns exactly one Jira `/field/search` page. Its `start_at` default is `0`, `max_results` default is `20`, and it accepts optional `project_key`, `query`, native `field_ids` arrays, and `field_types` arrays containing `"system"` and/or `"custom"`. Normal text is concise (field name and canonical ID). With `raw=True`, it returns the complete Jira page envelope, including `values`, `startAt`, `maxResults`, `total`, `isLast`, and any other Jira properties as structured content and a JSON text fallback.
+
+To continue, retain every filter and use `startAt + len(values)` as the next `start_at`; stop when Jira reports `isLast`. Jira can cap the requested page size, so use its returned metadata. The endpoint is documented for classic projects. `project_key` only supplies Jira project context/access filtering: it does **not** identify fields applicable to an issue type, Create screen, or Edit screen. Use `jira_fields` for issue-type, create-screen, and edit-screen metadata.
+
 ### Changelog history
 
-`jira_changelogs` retrieves every Jira GET page for an issue before returning one helper-owned structured envelope, `{"issue_key": "<KEY>", "changelogs": [...]}`. Its optional timestamp bounds are client-side filters applied after complete retrieval with `created_at_or_after <= created < created_before`; they do not limit Jira's GET requests. Use `jira_changelogs_by_ids` only for IDs already known from that history. It uses Jira's distinct known-ID POST endpoint, and Jira controls the returned order.
+`jira_changelogs` retrieves every Jira GET page for an issue before returning one helper-owned structured envelope, `{"issue_key": "<KEY>", "changelogs": [...]}`. Its optional timestamp bounds are client-side filters applied after complete retrieval with `created_at_or_after <= created < created_before`; they do not limit Jira's GET requests. Its optional native `field_ids` array retains only changelog items whose raw `fieldId` exactly matches a canonical field ID, dropping history events with no retained items.
+
+`jira_changelogs` normally returns every retained event. Supplying `result_max_results` enables local event pagination; `result_start_at` defaults to `0` and requires `result_max_results` when nonzero. Jira's complete history is still fetched before timestamp and field-ID filters and the result slice. Paged raw output adds helper-owned `result_page` metadata; it is not Jira server pagination.
+
+Use `jira_changelogs_by_ids` only for IDs already known from that history. It uses Jira's distinct known-ID POST endpoint and accepts the same native `field_ids` array filter. Jira controls the returned order. This known-ID operation has no result pagination, so request fewer IDs when a smaller response is needed.
 
 Normal text is condensed and server-truncated at 30,000 characters. With `raw=True`, both changelog tools return the untruncated helper-owned envelope as MCP structured content plus JSON text fallback, not untouched API pages. Complete histories and raw results may be large and can still be clipped by an MCP client or harness.
 

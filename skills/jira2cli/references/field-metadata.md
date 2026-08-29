@@ -1,6 +1,6 @@
 # Field Metadata
 
-Use this before issue creation or issue edits whenever required fields, editable fields, or allowed values are not already known.
+Use this before issue creation or issue edits whenever required fields, editable fields, or allowed values are not already known. For general searchable field-catalog discovery, use [field-catalog.md](field-catalog.md); that project-context view does not establish issue-type or screen applicability.
 
 ## Create Metadata
 

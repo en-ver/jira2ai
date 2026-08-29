@@ -51,6 +51,7 @@ EXPECTED_JIRA_TOOLS = [
     "jira_edit",
     "jira_fields",
     "jira_filters",
+    "jira_list_fields",
     "jira_issue_links",
     "jira_me",
     "jira_priorities",
@@ -305,6 +306,50 @@ def test_inmemory_worklog_report_uses_fixture_or_discovered_issue(
                 assert isinstance(worklog_payload["rowCount"], int)
             if "rows" in worklog_payload:
                 assert isinstance(worklog_payload["rows"], list)
+
+    _run(scenario())
+
+
+def test_inmemory_list_fields_returns_one_raw_server_page(
+    jira_e2e_config: JiraE2EConfig,
+) -> None:
+    async def scenario() -> None:
+        async with inmemory_client_mcp(timeout=20) as client:
+            result = assert_non_error_result(
+                await call_tool_mcp(
+                    client,
+                    "jira_list_fields",
+                    {
+                        "project_key": jira_e2e_config.project_key,
+                        "field_ids": ["summary"],
+                        "field_types": ["system"],
+                        "start_at": 0,
+                        "max_results": 20,
+                        "raw": True,
+                    },
+                )
+            )
+            payload = assert_structured_content(result)
+            values = payload.get("values")
+            if not isinstance(values, list):
+                raise AssertionError(
+                    "Expected jira_list_fields raw payload to include values"
+                )
+            assert values
+            assert all(isinstance(field, Mapping) for field in values)
+            assert len(values) == 1
+            summary = values[0]
+            assert summary.get("id") == "summary"
+            assert summary.get("schema", {}).get("type") == "string"
+
+            assert payload.get("startAt") == 0
+            max_results = payload.get("maxResults")
+            assert isinstance(max_results, int)
+            assert 0 < max_results <= 20
+            total = payload.get("total")
+            assert isinstance(total, int)
+            assert total == len(values)
+            assert payload.get("isLast") is True
 
     _run(scenario())
 

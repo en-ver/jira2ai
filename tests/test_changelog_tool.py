@@ -45,6 +45,9 @@ def test_changelogs_delegates_complete_history_and_filters(
             "PROJ-123",
             created_at_or_after="2026-08-01T00:00:00Z",
             created_before="2026-09-01T00:00:00Z",
+            field_ids=["summary", "customfield_10001"],
+            result_start_at=2,
+            result_max_results=3,
             ctx=fake_ctx,
             api=api,
         )
@@ -60,6 +63,9 @@ def test_changelogs_delegates_complete_history_and_filters(
                 {
                     "created_at_or_after": "2026-08-01T00:00:00Z",
                     "created_before": "2026-09-01T00:00:00Z",
+                    "field_ids": ["summary", "customfield_10001"],
+                    "result_start_at": 2,
+                    "result_max_results": 3,
                 },
             ),
         )
@@ -84,8 +90,8 @@ def test_changelogs_by_ids_forwards_native_ids_and_raw_envelope(
                     "Changelogs",
                     (),
                     {
-                        "list_by_ids": lambda _self, issue_key, changelog_ids: (
-                            calls.append((issue_key, changelog_ids))
+                        "list_by_ids": lambda _self, issue_key, changelog_ids, **kwargs: (
+                            calls.append((issue_key, changelog_ids, kwargs))
                             or HelperResult.with_data("formatted changelogs", payload)
                         )
                     },
@@ -98,13 +104,14 @@ def test_changelogs_by_ids_forwards_native_ids_and_raw_envelope(
         changelogs_by_ids(
             "PROJ-123",
             [10002, 10001, 10002],
+            field_ids=["summary"],
             raw=True,
             ctx=fake_ctx,
             api=cast(Any, object()),
         )
     )
 
-    assert calls == [("PROJ-123", [10002, 10001, 10002])]
+    assert calls == [("PROJ-123", [10002, 10001, 10002], {"field_ids": ["summary"]})]
     assert fake_ctx.info_messages == ["Fetching known changelog IDs for PROJ-123"]
     assert fake_ctx.error_messages == []
     assert isinstance(result, ToolResult)
@@ -189,7 +196,7 @@ def test_changelogs_by_ids_rejects_strings_and_booleans_at_mcp_runtime(
                     "Changelogs",
                     (),
                     {
-                        "list_by_ids": lambda _self, _issue_key, changelog_ids: (
+                        "list_by_ids": lambda _self, _issue_key, changelog_ids, **_kwargs: (
                             calls.append(changelog_ids)
                             or HelperResult.text_only("formatted changelogs")
                         )

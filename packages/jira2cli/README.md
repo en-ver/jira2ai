@@ -49,7 +49,7 @@ Run `uvx jira2cli --help` for the current command and option help.
 
 ### Metadata and saved filters
 
-`fields`, `project`, `projects`, `statuses`, `priorities`, `users`, `link-types`, `jql-syntax`, `filters`, `filter-run`
+`fields`, `fields-list`, `project`, `projects`, `statuses`, `priorities`, `users`, `link-types`, `jql-syntax`, `filters`, `filter-run`
 
 ### Issues, comments, and links
 
@@ -112,13 +112,21 @@ printf '{"rows_received":%d}\n' "$rows_received" >&2
 
 For saved filters, use the same loop with `filter-run <FILTER_ID>` in place of `search <JQL>`, retaining the exact filter ID, fields, and page size. The same counts and warning limitations apply. Do not edit the saved filter until the continuation is complete.
 
+## Field catalog
+
+`fields-list` returns exactly one Jira `/field/search` page. It defaults to `--start-at 0 --max-results 20` and accepts optional `--project-key`, `--query`, canonical `--field-ids ID[,ID...]`, and `--field-types system[,custom]`. The normal view is concise (field name and canonical ID); `--json` and `--raw` return the complete Jira page envelope, including `values`, `startAt`, `maxResults`, `total`, `isLast`, and any other Jira properties.
+
+To continue, retain every filter and use the returned `startAt + len(values)` as the next `--start-at`; stop when Jira reports `isLast`. Jira can cap the requested page size, so use its returned metadata. The endpoint is documented for classic projects. `--project-key` only supplies Jira project context/access filtering: it does **not** identify fields applicable to an issue type, Create screen, or Edit screen. Continue to use `fields` for issue-type, create-screen, and edit-screen metadata.
+
 ## Changelog history
 
-`changelogs <KEY>` retrieves the complete issue history: it follows every Jira GET page before returning one helper-owned envelope, `{"issue_key": "<KEY>", "changelogs": [...]}`. Optional `--created-at-or-after` and `--created-before` are client-side ISO-8601 filters applied only after retrieval with the half-open interval `created_at_or_after <= created < created_before`; they do not restrict Jira's GET requests.
+`changelogs <KEY>` retrieves the complete issue history: it follows every Jira GET page before returning one helper-owned envelope, `{"issue_key": "<KEY>", "changelogs": [...]}`. Optional `--created-at-or-after` and `--created-before` are client-side ISO-8601 filters applied only after retrieval with the half-open interval `created_at_or_after <= created < created_before`; they do not restrict Jira's GET requests. Optional `--field-ids ID[,ID...]` retains only changelog items whose raw `fieldId` exactly matches a canonical field ID, dropping history events with no retained items.
 
-Use `changelogs-by-ids <KEY> --changelog-ids ID[,ID...]` only when the exact changelog IDs are already known, normally from `changelogs`. It uses Jira's distinct known-ID POST endpoint. The plural CSV option is required exactly once; segments are trimmed base-10 integers and preserve order and duplicates. Jira controls the POST response order.
+`changelogs` normally returns every retained event. Supplying `--result-max-results N` enables local event pagination; `--result-start-at` defaults to `0` and requires `--result-max-results` when nonzero. Jira's complete history is still fetched before timestamp and field-ID filters and the result slice. Paged JSON/raw output adds helper-owned `result_page` metadata; it is not Jira server pagination.
 
-Both commands render condensed text normally. `--json` and `--raw` render the same normalized helper-owned envelope, not untouched HTTP pages or bytes. Complete history and structured output can be large; neither command applies a result-size cap, and terminals or external harnesses can still clip output.
+Use `changelogs-by-ids <KEY> --changelog-ids ID[,ID...]` only when the exact changelog IDs are already known, normally from `changelogs`. It uses Jira's distinct known-ID POST endpoint. The plural CSV option is required exactly once; segments are trimmed base-10 integers and preserve order and duplicates. It also accepts `--field-ids ID[,ID...]` with the same exact raw-`fieldId` filtering. Jira controls the POST response order; this known-ID operation has no result pagination, so batch fewer IDs when a smaller response is needed.
+
+Both commands render condensed text normally. `--json` and `--raw` render the same normalized helper-owned envelope, not untouched HTTP pages or bytes. Complete history and structured output can be large; terminals or external harnesses can still clip output.
 
 ## Examples
 
@@ -126,6 +134,7 @@ Both commands render condensed text normally. `--json` and `--raw` render the sa
 # Discover accessible projects and create/edit fields before a write.
 uvx jira2cli projects --json
 uvx jira2cli fields --project-key PROJ --issue-type Task --json
+uvx jira2cli fields-list --project-key PROJ --field-types system --max-results 20 --json
 
 # Read and search.
 uvx jira2cli read PROJ-123 --fields summary,labels --json
@@ -140,8 +149,8 @@ uvx jira2cli filters --query mine --json
 uvx jira2cli filter-run 10400 --fields key,summary --json
 
 # Inspect changelog history, attachments, and worklogs.
-uvx jira2cli changelogs PROJ-123 --created-at-or-after 2026-08-01T00:00:00Z --json
-uvx jira2cli changelogs-by-ids PROJ-123 --changelog-ids 10001,10002 --json
+uvx jira2cli changelogs PROJ-123 --field-ids summary --result-max-results 20 --json
+uvx jira2cli changelogs-by-ids PROJ-123 --changelog-ids 10001,10002 --field-ids summary --json
 uvx jira2cli attachment-list PROJ-123 --json
 uvx jira2cli worklogs PROJ-123 --json
 uvx jira2cli worklog-report --start-date 2026-06-12 --end-date 2026-06-13 --jql 'issue = PROJ-123' --json
@@ -154,7 +163,7 @@ Worklog-report dates are UTC and the end date is inclusive. It selects issues on
 From the repository root after workspace setup, contributors can run the checked-out CLI with:
 
 ```bash
-uv run --locked jira2cli --help
+uv run --locked --package jira2cli jira2cli --help
 ```
 
 ## Safety and capabilities

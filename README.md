@@ -58,9 +58,9 @@ Keep API tokens out of source control, logs, prompts, and shared client configur
 
 ## What you can do
 
-The products support authentication checks, issue reads and JQL search, complete issue changelog history, projects and field metadata, comments, transitions, saved filters, issue links, attachments, and worklogs. `changelogs` retrieves every Jira history page and can filter timestamps locally; `changelogs-by-ids` uses Jira's distinct known-ID request. Descriptions and comments accept Markdown. Plain CLI issue reads can render selected rich-text fields, while JSON and MCP structured issue reads preserve Jira's raw field data.
+The products support authentication checks, issue reads and JQL search, complete issue changelog history, projects, create/edit field metadata, a one-page field catalog, comments, transitions, saved filters, issue links, attachments, and worklogs. `changelogs` retrieves every Jira history page and can filter timestamps and exact field IDs locally; it can optionally page the retained events. `changelogs-by-ids` uses Jira's distinct known-ID request and can filter exact field IDs. Descriptions and comments accept Markdown. Plain CLI issue reads can render selected rich-text fields, while JSON and MCP structured issue reads preserve Jira's raw field data.
 
-For local development or contributions, see [CONTRIBUTING.md](CONTRIBUTING.md). Contributors working from a repository checkout use `uv run --locked jira2cli ...` after workspace setup. The optional [Pi CLI skill](skills/jira2cli/SKILL.md) is a source-checkout template for agents using `jira2cli`; UVX runs the CLI but does not install or auto-discover the skill.
+For local development or contributions, see [CONTRIBUTING.md](CONTRIBUTING.md). Contributors working from a repository checkout use `uv run --locked --package jira2cli jira2cli ...` after workspace setup. The optional [Pi CLI skill](skills/jira2cli/SKILL.md) is a source-checkout template for agents using `jira2cli`; UVX runs the CLI but does not install or auto-discover the skill.
 
 ## License
 

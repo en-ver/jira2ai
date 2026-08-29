@@ -18,7 +18,7 @@ From the repository root after workspace setup, maintainers can verify the check
 
 ```sh
 uv sync --all-packages --group dev
-uv run --locked jira2cli --help
+uv run --locked --package jira2cli jira2cli --help
 ```
 
 ## Authentication

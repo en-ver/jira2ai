@@ -5,6 +5,8 @@ import typer
 from jira2cli.parsing import (
     parse_changelog_ids_csv,
     parse_changelog_ids_option,
+    parse_field_ids_csv,
+    parse_field_ids_option,
     parse_fields_csv,
     parse_fields_json,
     parse_fields_option,
@@ -98,6 +100,44 @@ def test_parse_fields_option_rejects_repeated_occurrences(
 
     assert exc_info.value.exit_code == 2
     assert captured.err == "--fields: may be provided only once\n"
+    assert captured.out == ""
+
+
+def test_parse_field_ids_csv_trims_segments_and_preserves_order() -> None:
+    assert parse_field_ids_csv(" summary, customfield_10001 ") == [
+        "summary",
+        "customfield_10001",
+    ]
+
+
+@pytest.mark.parametrize("value", ["", "   ", ",summary", "summary,"])
+def test_parse_field_ids_csv_rejects_empty_segments(
+    value: str,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    with pytest.raises(typer.Exit) as exc_info:
+        parse_field_ids_csv(value)
+
+    captured = capsys.readouterr()
+
+    assert exc_info.value.exit_code == 2
+    assert (
+        captured.err
+        == "--field-ids: must contain comma-separated non-empty field IDs\n"
+    )
+    assert captured.out == ""
+
+
+def test_parse_field_ids_option_rejects_repeated_occurrences(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    with pytest.raises(typer.Exit) as exc_info:
+        parse_field_ids_option(["summary", "status"])
+
+    captured = capsys.readouterr()
+
+    assert exc_info.value.exit_code == 2
+    assert captured.err == "--field-ids: may be provided only once\n"
     assert captured.out == ""
 
 

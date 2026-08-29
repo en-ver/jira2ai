@@ -13,6 +13,7 @@ from jira2cli.output import (
     render_operation_result,
     validate_output_options,
 )
+from jira2cli.parsing import parse_field_ids_option, parse_field_types_option
 
 
 def fields_command(
@@ -62,6 +63,77 @@ def fields_command(
                 result = helpers.metadata.create_fields(project_key, issue_type)
             else:
                 result = helpers.metadata.issue_types(project_key)
+    except Exception as exc:
+        raise_cli_exception(exc)
+
+    typer.echo(
+        render_operation_result(
+            result,
+            json_output=json_output,
+            raw_output=raw_output,
+        )
+    )
+
+
+def fields_list_command(
+    project_key: str | None = typer.Option(
+        None,
+        "--project-key",
+        help="Optional project context filter; it does not determine issue-type or screen applicability.",
+    ),
+    query: str | None = typer.Option(
+        None,
+        "--query",
+        help="Optional case-insensitive field-name or description query.",
+    ),
+    field_ids: list[str] | None = typer.Option(
+        None,
+        "--field-ids",
+        help="Comma-separated canonical Jira field IDs. Provide --field-ids at most once.",
+    ),
+    field_types: list[str] | None = typer.Option(
+        None,
+        "--field-types",
+        help="Comma-separated field types: system and/or custom. Provide --field-types at most once.",
+    ),
+    start_at: int = typer.Option(
+        0,
+        "--start-at",
+        min=0,
+        help="Index of the first field to return from Jira's field catalog.",
+    ),
+    max_results: int = typer.Option(
+        20,
+        "--max-results",
+        min=1,
+        help="Maximum fields to return in this Jira server page.",
+    ),
+    raw_output: bool = typer.Option(
+        False,
+        "--raw",
+        help="Render API-oriented output as normalized, pretty-printed JSON with sorted object keys.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Render structured output as JSON.",
+    ),
+) -> None:
+    """List one searchable Jira field catalog page."""
+    validate_output_options(json_output=json_output, raw_output=raw_output)
+    selected_field_ids = parse_field_ids_option(field_ids)
+    selected_field_types = parse_field_types_option(field_types)
+
+    try:
+        api = client.get_api()
+        result = JiraHelpers(api).metadata.list_fields(
+            project_key,
+            query=query,
+            field_ids=selected_field_ids,
+            field_types=selected_field_types,
+            start_at=start_at,
+            max_results=max_results,
+        )
     except Exception as exc:
         raise_cli_exception(exc)
 
@@ -279,6 +351,7 @@ def jql_syntax_command() -> None:
 def register_metadata_commands(app: typer.Typer) -> None:
     """Register metadata and reference commands."""
     app.command("fields")(fields_command)
+    app.command("fields-list")(fields_list_command)
     app.command("project")(project_command)
     app.command("projects")(projects_command)
     app.command("statuses")(statuses_command)
@@ -290,6 +363,7 @@ def register_metadata_commands(app: typer.Typer) -> None:
 
 __all__ = [
     "fields_command",
+    "fields_list_command",
     "jql_syntax_command",
     "link_types_command",
     "priorities_command",

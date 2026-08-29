@@ -15,6 +15,7 @@ It also does **not** provide dedicated issue assign commands, issue delete/archi
 
 - [references/install-auth.md](references/install-auth.md) — Load when you need the consumer command prefix, CLI verification, Jira auth setup, or local maintainer verification.
 - [references/project-discovery.md](references/project-discovery.md) — Load when you need to resolve the right Jira project key or discover issue types with `fields --project-key`.
+- [references/field-catalog.md](references/field-catalog.md) — Load when you need one searchable page of canonical Jira field IDs, names, types, or project-context metadata.
 - [references/field-metadata.md](references/field-metadata.md) — Load before create/edit work when you need required fields, editable fields, or allowed values.
 - [references/user-identity-lookup.md](references/user-identity-lookup.md) — Load when a Jira user field needs an `accountId` or exact display name.
 - [references/jql-syntax.md](references/jql-syntax.md) — Load when composing or debugging JQL.
@@ -38,7 +39,7 @@ Required verification:
 - compare this skill against `packages/jira2cli/src/jira2cli/cli.py`
 - compare this skill against `packages/jira2cli/src/jira2cli/commands/*.py`
 - compare this skill against `packages/jira2cli/README.md`
-- as a maintainer source check, verify commands and options against current local help output from `uv run --locked jira2cli --help`
+- as a maintainer source check, verify commands and options against current local help output from `uv run --locked --package jira2cli jira2cli --help`
 - verify any documented command-specific options against that command's `--help`
 
 If the skill text and the CLI/help output disagree, fix or qualify the docs before proceeding.
@@ -66,7 +67,7 @@ Credentials file shape:
 
 - Use `uvx jira2cli ...` for consumer CLI commands.
 - UVX runs the CLI but does not install or auto-discover the Pi skill; load this source-checkout skill explicitly when needed.
-- For repository contributor or maintainer checks after workspace setup, use `uv run --locked jira2cli ...`; `--package jira2cli` is optional advanced workspace-member selection.
+- For repository contributor or maintainer checks after workspace setup, use `uv run --locked --package jira2cli jira2cli ...`.
 - Never print `JIRA_API_TOKEN` or other secrets.
 - Do not guess project keys, issue types, user identities, required Jira fields, attachment IDs, comment IDs, worklog IDs, transition names, saved filter IDs, or link direction.
 - Before create, edit, transition, comment, comment-update, comment-delete, link, delete-link, attachment, attachment-upload, attachment-delete, worklog-add, worklog-update, or worklog-delete actions, gather the relevant issue state or metadata first.
@@ -78,7 +79,8 @@ Credentials file shape:
 - For `search` and `filter-run`, `--fields` is optional and may appear at most once as comma-delimited selectors (`--fields key,summary`). If omitted, fields default to `summary, status, assignee, priority, issuetype, created, updated`. Projection is whole-field: `assignee` may include Jira-permitted nested identity, email, and avatar data; envelope metadata may remain. Plain output is the helper's fixed compact view; use structured `--json` or `--raw` and local `jq` reduction for arbitrary requested fields.
 - `search` and `filter-run` return one page per invocation. `--max-results` is per-page (default 20, maximum 50). With structured output, continue only while the opaque `nextPageToken` is non-empty, forwarding it unchanged as `--next-page-token`; do not use `total` to decide. Keep the JQL (or saved filter), requested fields, and page size stable. Do not edit a saved filter during continuation. Atlassian expires each `nextPageToken` in seven days, so complete pagination within that window; if it expires, rerun the search or filter from the first page.
 - For known issue keys, use JQL `key IN (...)`; split a large key list into batches if Jira rejects the query. An embedded `comment` or `worklog` field may be partial; use the dedicated paginated `comments <KEY>` or `worklogs <KEY>` commands for complete collections.
-- `changelogs <KEY>` fetches every Jira GET page before returning complete history. Optional `--created-at-or-after` and `--created-before` filter locally with `created_at_or_after <= created < created_before`; they do not limit Jira GET requests. Use `changelogs-by-ids <KEY> --changelog-ids ID[,ID...]` only for known IDs: it uses Jira's distinct POST endpoint. The one required plural CSV option is trimmed, requires non-empty base-10 integer segments, and preserves order and duplicates. Both `--json` and `--raw` return normalized helper-owned structured output rather than untouched HTTP output; full histories may be large or externally clipped.
+- `fields-list` returns one Jira field-catalog page. It accepts optional `--project-key`, `--query`, canonical `--field-ids`, `--field-types system[,custom]`, `--start-at` (default 0), and `--max-results` (default 20). The project key is only Jira project context/access filtering; it does not establish issue-type, Create-screen, or Edit-screen applicability. Jira documents the endpoint for classic projects. Continue with the same filters using returned `startAt + len(values)`; use `fields` for create/edit metadata.
+- `changelogs <KEY>` fetches every Jira GET page before returning complete history. Optional `--created-at-or-after`, `--created-before`, and canonical `--field-ids` filters are applied locally; field filtering exactly matches raw `fieldId` and drops emptied events. `--result-max-results` optionally pages retained events locally after complete retrieval; nonzero `--result-start-at` requires it. Use `changelogs-by-ids <KEY> --changelog-ids ID[,ID...]` only for known IDs: it uses Jira's distinct POST endpoint and accepts the same `--field-ids` filter, but no result pagination. The one required plural changelog-ID CSV option is trimmed, requires non-empty base-10 integer segments, and preserves order and duplicates. Both `--json` and `--raw` return normalized helper-owned structured output rather than untouched HTTP output; full histories may be large or externally clipped.
 
 ## Flat command surface
 
@@ -100,6 +102,7 @@ Credentials file shape:
 ### Metadata and saved filters
 
 - `fields`
+- `fields-list`
 - `project`
 - `projects`
 - `statuses`
@@ -142,6 +145,7 @@ Credentials file shape:
 - `uvx jira2cli --credentials-file <path> me --json`
 - `uvx jira2cli projects --query <text> --json`
 - `uvx jira2cli fields --project-key <PROJECT> --json`
+- `uvx jira2cli fields-list --project-key <PROJECT> --field-types system --start-at <N> --max-results <N> --json`
 - `uvx jira2cli fields --project-key <PROJECT> --issue-type <TYPE> --json`
 - `uvx jira2cli fields --issue-key <KEY> --json`
 - `uvx jira2cli users <query> --max-results <N> --json`
@@ -149,8 +153,8 @@ Credentials file shape:
 - `uvx jira2cli search '<JQL>' --fields key,summary,status --max-results <N> --next-page-token '<TOKEN>' --json`
 - `uvx jira2cli read <KEY> --fields summary,<FIELD_ID> --json`
 - `uvx jira2cli comments <KEY> --start-at <N> --max-results <N> --order-by -created --json`
-- `uvx jira2cli changelogs <KEY> --created-at-or-after <ISO-8601> --created-before <ISO-8601> --json`
-- `uvx jira2cli changelogs-by-ids <KEY> --changelog-ids <ID[,ID...]> --json`
+- `uvx jira2cli changelogs <KEY> --field-ids <FIELD_ID[,FIELD_ID...]> --result-start-at <N> --result-max-results <N> --json`
+- `uvx jira2cli changelogs-by-ids <KEY> --changelog-ids <ID[,ID...]> --field-ids <FIELD_ID[,FIELD_ID...]> --json`
 - `uvx jira2cli transitions <KEY> --json`
 - `uvx jira2cli transition <KEY> <TRANSITION_ID_OR_NAME> --json`
 - `uvx jira2cli filters --query <text> --json`

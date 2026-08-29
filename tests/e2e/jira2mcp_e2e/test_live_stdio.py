@@ -38,6 +38,7 @@ EXPECTED_JIRA_TOOLS = [
     "jira_edit",
     "jira_fields",
     "jira_filters",
+    "jira_list_fields",
     "jira_issue_links",
     "jira_me",
     "jira_priorities",
