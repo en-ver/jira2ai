@@ -340,7 +340,7 @@ def test_inmemory_list_fields_returns_one_raw_server_page(
             assert len(values) == 1
             summary = values[0]
             assert summary.get("id") == "summary"
-            assert summary.get("custom") is False
+            assert summary.get("schema", {}).get("type") == "string"
 
             assert payload.get("startAt") == 0
             max_results = payload.get("maxResults")
