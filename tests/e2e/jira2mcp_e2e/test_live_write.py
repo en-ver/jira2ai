@@ -498,7 +498,7 @@ def test_write_module_can_download_fixture_attachment_when_configured(
                     "jira_attachment",
                     {
                         "attachment_id": jira_e2e_required_attachment_id,
-                        "output_path": "downloads",
+                        "output_path": "downloads/",
                     },
                 )
             )
