@@ -1,6 +1,6 @@
 """Get field metadata for creating or editing Jira issues."""
 
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastmcp.dependencies import CurrentContext, Depends
 from fastmcp.server.context import Context
@@ -12,11 +12,90 @@ from jira2py.helpers.errors import (
     JiraHelperOperationError,
     JiraHelperValidationError,
 )
+from pydantic import Field
 
 from jira2mcp.adapter import adapt_operation_result, to_tool_error
 from jira2mcp.utils import get_api
 
 from .server import tools
+
+CanonicalFieldId = Annotated[
+    str,
+    Field(
+        min_length=1,
+        pattern=r"^[^\s,](?:[^\r\n,]*[^\s,])?$",
+        description="One canonical Jira field ID without surrounding whitespace or commas.",
+    ),
+]
+
+
+@tools.tool(
+    tags={"metadata"},
+    annotations={"readOnlyHint": True, "idempotentHint": True, "openWorldHint": False},
+)
+async def list_fields(
+    project_key: Annotated[
+        str | None,
+        "Optional project context filter; it does not determine issue-type or screen applicability.",
+    ] = None,
+    query: Annotated[
+        str | None,
+        "Optional case-insensitive field-name or description query.",
+    ] = None,
+    field_ids: Annotated[
+        list[CanonicalFieldId] | None,
+        Field(
+            min_length=1,
+            description="Canonical Jira field IDs to include. Each array item is one ID.",
+        ),
+    ] = None,
+    field_types: Annotated[
+        list[Literal["system", "custom"]] | None,
+        Field(
+            min_length=1,
+            description="Field types to include: system and/or custom.",
+        ),
+    ] = None,
+    start_at: Annotated[
+        int,
+        Field(
+            description="Index of the first field to return from Jira's catalog", ge=0
+        ),
+    ] = 0,
+    max_results: Annotated[
+        int,
+        Field(description="Maximum fields to return in this Jira server page", ge=1),
+    ] = 20,
+    raw: Annotated[
+        bool,
+        "Return the complete API-shaped field page, including values and Jira pagination metadata, as structured content and JSON text fallback.",
+    ] = False,
+    ctx: Context = CurrentContext(),
+    api: JiraAPI = Depends(get_api),
+) -> str | ToolResult:
+    """List one searchable Jira field catalog page.
+
+    Project context is not issue-type, create-screen, or edit-screen applicability.
+    Use jira_fields for create or edit metadata.
+    """
+    await ctx.info("Listing Jira field catalog")
+
+    try:
+        result = JiraHelpers(api).metadata.list_fields(
+            project_key,
+            query=query,
+            field_ids=field_ids,
+            field_types=field_types,
+            start_at=start_at,
+            max_results=max_results,
+        )
+    except JiraHelperOperationError as exc:
+        await ctx.error(str(exc))
+        raise to_tool_error(exc) from exc
+    except JiraHelperError as exc:
+        raise to_tool_error(exc) from exc
+
+    return adapt_operation_result(result, raw=raw, truncate_text=True)
 
 
 @tools.tool(

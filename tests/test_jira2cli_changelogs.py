@@ -48,6 +48,12 @@ def test_changelogs_command_delegates_complete_history_and_bounds(
             "2026-08-01T00:00:00Z",
             "--created-before",
             "2026-09-01T00:00:00Z",
+            "--field-ids",
+            "summary,customfield_10001",
+            "--result-start-at",
+            "2",
+            "--result-max-results",
+            "3",
         ],
     )
 
@@ -62,6 +68,9 @@ def test_changelogs_command_delegates_complete_history_and_bounds(
                 {
                     "created_at_or_after": "2026-08-01T00:00:00Z",
                     "created_before": "2026-09-01T00:00:00Z",
+                    "field_ids": ["summary", "customfield_10001"],
+                    "result_start_at": 2,
+                    "result_max_results": 3,
                 },
             ),
         ),
@@ -71,11 +80,16 @@ def test_changelogs_command_delegates_complete_history_and_bounds(
 def test_changelogs_by_ids_parses_csv_preserves_order_and_renders_json(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    calls: list[tuple[str, list[int]]] = []
+    calls: list[tuple[object, ...]] = []
     monkeypatch.setattr("jira2cli.client.get_api", lambda: object())
 
-    def fake_list_by_ids(issue_key: str, changelog_ids: list[int]) -> HelperResult:
-        calls.append((issue_key, changelog_ids))
+    def fake_list_by_ids(
+        issue_key: str,
+        changelog_ids: list[int],
+        *,
+        field_ids: list[str] | None,
+    ) -> HelperResult:
+        calls.append((issue_key, changelog_ids, field_ids))
         return HelperResult.with_data(
             "formatted changelogs",
             {"issue_key": issue_key, "changelogs": [{"id": "10001"}]},
@@ -90,6 +104,8 @@ def test_changelogs_by_ids_parses_csv_preserves_order_and_renders_json(
             "PROJ-123",
             "--changelog-ids",
             "10001, 10002,10001",
+            "--field-ids",
+            "summary, customfield_10001",
             "--json",
         ],
     )
@@ -99,7 +115,9 @@ def test_changelogs_by_ids_parses_csv_preserves_order_and_renders_json(
         "issue_key": "PROJ-123",
         "changelogs": [{"id": "10001"}],
     }
-    assert calls == [("PROJ-123", [10001, 10002, 10001])]
+    assert calls == [
+        ("PROJ-123", [10001, 10002, 10001], ["summary", "customfield_10001"])
+    ]
 
 
 @pytest.mark.parametrize(
@@ -202,20 +220,27 @@ def test_changelog_command_help_and_registration_match_contract() -> None:
     assert "--changelog-ids" in command_help
     assert "Required exactly once" in command_help
     assert "--changelog-id " not in command_help
-    assert (
-        "complete changelog history"
-        in " ".join(strip_ansi(history_help.stdout).replace("│", " ").split()).lower()
+    assert "--field-ids" in command_help
+    assert "--result-start-at" not in command_help
+    history_command_help = " ".join(
+        strip_ansi(history_help.stdout).replace("│", " ").split()
     )
+    assert "complete changelog history" in history_command_help.lower()
+    assert "--field-ids" in history_command_help
+    assert "--result-start-at" in history_command_help
+    assert "--result-max-results" in history_command_help
 
     assert [param.name for param in by_ids_command.params] == [
         "issue_key",
         "changelog_ids",
+        "field_ids",
         "raw_output",
         "json_output",
     ]
     assert [param.opts for param in by_ids_command.params] == [
         ["issue_key"],
         ["--changelog-ids"],
+        ["--field-ids"],
         ["--raw"],
         ["--json"],
     ]

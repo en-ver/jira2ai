@@ -25,6 +25,7 @@ EXPECTED_JIRA_TOOLS = {
     "jira_edit",
     "jira_fields",
     "jira_filters",
+    "jira_list_fields",
     "jira_issue_links",
     "jira_me",
     "jira_priorities",
@@ -83,11 +84,19 @@ def test_changelog_tools_expose_complete_history_and_known_id_schemas() -> None:
     expected = {
         "jira_changelogs": (
             {"issue_key"},
-            {"issue_key", "created_at_or_after", "created_before", "raw"},
+            {
+                "issue_key",
+                "created_at_or_after",
+                "created_before",
+                "field_ids",
+                "result_start_at",
+                "result_max_results",
+                "raw",
+            },
         ),
         "jira_changelogs_by_ids": (
             {"issue_key", "changelog_ids"},
-            {"issue_key", "changelog_ids", "raw"},
+            {"issue_key", "changelog_ids", "field_ids", "raw"},
         ),
     }
 
@@ -118,12 +127,96 @@ def test_changelog_tools_expose_complete_history_and_known_id_schemas() -> None:
         assert complete_properties[name]["default"] is None
         assert "complete history" in complete_properties[name]["description"].lower()
 
+    field_ids = complete_properties["field_ids"]
+    field_ids_array = next(
+        entry for entry in field_ids["anyOf"] if entry["type"] == "array"
+    )
+    assert field_ids["default"] is None
+    assert field_ids_array["minItems"] == 1
+    assert field_ids_array["items"]["type"] == "string"
+    assert field_ids_array["items"]["minLength"] == 1
+    assert "fieldid" in field_ids["description"].lower()
+
+    result_start_at = complete_properties["result_start_at"]
+    assert result_start_at["default"] == 0
+    assert result_start_at["minimum"] == 0
+    assert "complete history" in result_start_at["description"].lower()
+
+    result_max_results = complete_properties["result_max_results"]
+    assert result_max_results["default"] is None
+    assert {entry["type"] for entry in result_max_results["anyOf"]} == {
+        "integer",
+        "null",
+    }
+    assert (
+        next(
+            entry for entry in result_max_results["anyOf"] if entry["type"] == "integer"
+        )["minimum"]
+        == 1
+    )
+
     by_ids = next(tool for tool in tools if tool.name == "jira_changelogs_by_ids")
     by_ids_properties = cast(dict[str, dict[str, Any]], by_ids.parameters["properties"])
     changelog_ids = by_ids_properties["changelog_ids"]
     assert changelog_ids["type"] == "array"
     assert changelog_ids["minItems"] == 1
     assert changelog_ids["items"] == {"type": "integer"}
+    by_ids_field_ids = by_ids_properties["field_ids"]
+    assert by_ids_field_ids["default"] is None
+    assert "result_start_at" not in by_ids_properties
+    assert "result_max_results" not in by_ids_properties
+
+
+def test_list_fields_tool_exposes_one_server_page_schema() -> None:
+    tools = asyncio.run(mcp.list_tools(run_middleware=False))
+    tool = next(tool for tool in tools if tool.name == "jira_list_fields")
+    parameters = cast(dict[str, Any], tool.parameters)
+    properties = cast(dict[str, dict[str, Any]], parameters["properties"])
+
+    assert set(parameters.get("required", [])) == set()
+    assert set(properties) == {
+        "project_key",
+        "query",
+        "field_ids",
+        "field_types",
+        "start_at",
+        "max_results",
+        "raw",
+    }
+    assert parameters["additionalProperties"] is False
+    assert "one searchable jira field catalog page" in tool.description.lower()
+    assert "screen applicability" in tool.description.lower()
+
+    for name in ("project_key", "query"):
+        assert {entry["type"] for entry in properties[name]["anyOf"]} == {
+            "string",
+            "null",
+        }
+        assert properties[name]["default"] is None
+
+    field_ids = properties["field_ids"]
+    field_ids_array = next(
+        entry for entry in field_ids["anyOf"] if entry["type"] == "array"
+    )
+    assert field_ids["default"] is None
+    assert field_ids_array["minItems"] == 1
+    assert field_ids_array["items"]["type"] == "string"
+    assert field_ids_array["items"]["minLength"] == 1
+
+    field_types = properties["field_types"]
+    field_types_array = next(
+        entry for entry in field_types["anyOf"] if entry["type"] == "array"
+    )
+    assert field_types["default"] is None
+    assert field_types_array["minItems"] == 1
+    assert field_types_array["items"]["enum"] == ["system", "custom"]
+
+    assert properties["start_at"]["default"] == 0
+    assert properties["start_at"]["minimum"] == 0
+    assert properties["max_results"]["default"] == 20
+    assert properties["max_results"]["minimum"] == 1
+    assert properties["raw"]["default"] is False
+    assert "pagination metadata" in properties["raw"]["description"].lower()
 
 
 def test_search_tools_expose_manual_cursor_paging_schema() -> None:

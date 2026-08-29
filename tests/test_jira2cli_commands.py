@@ -84,6 +84,7 @@ def test_root_help_lists_registered_commands() -> None:
         "changelogs-by-ids",
         "comments",
         "fields",
+        "fields-list",
         "projects",
         "users",
         "link-types",
@@ -735,6 +736,73 @@ def test_comments_command_raw_output_delegates_to_helpers(
         '  "start_at": 2\n'
         "}\n"
     )
+
+
+def test_fields_list_command_forwards_one_server_page_and_json_envelope(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[tuple[str, object]] = []
+    monkeypatch.setattr(
+        "jira2cli.client.get_api",
+        lambda: calls.append(("get_api", None)) or object(),
+    )
+
+    payload = {
+        "startAt": 2,
+        "maxResults": 3,
+        "total": 6,
+        "isLast": False,
+        "values": [{"id": "summary", "name": "Summary"}],
+    }
+
+    def fake_list_fields(project_key: str | None, **kwargs: object) -> HelperResult:
+        calls.append(("list_fields", (project_key, kwargs)))
+        return HelperResult.with_data("field catalog", payload)
+
+    _patch_helpers(
+        monkeypatch,
+        "jira2cli.commands.metadata",
+        metadata={"list_fields": fake_list_fields},
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "fields-list",
+            "--project-key",
+            "PROJ",
+            "--query",
+            "estimate",
+            "--field-ids",
+            "summary, customfield_10001",
+            "--field-types",
+            "system,custom",
+            "--start-at",
+            "2",
+            "--max-results",
+            "3",
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert json.loads(result.stdout) == payload
+    assert calls == [
+        ("get_api", None),
+        (
+            "list_fields",
+            (
+                "PROJ",
+                {
+                    "query": "estimate",
+                    "field_ids": ["summary", "customfield_10001"],
+                    "field_types": ["system", "custom"],
+                    "start_at": 2,
+                    "max_results": 3,
+                },
+            ),
+        ),
+    ]
 
 
 def test_fields_command_issue_key_takes_precedence(
