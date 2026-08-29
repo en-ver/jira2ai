@@ -525,7 +525,7 @@ requires-dist = [
 
 [[package]]
 name = "jira2mcp"
-version = "0.3.0"
+version = "0.4.0"
 source = { editable = "packages/jira2mcp" }
 dependencies = [
     { name = "fastmcp" },
