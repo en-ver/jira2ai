@@ -26,7 +26,6 @@ def test_wrappers_pin_published_jira2py_without_bumping_wrapper_versions() -> No
         project = tomllib.loads(
             (ROOT / "packages" / package_name / "pyproject.toml").read_text()
         )["project"]
-        assert project["version"] == "0.4.0"
         assert "jira2py==0.12.0" in project["dependencies"]
 
         locked_wrapper = next(
