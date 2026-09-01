@@ -20,10 +20,12 @@ mcp = FastMCP(
         "- Before creating: use jira_fields with project_key + issue_type to discover required fields\n"
         "- Use jira_list_fields for one server-paged field catalog; its project context does not determine issue-type or screen applicability\n"
         "- Before assigning: use jira_users to look up account IDs\n"
-        "- Descriptions and comments accept markdown (auto-converted to ADF)\n"
+        "- Dedicated description and comment parameters accept Markdown (auto-converted to ADF); native jira_transition fields/update data is not converted, and jira_transition.update comment bodies must already be ADF\n"
         "- jira_read requires a non-empty fields array; request only the Jira fields needed\n"
         "- Use jira_comments for comments, jira_changelogs for complete issue history, jira_changelogs_by_ids for known changelog IDs, jira_issue_links for link IDs, and jira_attachments or jira_attachment_metadata for attachment metadata\n"
         "- jira_changelogs fetches every GET page before applying optional local timestamp and fieldId filters; result pagination is local\n"
+        "- Before a transition: read the current issue, use jira_transitions with raw=True for fresh expanded action metadata, then submit one native jira_transition fields/update request\n"
+        "- A transition action ID is not a status ID; unavailable transitions are diagnostic only, and Jira acceptance (often HTTP 204) requires a reread rather than a blind retry\n"
         "- Read the data://jira/link-types resource before creating issue links\n"
         "- Use the jql_syntax prompt for JQL syntax reference when building search queries"
     ),

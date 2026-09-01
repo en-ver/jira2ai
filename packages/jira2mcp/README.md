@@ -120,11 +120,53 @@ The server also provides the `data://jira/link-types` resource and the `jira_jql
 
 ## Usage and safety
 
-Descriptions and comments accept Markdown and are converted to Atlassian Document Format (ADF). `jira_read` returns selected Jira fields unchanged, including ADF, as structured content and a compact JSON text fallback; it does not format or truncate the response. `jira_run_filter` returns the same search-shaped result as `jira_search` after resolving the filter's JQL. `jira_download_attachment` provides structured/raw-friendly output, while `jira_attachment` remains available for its original simple download surface.
+Dedicated description and comment parameters accept Markdown and convert it to Atlassian Document Format (ADF). Native `jira_transition` `fields` and `update` data is not converted. `jira_read` returns selected Jira fields unchanged, including ADF, as structured content and a compact JSON text fallback; it does not format or truncate the response. `jira_run_filter` returns the same search-shaped result as `jira_search` after resolving the filter's JQL. `jira_download_attachment` provides structured/raw-friendly output, while `jira_attachment` remains available for its original simple download surface.
 
 `jira_read` requires both `issue_key` and a non-empty native `fields` array, for example `jira_read(issue_key="PROJ-123", fields=["summary", "description"])`. Each array item is one field key, ID, or endpoint-supported selector; do not use comma-separated items or surrounding whitespace. It has no `raw` mode because it always returns structured Jira data. Selectors such as `*all`, `*navigable`, or negative selectors can still return broad responses, so request only what is needed.
 
 Before a create or edit, call `jira_fields` for the target project and issue type. Before a transition, link, comment update/delete, attachment deletion, or worklog mutation, read the current state and use exact IDs or names. Attachment uploads must stay within the server working directory. Downloads must stay within advertised MCP roots, or the server working directory when roots are unavailable. All reads and writes remain subject to the configured Jira account's permissions.
+
+### Workflow transitions
+
+A transition action is a current workflow action, not a status update. Read the current issue first, including `status` and fields expected to change. Then use structured expanded metadata, normally with `raw=True`, and prefer a newly discovered action ID:
+
+```text
+jira_read(issue_key="PROJ-123", fields=["summary", "status", "resolution"])
+jira_transitions(issue_key="PROJ-123", raw=True)
+# Diagnostic only when investigating a blocked or absent action.
+jira_transitions(issue_key="PROJ-123", include_unavailable_transitions=True, raw=True)
+jira_transitions(issue_key="PROJ-123", transition_id="31", raw=True)
+```
+
+`transition_id="31"` identifies the transition action ID; it is not the destination status ID. Inspect availability, screen/conditional/global/looped indicators, required fields, schema, operations, allowed values, defaults, autocomplete, and configuration before one request. A looped action can intentionally retain the same status. `include_unavailable_transitions=True` is diagnostic only: never submit an unavailable action.
+
+`jira_transition` accepts one native Jira `fields` object and/or `update` object. It forwards those JSON shapes unchanged: it does not expose helper history/entity properties, convert Markdown to ADF, add comment/worklog convenience parameters, locally validate screen values, automatically verify, or guarantee ACID/idempotent behavior. Do not place an exact field key in both `fields` and `update`; `jira2py` rejects that overlap before posting.
+
+```text
+jira_transition(
+  issue_key="PROJ-123",
+  transition="31",
+  fields={"resolution": {"name": "Done"}}
+)
+
+# Use only when the discovered operations permit a native comment add.
+jira_transition(
+  issue_key="PROJ-123",
+  transition="31",
+  update={"comment": [{"add": {"body": {"type": "doc", "version": 1, "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Approved for release."}]}]}}}]}
+)
+
+# A native worklog add is likewise conditional on the discovered operations.
+jira_transition(
+  issue_key="PROJ-123",
+  transition="31",
+  update={"worklog": [{"add": {"timeSpent": "30m", "comment": {"type": "doc", "version": 1, "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Release verification"}]}]}}}]}
+)
+```
+
+Native `jira_transition.update` comment bodies must already be Jira-native ADF; the worklog bodies above are likewise ADF, and the `update` values are native operation arrays. Jira data is persistent and is not secret storage; never put credentials or secrets in transition fields, comments, or worklogs.
+
+Jira commonly replies `204 No Content`, so acceptance returns no issue object and is not verification. Reread the status and changed fields; inspect comments, worklogs, or changelog when relevant. For a `400`, revisit the fresh metadata, screen, required/schema/allowed values, and operation shape, or determine whether the configured account lacks permission to transition the issue. For a `409`, timeout, or `5xx`, delivery or final state can be uncertain: reread first, then decide on one new request. Do **not** blindly retry a transition or native comment/worklog update because it can be non-idempotent.
 
 ### Field catalog
 

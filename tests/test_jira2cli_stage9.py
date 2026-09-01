@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from types import SimpleNamespace
 from typing import Any, cast
 
@@ -227,6 +228,123 @@ def test_transition_commands_delegate_to_helpers(
         ("get_api", None),
         ("transition", ("PROJ-1", "Done")),
     ]
+
+
+def test_transition_commands_forward_focused_metadata_and_native_json(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[tuple[str, object]] = []
+    fields = {"resolution": {"name": "Done"}}
+    update = {"comment": [{"add": {"body": {"type": "doc", "version": 1}}}]}
+
+    monkeypatch.setattr(
+        "jira2cli.client.get_api",
+        lambda: calls.append(("get_api", None)) or object(),
+    )
+
+    def fake_transitions(issue_key: str, **kwargs: object) -> HelperResult:
+        calls.append(("transitions", (issue_key, kwargs)))
+        return HelperResult.with_data("available transitions", {"transitions": []})
+
+    def fake_transition(
+        issue_key: str,
+        transition: str,
+        **kwargs: object,
+    ) -> HelperResult:
+        calls.append(("transition", (issue_key, transition, kwargs)))
+        return HelperResult.with_data(
+            "Jira accepted transition without a verification read",
+            {"issue_key": issue_key, "transition_id": transition, "verified": False},
+        )
+
+    _patch_helpers(
+        monkeypatch,
+        "jira2cli.commands.transitions",
+        metadata={"transitions": fake_transitions},
+        issues={"transition": fake_transition},
+    )
+
+    discovery_result = runner.invoke(
+        app,
+        [
+            "transitions",
+            "PROJ-1",
+            "--transition-id",
+            "31",
+            "--include-unavailable",
+            "--json",
+        ],
+    )
+    mutation_result = runner.invoke(
+        app,
+        [
+            "transition",
+            "PROJ-1",
+            "31",
+            "--fields-json",
+            json.dumps(fields),
+            "--update-json",
+            json.dumps(update),
+            "--json",
+        ],
+    )
+
+    assert discovery_result.exit_code == 0
+    assert json.loads(discovery_result.stdout) == {"transitions": []}
+    assert mutation_result.exit_code == 0
+    assert json.loads(mutation_result.stdout) == {
+        "issue_key": "PROJ-1",
+        "transition_id": "31",
+        "verified": False,
+    }
+    assert calls == [
+        ("get_api", None),
+        (
+            "transitions",
+            (
+                "PROJ-1",
+                {
+                    "transition_id": "31",
+                    "include_unavailable_transitions": True,
+                },
+            ),
+        ),
+        ("get_api", None),
+        ("transition", ("PROJ-1", "31", {"fields": fields, "update": update})),
+    ]
+
+
+@pytest.mark.parametrize("option", ["--fields-json", "--update-json"])
+def test_transition_command_rejects_non_object_native_json_before_api(
+    monkeypatch: pytest.MonkeyPatch,
+    option: str,
+) -> None:
+    monkeypatch.setattr(
+        "jira2cli.client.get_api",
+        lambda: pytest.fail("get_api should not be called"),
+    )
+
+    result = runner.invoke(app, ["transition", "PROJ-1", "31", option, "[]"])
+
+    assert result.exit_code == 2
+    assert result.stdout == ""
+    assert result.stderr == f"{option}: must be a JSON object\n"
+
+
+def test_transition_command_help_matches_native_transition_options() -> None:
+    discovery_result = runner.invoke(app, ["transitions", "--help"])
+    mutation_result = runner.invoke(app, ["transition", "--help"])
+    discovery_help = " ".join(strip_ansi(discovery_result.stdout).split())
+    mutation_help = " ".join(strip_ansi(mutation_result.stdout).split())
+
+    assert discovery_result.exit_code == 0
+    assert "--transition-id" in discovery_help
+    assert "--include-unavailable" in discovery_help
+    assert "diagnostics; do not submit" in discovery_help
+    assert mutation_result.exit_code == 0
+    assert "--fields-json" in mutation_help
+    assert "--update-json" in mutation_help
+    assert "Fresh transition action ID preferred" in mutation_help
 
 
 def test_comment_mutation_commands_delegate_to_helpers(
