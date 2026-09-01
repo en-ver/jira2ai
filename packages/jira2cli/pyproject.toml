@@ -1,6 +1,6 @@
 [project]
 name = "jira2cli"
-version = "0.5.0"
+version = "0.5.1"
 description = "CLI for Jira AI integrations powered by jira2py helpers"
 readme = "README.md"
 authors = [
