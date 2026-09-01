@@ -128,6 +128,44 @@ Use `changelogs-by-ids <KEY> --changelog-ids ID[,ID...]` only when the exact cha
 
 Both commands render condensed text normally. `--json` and `--raw` render the same normalized helper-owned envelope, not untouched HTTP pages or bytes. Complete history and structured output can be large; terminals or external harnesses can still clip output.
 
+## Workflow transitions
+
+A transition action is a current workflow action, not a status update. Work from a fresh issue read and fresh transition metadata so the ID, availability, and screen rules are current:
+
+1. Read the current issue and the fields that you expect to change:
+   ```bash
+   uvx jira2cli read PROJ-123 --fields summary,status,resolution --json
+   ```
+2. Discover expanded structured metadata. Use `--include-unavailable` only to diagnose why an action is unavailable; never submit an unavailable action. Focus a known current action when its metadata is large:
+   ```bash
+   uvx jira2cli transitions PROJ-123 --json
+   # Diagnostic only when investigating a blocked or absent action.
+   uvx jira2cli transitions PROJ-123 --include-unavailable --json
+   uvx jira2cli transitions PROJ-123 --transition-id 31 --json
+   ```
+   Inspect availability, screen/conditional/global/looped indicators, required fields, schema, operations, allowed values, defaults, autocomplete, and configuration. `31` is a **transition action ID**; it is not the destination status ID. A looped action can intentionally leave the issue in the same status.
+3. Choose a fresh available transition action ID and submit one native Jira request. `--fields-json` is a JSON object of field values; `--update-json` is a JSON object of native operation arrays. The CLI forwards both unchanged: it does not convert Markdown to Atlassian Document Format (ADF), add comment/worklog flags, validate screen values locally, or promise ACID/idempotent behavior.
+
+   ```bash
+   uvx jira2cli transition PROJ-123 31 \
+     --fields-json '{"resolution":{"name":"Done"}}' --json
+
+   # Only when this transition metadata permits comment operations.
+   uvx jira2cli transition PROJ-123 31 \
+     --update-json '{"comment":[{"add":{"body":{"type":"doc","version":1,"content":[{"type":"paragraph","content":[{"type":"text","text":"Approved for release."}]}]}}}]}' \
+     --json
+
+   # Likewise, use a native worklog add shape only when the metadata permits it.
+   uvx jira2cli transition PROJ-123 31 \
+     --update-json '{"worklog":[{"add":{"timeSpent":"30m","comment":{"type":"doc","version":1,"content":[{"type":"paragraph","content":[{"type":"text","text":"Release verification"}]}]}}}]}' \
+     --json
+   ```
+
+   Do not use the exact same field key in both objects: Jira may define different semantics, and `jira2py` rejects exact overlap before the POST. Native `update.comment` bodies must already be Jira-native ADF, and `update` operation objects must already have Jira-native shapes. Inline CLI JSON can enter shell history; persistent Jira fields, comments, and worklogs are not secret storage.
+4. Jira commonly replies `204 No Content`: acceptance returns no issue object and does not verify the outcome. Reread the issue status and changed fields. Inspect `comments`, `worklogs`, or `changelogs` when an operation could have affected them.
+
+A `400` usually means the fresh metadata, screen, required fields, schema, allowed values, or operation shape needs correction, or the configured account lacks permission to transition the issue. A `409`, timeout, or `5xx` can leave delivery or final state uncertain. In all of those cases, reread the issue and current transition metadata (and comments/worklogs or changelog when relevant) before deciding on one new request. Do **not** blindly retry: a transition or native comment/worklog operation can be non-idempotent.
+
 ## Examples
 
 ```bash
@@ -140,9 +178,9 @@ uvx jira2cli fields-list --project-key PROJ --field-types system --max-results 2
 uvx jira2cli read PROJ-123 --fields summary,labels --json
 uvx jira2cli search 'project = PROJ ORDER BY created DESC' --fields key,summary --json
 
-# Inspect workflow choices before applying one.
+# Inspect current expanded workflow choices, then apply a fresh action ID.
 uvx jira2cli transitions PROJ-123 --json
-uvx jira2cli transition PROJ-123 "Start Progress" --json
+uvx jira2cli transition PROJ-123 31 --json
 
 # Reuse a saved filter.
 uvx jira2cli filters --query mine --json
@@ -168,7 +206,7 @@ uv run --locked --package jira2cli jira2cli --help
 
 ## Safety and capabilities
 
-Descriptions and comments accept Markdown. Plain `read` output renders selected rich-text Jira fields as Markdown, while `read --json` preserves the raw Jira data. Use `fields` before create or edit; `users` before choosing a user; `transitions` before changing status; and `link-types` before creating links. Read the current issue before an update or destructive action, use exact IDs, and confirm the intended fields, transition, comment, attachment, link, or worklog before mutating Jira. Jira permissions control what the configured account can read or write.
+Dedicated description parameters and comment-command bodies accept Markdown and convert it to ADF. Plain `read` output renders selected rich-text Jira fields as Markdown, while `read --json` preserves the raw Jira data. Use `fields` before create or edit; `users` before choosing a user; `transitions` before changing status; and `link-types` before creating links. For a transition, follow the fresh metadata, native JSON, reread, and no-blind-retry workflow above. Read the current issue before an update or destructive action, use exact IDs, and confirm the intended fields, transition, comment, attachment, link, or worklog before mutating Jira. Jira permissions control what the configured account can read or write.
 
 The optional [Pi skill](https://github.com/en-ver/jira2ai/tree/main/skills/jira2cli) is a source-checkout template for agent workflows. Load it explicitly as `<path-to-jira2ai>/skills/jira2cli`; UVX runs the CLI but does not install or auto-discover the skill.
 

@@ -51,6 +51,81 @@ def test_mcp_registers_existing_and_new_jira_tools() -> None:
     names = {tool.name for tool in tools}
 
     assert EXPECTED_JIRA_TOOLS <= names
+    assert (
+        "Dedicated description and comment parameters accept Markdown"
+        in mcp.instructions
+    )
+    assert (
+        "jira_transition.update comment bodies must already be ADF" in mcp.instructions
+    )
+
+
+def test_transition_tools_expose_native_workflow_schemas_and_annotations() -> None:
+    tools = asyncio.run(mcp.list_tools(run_middleware=False))
+    discovery = next(tool for tool in tools if tool.name == "jira_transitions")
+    mutation = next(tool for tool in tools if tool.name == "jira_transition")
+
+    discovery_parameters = cast(dict[str, Any], discovery.parameters)
+    discovery_properties = cast(
+        dict[str, dict[str, Any]], discovery_parameters["properties"]
+    )
+    assert set(discovery_parameters["required"]) == {"issue_key"}
+    assert set(discovery_properties) == {
+        "issue_key",
+        "transition_id",
+        "include_unavailable_transitions",
+        "raw",
+    }
+    assert discovery_parameters["additionalProperties"] is False
+    assert discovery_properties["transition_id"]["default"] is None
+    assert {
+        entry["type"] for entry in discovery_properties["transition_id"]["anyOf"]
+    } == {
+        "string",
+        "null",
+    }
+    assert discovery_properties["include_unavailable_transitions"] == {
+        "default": False,
+        "description": discovery_properties["include_unavailable_transitions"][
+            "description"
+        ],
+        "type": "boolean",
+    }
+    assert (
+        "diagnostic"
+        in discovery_properties["include_unavailable_transitions"][
+            "description"
+        ].lower()
+    )
+    assert discovery.annotations.readOnlyHint is True
+    assert discovery.annotations.idempotentHint is True
+
+    mutation_parameters = cast(dict[str, Any], mutation.parameters)
+    mutation_properties = cast(
+        dict[str, dict[str, Any]], mutation_parameters["properties"]
+    )
+    assert set(mutation_parameters["required"]) == {"issue_key", "transition"}
+    assert set(mutation_properties) == {
+        "issue_key",
+        "transition",
+        "fields",
+        "update",
+        "raw",
+    }
+    assert mutation_parameters["additionalProperties"] is False
+    for field_name in ("fields", "update"):
+        schema = mutation_properties[field_name]
+        assert schema["default"] is None
+        assert {entry["type"] for entry in schema["anyOf"]} == {"object", "null"}
+        assert "native jira" in schema["description"].lower()
+        assert "history" not in schema["description"].lower()
+        assert "entity" not in schema["description"].lower()
+    assert mutation.annotations.readOnlyHint is False
+    assert mutation.annotations.destructiveHint is True
+    assert mutation.annotations.idempotentHint is False
+    assert "status id" in discovery.description.lower()
+    assert "204" in mutation.description
+    assert "blindly retry" in mutation.description.lower()
 
 
 def test_read_tool_requires_nonempty_field_selectors() -> None:
