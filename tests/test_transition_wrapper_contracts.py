@@ -3,15 +3,15 @@ from __future__ import annotations
 import tomllib
 from inspect import signature
 from pathlib import Path
+from typing import Any, cast
 
 from jira2cli import app
 from jira2py import __version__ as jira2py_version
 from jira2py.helpers.issues import IssueHelpers
 from jira2py.helpers.metadata import MetadataHelpers
-from typer.testing import CliRunner
+from typer.main import get_command
 
 ROOT = Path(__file__).resolve().parents[1]
-runner = CliRunner()
 
 
 def test_wrappers_pin_published_jira2py_without_bumping_wrapper_versions() -> None:
@@ -56,15 +56,29 @@ def test_wrappers_pin_published_jira2py_without_bumping_wrapper_versions() -> No
 
 
 def test_transition_docs_and_skill_match_current_cli_help() -> None:
-    discovery_help = runner.invoke(app, ["transitions", "--help"])
-    mutation_help = runner.invoke(app, ["transition", "--help"])
-
-    assert discovery_help.exit_code == 0
-    assert "--transition-id" in discovery_help.stdout
-    assert "--include-unavailable" in discovery_help.stdout
-    assert mutation_help.exit_code == 0
-    assert "--fields-json" in mutation_help.stdout
-    assert "--update-json" in mutation_help.stdout
+    commands = cast(Any, get_command(app)).commands
+    expected_visible_options = {
+        "transitions": {
+            "--transition-id",
+            "--include-unavailable",
+            "--raw",
+            "--json",
+        },
+        "transition": {
+            "--fields-json",
+            "--update-json",
+            "--raw",
+            "--json",
+        },
+    }
+    for command_name, expected_options in expected_visible_options.items():
+        assert {
+            option
+            for parameter in commands[command_name].params
+            if not parameter.hidden
+            for option in parameter.opts
+            if option.startswith("--")
+        } == expected_options
 
     cli_readme = (ROOT / "packages/jira2cli/README.md").read_text()
     mcp_readme = (ROOT / "packages/jira2mcp/README.md").read_text()
@@ -101,4 +115,7 @@ def test_transition_docs_and_skill_match_current_cli_help() -> None:
     assert "transitions PROJ-123 --json" in cli_readme
     assert "transitions <KEY> --json" in skill
     assert "transitions <KEY> --json" in transition_reference
-    assert "include-unavailable --json\nuvx jira2cli transition" not in cli_readme
+    assert (
+        "Use `--include-unavailable` only to diagnose why an action is unavailable; "
+        "never submit an unavailable action."
+    ) in cli_readme
