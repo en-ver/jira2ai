@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 from fastmcp import Context
 from fastmcp.dependencies import CurrentContext, Depends
 from fastmcp.exceptions import ToolError
-from fastmcp.tools.tool import ToolResult
+from fastmcp.tools import ToolResult
 from jira2py import JiraAPI
 from jira2py.helpers import HelperResult, JiraHelpers
 from jira2py.helpers.errors import (

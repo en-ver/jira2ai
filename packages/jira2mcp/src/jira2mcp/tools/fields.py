@@ -4,7 +4,7 @@ from typing import Annotated, Literal
 
 from fastmcp.dependencies import CurrentContext, Depends
 from fastmcp.server.context import Context
-from fastmcp.tools.tool import ToolResult
+from fastmcp.tools import ToolResult
 from jira2py import JiraAPI
 from jira2py.helpers import JiraHelpers
 from jira2py.helpers.errors import (

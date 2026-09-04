@@ -6,7 +6,7 @@ import json
 from typing import Any
 
 from fastmcp.exceptions import ToolError
-from fastmcp.tools.tool import ToolResult
+from fastmcp.tools import ToolResult
 from jira2py.helpers import HelperResult
 from jira2py.helpers.errors import JiraHelperError
 
