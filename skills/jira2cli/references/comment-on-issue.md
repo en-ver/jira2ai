@@ -34,4 +34,8 @@ After confirmation only, run:
 
 Use `--raw` instead of `--json` only when you need API-oriented output. `--raw` renders API-oriented output by parsing JSON when needed, then pretty-printing it with recursively sorted object keys; it does not emit untouched HTTP bytes.
 
+## Mentions
+
+Comment add and update bodies recognize canonical `[~accountId:<id>]` as one semantic ADF mention; Jira may notify that account. Escaped, malformed, code, link, and image forms remain text. Formatted comment Markdown is presentation-only and can lose mention identity when written back, so preserve raw ADF from `comments --json` for identity-safe updates.
+
 Do not post, overwrite, or delete a comment before checking the current issue and recent comments.

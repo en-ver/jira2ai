@@ -31,4 +31,8 @@ After confirmation only, run:
 
 Use `--raw` instead of `--json` only when you need API-oriented output. `--raw` renders API-oriented output by parsing JSON when needed, then pretty-printing it with recursively sorted object keys; it does not emit untouched HTTP bytes.
 
+## Mentions
+
+Worklog add and update comments recognize canonical `[~accountId:<id>]` as one semantic ADF mention; Jira may notify that account. Escaped, malformed, code, link, and image forms remain text. Formatted worklog Markdown is presentation-only and can lose mention identity when written back, so preserve raw ADF from `worklogs --json` for identity-safe updates.
+
 Do not guess worklog IDs or mutate time tracking without explicit confirmation.

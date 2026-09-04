@@ -73,12 +73,18 @@ async def add_worklog(
         str | None,
         "Optional Jira started timestamp such as 2026-06-27T09:00:00.000+0000",
     ] = None,
-    comment: Annotated[str | None, "Optional worklog comment in markdown"] = None,
+    comment: Annotated[
+        str | None,
+        "Optional worklog comment in Markdown; [~accountId:<id>] creates a Jira mention",
+    ] = None,
     raw: Annotated[bool, "Return raw JSON from the API"] = False,
     ctx: Context = CurrentContext(),
     api: JiraAPI = Depends(get_api),
 ) -> str | ToolResult:
-    """Add a worklog to a Jira issue."""
+    """Add a worklog to a Jira issue.
+
+    Canonical [~accountId:<id>] syntax creates an ADF mention in its comment.
+    """
     await ctx.info(f"Adding worklog to {issue_key}")
 
     try:
@@ -119,13 +125,17 @@ async def update_worklog(
         "Optional Jira started timestamp such as 2026-06-27T09:00:00.000+0000",
     ] = None,
     comment: Annotated[
-        str | None, "Optional replacement worklog comment in markdown"
+        str | None,
+        "Optional replacement worklog comment in Markdown; [~accountId:<id>] creates a Jira mention",
     ] = None,
     raw: Annotated[bool, "Return raw JSON from the API"] = False,
     ctx: Context = CurrentContext(),
     api: JiraAPI = Depends(get_api),
 ) -> str | ToolResult:
-    """Update an existing Jira worklog."""
+    """Update an existing Jira worklog.
+
+    Canonical [~accountId:<id>] syntax creates an ADF mention in its comment.
+    """
     await ctx.info(f"Updating worklog {worklog_id} on {issue_key}")
 
     try:

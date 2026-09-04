@@ -25,15 +25,19 @@ from .server import tools
 )
 async def comment(
     issue_key: Annotated[str, "Issue key (e.g. PROJ-123)"],
-    body: Annotated[str, "Comment text in markdown"],
+    body: Annotated[
+        str,
+        "Comment text in Markdown; [~accountId:<id>] creates a Jira mention",
+    ],
     raw: Annotated[bool, "Return raw JSON from the API"] = False,
     ctx: Context = CurrentContext(),
     api: JiraAPI = Depends(get_api),
 ) -> str | ToolResult:
     """Add a comment to a Jira issue.
 
-    Provide the comment body in markdown — it will be converted to
-    Atlassian Document Format (ADF) automatically.
+    Provide the comment body in Markdown — it will be converted to
+    Atlassian Document Format (ADF) automatically. Canonical
+    [~accountId:<id>] syntax creates an ADF mention.
     """
     await ctx.info(f"Adding comment to {issue_key}")
 

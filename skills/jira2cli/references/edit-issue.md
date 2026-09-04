@@ -16,4 +16,8 @@ Use this only when the user has asked to change an existing Jira issue.
    - `uvx jira2cli edit <KEY> --summary <text> --description <text> --fields-json '<json>' --json`
 7. If you need API-oriented output instead of structured confirmation, rerun with `--raw` instead of `--json`. `--raw` renders API-oriented output by parsing JSON when needed, then pretty-printing it with recursively sorted object keys; it does not emit untouched HTTP bytes.
 
+## Rich-text mentions
+
+`--description` and string values in compatible rich-text `--fields-json` fields recognize canonical `[~accountId:<id>]` as one semantic ADF mention; Jira may notify that account. Escaped, malformed, code, link, and image forms remain text. Preserve raw issue ADF from `read --json` for identity-safe edits, because formatted issue Markdown is presentation-only and can lose mention identity when written back.
+
 Do not guess field IDs or values. If metadata does not show the field you need, stop and ask before editing.

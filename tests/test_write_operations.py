@@ -266,3 +266,25 @@ def test_comment_and_link_tools_delegate_to_helpers(fake_ctx, make_write_api) ->
         default=str,
     )
     assert delete_link_result == "Deleted issue link 77"
+
+
+def test_comment_tool_passes_canonical_mention_to_high_level_helper(
+    fake_ctx, make_write_api
+) -> None:
+    body = r"Notify [~accountId:account-123] but keep \[~accountId:literal] literal"
+    api = make_write_api(comment_response=COMMENT_RESPONSE)
+
+    result = asyncio.run(comment("PROJ-123", body, ctx=fake_ctx, api=api))
+
+    assert (
+        result
+        == "Added comment to PROJ-123\nURL: https://example.atlassian.net/browse/PROJ-123"
+    )
+    assert api._methods["add_comment"].calls
+    adf_body = cast(dict[str, Any], api._methods["add_comment"].calls[0]["body"])
+    content = cast(list[dict[str, Any]], adf_body["content"])[0]["content"]
+    mentions = [node for node in content if node["type"] == "mention"]
+    assert mentions == [{"type": "mention", "attrs": {"id": "account-123"}}]
+    assert "[~accountId:literal]" in "".join(
+        node.get("text", "") for node in content if node["type"] == "text"
+    )

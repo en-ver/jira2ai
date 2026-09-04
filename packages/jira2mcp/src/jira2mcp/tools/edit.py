@@ -26,7 +26,10 @@ from .server import tools
 async def edit(
     issue_key: Annotated[str, "Issue key (e.g. PROJ-123)"],
     summary: Annotated[str | None, "New issue title / summary"] = None,
-    description: Annotated[str | None, "New description in markdown"] = None,
+    description: Annotated[
+        str | None,
+        "New description in Markdown; [~accountId:<id>] creates a Jira mention",
+    ] = None,
     fields: Annotated[
         dict[str, Any] | None,
         "Additional fields to update as key-value pairs "
@@ -41,7 +44,8 @@ async def edit(
 
     Provide at least one of summary, description, or fields.
     Markdown is auto-converted to ADF for rich-text fields (description,
-    environment, and custom textarea fields).
+    environment, and custom textarea fields). Canonical [~accountId:<id>]
+    syntax creates an ADF mention in these high-level write inputs.
 
     Use jira_fields with issue_key to discover which fields are available
     on the edit screen. Use jira_users to look up account IDs for assignee updates.

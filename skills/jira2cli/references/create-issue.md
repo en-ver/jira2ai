@@ -18,4 +18,8 @@ Use this only when the user has asked for a new Jira issue.
    - `uvx jira2cli create <PROJECT> <TYPE> <SUMMARY> --description <text> --fields-json '<json>' --json`
 8. If you need API-oriented output instead of structured confirmation, rerun with `--raw` instead of `--json`. `--raw` renders API-oriented output by parsing JSON when needed, then pretty-printing it with recursively sorted object keys; it does not emit untouched HTTP bytes.
 
+## Rich-text mentions
+
+`--description` and string values in compatible rich-text `--fields-json` fields recognize canonical `[~accountId:<id>]` as one semantic ADF mention; Jira may notify that account. Escaped, malformed, code, link, and image forms remain text. Preserve raw issue ADF from `read --json` for identity-safe later edits, because formatted Markdown is presentation-only and can lose mention identity when written back.
+
 Do not guess required fields or send placeholder values just to make the create succeed.

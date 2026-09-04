@@ -154,7 +154,18 @@ def test_read_command_json_bypasses_formatter_and_browse_url(
     data = {
         "key": "PROJ-123",
         "fields": {
-            "description": {"type": "doc", "version": 1, "content": []},
+            "description": {
+                "type": "doc",
+                "version": 1,
+                "content": [
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {"type": "mention", "attrs": {"id": "account-123"}}
+                        ],
+                    }
+                ],
+            },
             "summary": "Unformatted",
         },
     }
@@ -1147,6 +1158,51 @@ def test_comment_command_delegates_to_helpers(
         ("get_api", None),
         ("add", ("PROJ-123", "Ship it")),
     ]
+
+
+def test_comment_command_passes_canonical_mention_to_high_level_helper(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[dict[str, object]] = []
+    body = r"Notify [~accountId:account-123] but keep \[~accountId:literal] literal"
+    api = SimpleNamespace(
+        credentials=SimpleNamespace(url="https://example.atlassian.net"),
+        comments=SimpleNamespace(
+            add_comment=lambda **kwargs: calls.append(kwargs) or {"id": "20001"}
+        ),
+    )
+    monkeypatch.setattr("jira2cli.client.get_api", lambda: api)
+
+    result = runner.invoke(app, ["comment", "PROJ-123", body])
+
+    assert result.exit_code == 0
+    assert len(calls) == 1
+    adf_body = calls[0]["body"]
+    assert isinstance(adf_body, dict)
+    content = adf_body["content"][0]["content"]
+    mentions = [node for node in content if node["type"] == "mention"]
+    assert mentions == [{"type": "mention", "attrs": {"id": "account-123"}}]
+    assert "[~accountId:literal]" in "".join(
+        node.get("text", "") for node in content if node["type"] == "text"
+    )
+
+
+@pytest.mark.parametrize(
+    "argv",
+    [
+        ["create", "--help"],
+        ["edit", "--help"],
+        ["comment", "--help"],
+        ["comment-update", "--help"],
+        ["worklog-add", "--help"],
+        ["worklog-update", "--help"],
+    ],
+)
+def test_high_level_write_help_describes_canonical_mentions(argv: list[str]) -> None:
+    result = runner.invoke(app, argv)
+
+    assert result.exit_code == 0
+    assert "[~accountId:<id>]" in strip_ansi(result.stdout)
 
 
 @pytest.mark.parametrize(
