@@ -32,7 +32,10 @@ def read_command(
     json_output: bool = typer.Option(
         False,
         "--json",
-        help="Render the unchanged Jira response as JSON.",
+        help=(
+            "Render the unchanged Jira response as JSON, including raw ADF for "
+            "identity-safe rich-text edits."
+        ),
     ),
 ) -> None:
     """Read one Jira issue; use search or filter-run for multi-issue projected reads."""

@@ -63,6 +63,14 @@ Most structured commands accept `--json` for helper output. `--raw` renders API-
 
 `read` requires exactly one `--fields FIELD[,FIELD...]` option. Its CSV segments are trimmed, must be non-empty, and are forwarded in order as Jira field keys, IDs, or endpoint-supported selectors. `--json` bypasses text formatting and preserves the returned Jira object, including ADF. Selectors such as `*all`, `*navigable`, or negative selectors can still return broad responses; request only what is needed.
 
+## Mentions in high-level writes
+
+High-level Markdown writes recognize the canonical Jira mention `[~accountId:<id>]`: issue descriptions, compatible rich-text string values in `--fields-json` (including `environment` and supported custom textarea fields), comment add/update bodies, and worklog add/update comments. It produces one semantic ADF mention, and Jira may notify the referenced account.
+
+Only the unescaped canonical form is a mention. Escaped, malformed, code, link, and image forms remain text. This write-only behavior does not apply to native `transition --fields-json` or `--update-json` values, which must already use Jira-native shapes and ADF where required.
+
+Formatted issue, comment, and worklog Markdown is presentation-only and may lose mention identity when edited or written back. For identity-safe edits, preserve raw ADF from `read --json` for issue fields and structured `comments --json` or `worklogs --json` output for their bodies; do not write formatted text back when mention identity matters.
+
 ## Multi-issue projected search and pagination
 
 Unlike singular `read`, `search` and `filter-run` are multi-issue projected reads. Each invocation returns one page and requests the selected `--fields` for every issue in that page. A requested field can still be absent or null. Use structured `--json` or `--raw` to inspect arbitrary projected fields: plain output is a fixed compact view.

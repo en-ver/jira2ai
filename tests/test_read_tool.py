@@ -50,6 +50,35 @@ def test_read_returns_unmodified_structured_issue(
     )
 
 
+def test_read_preserves_raw_mention_adf_for_identity_safe_edits(
+    fake_ctx, make_read_api
+) -> None:
+    issue_data = {
+        "key": "PROJ-123",
+        "fields": {
+            "description": {
+                "type": "doc",
+                "version": 1,
+                "content": [
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {"type": "mention", "attrs": {"id": "account-123"}}
+                        ],
+                    }
+                ],
+            }
+        },
+    }
+    api = make_read_api(issue_data=issue_data)
+
+    result = asyncio.run(
+        read("PROJ-123", fields=["description"], ctx=fake_ctx, api=api)
+    )
+
+    assert result.structured_content == issue_data
+
+
 def test_read_normalizes_issue_key_before_api(fake_ctx, make_read_api) -> None:
     api = make_read_api(issue_data={"key": "PROJ-123", "fields": {}})
 

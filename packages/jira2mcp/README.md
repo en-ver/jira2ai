@@ -120,7 +120,11 @@ The server also provides the `data://jira/link-types` resource and the `jira_jql
 
 ## Usage and safety
 
-Dedicated description and comment parameters accept Markdown and convert it to Atlassian Document Format (ADF). Native `jira_transition` `fields` and `update` data is not converted. `jira_read` returns selected Jira fields unchanged, including ADF, as structured content and a compact JSON text fallback; it does not format or truncate the response. `jira_run_filter` returns the same search-shaped result as `jira_search` after resolving the filter's JQL. `jira_download_attachment` provides structured/raw-friendly output, while `jira_attachment` remains available for its original simple download surface.
+High-level Markdown writes—issue descriptions, compatible rich-text field strings, comment add/update bodies, and worklog add/update comments—recognize the canonical Jira mention `[~accountId:<id>]` and convert it to one semantic ADF mention. Escaped, malformed, code, link, and image forms remain text. Jira may notify the referenced account. Native `jira_transition` `fields` and `update` data is not converted.
+
+Formatted issue, comment, and worklog Markdown is presentation-only and may lose mention identity when edited or written back. For identity-safe edits, preserve raw ADF from `jira_read` structured data for issue fields and `raw=True` `jira_comments` or `jira_worklogs` results for their bodies; do not write formatted text back when mention identity matters.
+
+`jira_read` returns selected Jira fields unchanged, including ADF, as structured content and a compact JSON text fallback; it does not format or truncate the response. `jira_run_filter` returns the same search-shaped result as `jira_search` after resolving the filter's JQL. `jira_download_attachment` provides structured/raw-friendly output, while `jira_attachment` remains available for its original simple download surface.
 
 `jira_read` requires both `issue_key` and a non-empty native `fields` array, for example `jira_read(issue_key="PROJ-123", fields=["summary", "description"])`. Each array item is one field key, ID, or endpoint-supported selector; do not use comma-separated items or surrounding whitespace. It has no `raw` mode because it always returns structured Jira data. Selectors such as `*all`, `*navigable`, or negative selectors can still return broad responses, so request only what is needed.
 

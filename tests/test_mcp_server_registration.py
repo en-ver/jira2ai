@@ -51,13 +51,30 @@ def test_mcp_registers_existing_and_new_jira_tools() -> None:
     names = {tool.name for tool in tools}
 
     assert EXPECTED_JIRA_TOOLS <= names
+    assert "[~accountId:<id>]" in mcp.instructions
     assert (
-        "Dedicated description and comment parameters accept Markdown"
-        in mcp.instructions
+        "escaped, malformed, code, link, and image forms stay text" in mcp.instructions
     )
+    assert "presentation-only" in mcp.instructions
+    assert "jira_read structured data" in mcp.instructions
     assert (
         "jira_transition.update comment bodies must already be ADF" in mcp.instructions
     )
+
+
+def test_mcp_high_level_write_tools_describe_canonical_mentions() -> None:
+    tools = asyncio.run(mcp.list_tools(run_middleware=False))
+    descriptions = {tool.name: tool.description for tool in tools}
+
+    for name in {
+        "jira_create",
+        "jira_edit",
+        "jira_comment",
+        "jira_update_comment",
+        "jira_add_worklog",
+        "jira_update_worklog",
+    }:
+        assert "[~accountId:<id>]" in descriptions[name]
 
 
 def test_transition_tools_expose_native_workflow_schemas_and_annotations() -> None:

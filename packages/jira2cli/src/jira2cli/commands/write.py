@@ -21,12 +21,15 @@ def create_command(
     description: str | None = typer.Option(
         None,
         "--description",
-        help="Issue description in markdown.",
+        help="Issue description in Markdown. Supports [~accountId:<id>] mentions.",
     ),
     fields_json: str | None = typer.Option(
         None,
         "--fields-json",
-        help="Additional issue fields as a JSON object.",
+        help=(
+            "Additional issue fields as a JSON object. Compatible rich-text "
+            "string values support [~accountId:<id>] mentions."
+        ),
     ),
     raw_output: bool = typer.Option(
         False,
@@ -74,12 +77,15 @@ def edit_command(
     description: str | None = typer.Option(
         None,
         "--description",
-        help="New issue description in markdown.",
+        help="New issue description in Markdown. Supports [~accountId:<id>] mentions.",
     ),
     fields_json: str | None = typer.Option(
         None,
         "--fields-json",
-        help="Additional fields to update as a JSON object.",
+        help=(
+            "Additional fields to update as a JSON object. Compatible rich-text "
+            "string values support [~accountId:<id>] mentions."
+        ),
     ),
     raw_output: bool = typer.Option(
         False,
@@ -120,7 +126,9 @@ def edit_command(
 
 def comment_command(
     issue_key: str = typer.Argument(..., help="Issue key (e.g. PROJ-123)"),
-    body: str = typer.Argument(..., help="Comment text in markdown"),
+    body: str = typer.Argument(
+        ..., help="Comment text in Markdown. [~accountId:<id>] creates a Jira mention."
+    ),
     raw_output: bool = typer.Option(
         False,
         "--raw",
@@ -153,7 +161,13 @@ def comment_command(
 def comment_update_command(
     issue_key: str = typer.Argument(..., help="Issue key (e.g. PROJ-123)"),
     comment_id: str = typer.Argument(..., help="Comment ID"),
-    body: str = typer.Argument(..., help="Replacement comment text in markdown"),
+    body: str = typer.Argument(
+        ...,
+        help=(
+            "Replacement comment text in Markdown. [~accountId:<id>] creates a "
+            "Jira mention."
+        ),
+    ),
     raw_output: bool = typer.Option(
         False,
         "--raw",

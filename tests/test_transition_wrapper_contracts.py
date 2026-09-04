@@ -19,14 +19,14 @@ def test_wrappers_pin_published_jira2py_without_bumping_wrapper_versions() -> No
     jira2py = next(
         package
         for package in lock["package"]
-        if package["name"] == "jira2py" and package["version"] == "0.12.0"
+        if package["name"] == "jira2py" and package["version"] == "0.13.0"
     )
 
     for package_name in ("jira2cli", "jira2mcp"):
         project = tomllib.loads(
             (ROOT / "packages" / package_name / "pyproject.toml").read_text()
         )["project"]
-        assert "jira2py==0.12.0" in project["dependencies"]
+        assert "jira2py==0.13.0" in project["dependencies"]
 
         locked_wrapper = next(
             package for package in lock["package"] if package["name"] == package_name
@@ -34,12 +34,12 @@ def test_wrappers_pin_published_jira2py_without_bumping_wrapper_versions() -> No
         requires_dist = locked_wrapper["metadata"]["requires-dist"]
         assert {
             entry["specifier"] for entry in requires_dist if entry["name"] == "jira2py"
-        } == {"==0.12.0"}
+        } == {"==0.13.0"}
 
     assert jira2py["source"] == {"registry": "https://pypi.org/simple"}
     assert jira2py["sdist"]["url"].startswith("https://files.pythonhosted.org/")
     assert jira2py["wheels"][0]["url"].startswith("https://files.pythonhosted.org/")
-    assert jira2py_version == "0.12.0"
+    assert jira2py_version == "0.13.0"
     assert set(signature(MetadataHelpers.transitions).parameters) == {
         "self",
         "issue_key",
@@ -106,7 +106,8 @@ def test_transition_docs_and_skill_match_current_cli_help() -> None:
         "Dedicated description parameters and comment-command bodies accept Markdown"
         in cli_readme
     )
-    assert "Dedicated description and comment parameters accept Markdown" in mcp_readme
+    assert "High-level Markdown writes" in mcp_readme
+    assert "[~accountId:<id>]" in mcp_readme
 
     transition_guidance = (cli_readme, mcp_readme, skill, transition_reference)
     for text in transition_guidance:

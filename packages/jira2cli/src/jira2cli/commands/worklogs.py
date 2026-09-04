@@ -75,7 +75,10 @@ def worklog_add_command(
     comment: str | None = typer.Option(
         None,
         "--comment",
-        help="Optional worklog comment in markdown.",
+        help=(
+            "Optional worklog comment in Markdown. [~accountId:<id>] creates a "
+            "Jira mention."
+        ),
     ),
     raw_output: bool = typer.Option(
         False,
@@ -127,7 +130,10 @@ def worklog_update_command(
     comment: str | None = typer.Option(
         None,
         "--comment",
-        help="Optional replacement worklog comment in markdown.",
+        help=(
+            "Optional replacement worklog comment in Markdown. "
+            "[~accountId:<id>] creates a Jira mention."
+        ),
     ),
     raw_output: bool = typer.Option(
         False,

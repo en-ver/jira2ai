@@ -31,7 +31,10 @@ async def create(
     project_key: Annotated[str, "Project key (e.g. PROJ)"],
     issue_type: Annotated[str, "Issue type name (e.g. Bug, Task, Story, Epic)"],
     summary: Annotated[str, "Issue title / summary"],
-    description: Annotated[str | None, "Issue description in markdown"] = None,
+    description: Annotated[
+        str | None,
+        "Issue description in Markdown; [~accountId:<id>] creates a Jira mention",
+    ] = None,
     fields: Annotated[
         dict[str, Any] | None,
         "Additional fields as key-value pairs "
@@ -45,7 +48,8 @@ async def create(
     """Create a new Jira issue.
 
     Markdown is auto-converted to ADF for rich-text fields (description,
-    environment, and custom textarea fields).
+    environment, and custom textarea fields). Canonical [~accountId:<id>]
+    syntax creates an ADF mention in these high-level write inputs.
 
     Always use jira_fields with project_key + issue_type first to discover
     required fields on the create screen. Use jira_users to look up account

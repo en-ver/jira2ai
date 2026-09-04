@@ -70,12 +70,18 @@ async def comments(
 async def update_comment(
     issue_key: Annotated[str, "Issue key (e.g. PROJ-123)"],
     comment_id: Annotated[str, "Comment ID"],
-    body: Annotated[str, "Replacement comment text in markdown"],
+    body: Annotated[
+        str,
+        "Replacement comment text in Markdown; [~accountId:<id>] creates a Jira mention",
+    ],
     raw: Annotated[bool, "Return raw JSON from the API"] = False,
     ctx: Context = CurrentContext(),
     api: JiraAPI = Depends(get_api),
 ) -> str | ToolResult:
-    """Update an existing Jira issue comment."""
+    """Update an existing Jira issue comment.
+
+    Canonical [~accountId:<id>] syntax creates an ADF mention.
+    """
     await ctx.info(f"Updating comment {comment_id} on {issue_key}")
 
     try:
