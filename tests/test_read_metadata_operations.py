@@ -8,7 +8,7 @@ from typing import Any, cast
 
 import pytest
 from fastmcp.exceptions import ToolError
-from fastmcp.tools.tool import ToolResult
+from fastmcp.tools import ToolResult
 from jira2mcp.tools import fields as fields_tool_module
 from jira2mcp.tools import projects as projects_tool_module
 from jira2mcp.tools.comments import comments

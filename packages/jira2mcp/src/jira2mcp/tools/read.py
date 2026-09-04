@@ -5,7 +5,7 @@ from typing import Annotated
 from fastmcp.dependencies import CurrentContext, Depends
 from fastmcp.exceptions import ToolError
 from fastmcp.server.context import Context
-from fastmcp.tools.tool import ToolResult
+from fastmcp.tools import ToolResult
 from jira2py import JiraAPI, JiraError
 from pydantic import Field, StringConstraints
 

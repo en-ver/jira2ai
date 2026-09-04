@@ -1,0 +1,80 @@
+name: FastMCP compatibility
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/fastmcp-compat.yml"
+      - "packages/jira2mcp/**"
+      - "pyproject.toml"
+      - "scripts/smoke_jira2mcp_wheel.py"
+      - "tests/**/*.py"
+      - "uv.lock"
+
+permissions:
+  contents: read
+
+jobs:
+  jira2mcp-fastmcp-contract:
+    name: jira2mcp FastMCP contract
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Set up Python
+        run: uv python install 3.13
+
+      - name: Enforce FastMCP dependency and import contract
+        run: uv run --locked python -m pytest tests/test_fastmcp_compatibility.py
+
+  jira2mcp-wheel-smoke:
+    name: jira2mcp wheel (${{ matrix.label }})
+    needs: jira2mcp-fastmcp-contract
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: FastMCP 3.2.0
+            requirement: "fastmcp==3.2.0"
+            specifier: "==3.2.0"
+          - label: latest FastMCP 3.x
+            requirement: "fastmcp>=3.2.0,<4"
+            specifier: ">=3.2.0,<4"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Set up Python
+        run: uv python install 3.13
+
+      - name: Build jira2mcp wheel
+        run: uv build --package jira2mcp
+
+      - name: Install and smoke-test the wheel outside the checkout
+        env:
+          FASTMCP_REQUIREMENT: ${{ matrix.requirement }}
+          FASTMCP_SPECIFIER: ${{ matrix.specifier }}
+        run: |
+          SMOKE_DIR="$(mktemp -d "$RUNNER_TEMP/jira2mcp-fastmcp-XXXXXX")"
+          PYTHON="$SMOKE_DIR/venv/bin/python"
+          uv venv --python 3.13 "$SMOKE_DIR/venv"
+          (
+            cd "$SMOKE_DIR"
+            uv pip install --no-cache --python "$PYTHON" \
+              "$FASTMCP_REQUIREMENT" \
+              "$GITHUB_WORKSPACE"/dist/jira2mcp-*.whl
+            "$SMOKE_DIR/venv/bin/jira2mcp" --help
+            "$PYTHON" "$GITHUB_WORKSPACE/scripts/smoke_jira2mcp_wheel.py" \
+              --checkout "$GITHUB_WORKSPACE" \
+              --server "$SMOKE_DIR/venv/bin/jira2mcp" \
+              --fastmcp-specifier "$FASTMCP_SPECIFIER"
+          )

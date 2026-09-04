@@ -7,7 +7,7 @@ from typing import Any, cast
 import pytest
 from fastmcp import Client
 from fastmcp.exceptions import ToolError
-from fastmcp.tools.tool import ToolResult
+from fastmcp.tools import ToolResult
 from jira2mcp import mcp
 from jira2mcp.adapter import (
     adapt_operation_result,

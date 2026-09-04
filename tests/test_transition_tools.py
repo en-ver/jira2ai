@@ -5,7 +5,7 @@ from types import SimpleNamespace
 from typing import Any, cast
 
 import pytest
-from fastmcp.tools.tool import ToolResult
+from fastmcp.tools import ToolResult
 from jira2mcp.tools import transitions as transitions_tool_module
 from jira2mcp.tools.transitions import transition, transitions
 from jira2py.helpers import HelperResult

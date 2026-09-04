@@ -6,7 +6,7 @@ from typing import Any, cast
 
 import pytest
 from fastmcp.exceptions import ToolError
-from fastmcp.tools.tool import ToolResult
+from fastmcp.tools import ToolResult
 from jira2mcp.adf import markdown_to_adf
 from jira2mcp.tools.add_link import add_link
 from jira2mcp.tools.comment import comment
