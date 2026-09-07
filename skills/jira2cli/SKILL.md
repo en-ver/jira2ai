@@ -89,6 +89,10 @@ High-level Markdown writes recognize the canonical Jira mention `[~accountId:<id
 
 Formatted issue, comment, and worklog Markdown is presentation-only and may lose mention identity when edited or written back. For identity-safe edits, preserve raw ADF from `read --json` for issue fields and structured `comments --json` or `worklogs --json` output for their bodies; do not write formatted text back when mention identity matters. This write-only behavior does not apply to native transition `--fields-json` or `--update-json` values, which must already use Jira-native shapes and ADF where required.
 
+## Images from attachments
+
+For an existing issue, upload the image and use the returned JSON/raw item's `content` URL as native `![alt](attachment-content-url)` Markdown in `edit`, comment add/update, or worklog comment add/update. `edit` replaces whole rich-text values; compatible `--fields-json` strings are limited to `environment` and supported custom textarea fields, not plain fields or transition data. `create` cannot embed its own new attachment: create first, upload to the returned key, then edit the complete rich-text value. External image URLs remain external. Load the attachment, create, edit, comment, or worklog reference above for the exact flow.
+
 ## Flat command surface
 
 ### Identity

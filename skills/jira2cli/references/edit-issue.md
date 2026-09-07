@@ -20,4 +20,8 @@ Use this only when the user has asked to change an existing Jira issue.
 
 `--description` and string values in compatible rich-text `--fields-json` fields recognize canonical `[~accountId:<id>]` as one semantic ADF mention; Jira may notify that account. Escaped, malformed, code, link, and image forms remain text. Preserve raw issue ADF from `read --json` for identity-safe edits, because formatted issue Markdown is presentation-only and can lose mention identity when written back.
 
+## Attached images
+
+For an image already attached to this issue, use its upload result's existing `content` URL in native Markdown: `![alt](attachment-content-url)`. `--description` and compatible rich-text string values in `--fields-json` accept it; through `--fields-json`, that is limited to `environment` and supported custom textarea fields, not plain fields. Each supplied rich-text value replaces the complete field, so include the existing content that must remain. External image URLs remain external.
+
 Do not guess field IDs or values. If metadata does not show the field you need, stop and ask before editing.

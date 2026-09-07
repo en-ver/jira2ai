@@ -124,6 +124,12 @@ High-level Markdown writes—issue descriptions, compatible rich-text field stri
 
 Formatted issue, comment, and worklog Markdown is presentation-only and may lose mention identity when edited or written back. For identity-safe edits, preserve raw ADF from `jira_read` structured data for issue fields and `raw=True` `jira_comments` or `jira_worklogs` results for their bodies; do not write formatted text back when mention identity matters.
 
+### Images from attached Jira files
+
+For an existing issue, first call `jira_upload_attachment(issue_key, file_path, raw=True)`. Its existing upload item URL is at `structuredContent.data[0].content`; use that ordinary attachment-content URL in native `![alt](attachment-content-url)` Markdown for `jira_edit`, `jira_comment`, `jira_update_comment`, `jira_add_worklog`, or `jira_update_worklog`. The image must already be attached to that same issue.
+
+For `jira_edit`, this applies to description and compatible rich-text strings in `fields`: `environment` and supported custom textarea fields. Each supplied rich-text value replaces its complete field; plain fields and native transition data stay unchanged. `jira_create` cannot embed an attachment uploaded to the issue it is creating: create first, upload to the returned key, then replace the complete rich-text field with `jira_edit`. External image URLs remain external.
+
 `jira_read` returns selected Jira fields unchanged, including ADF, as structured content and a compact JSON text fallback; it does not format or truncate the response. `jira_run_filter` returns the same search-shaped result as `jira_search` after resolving the filter's JQL. `jira_download_attachment` provides structured/raw-friendly output, while `jira_attachment` remains available for its original simple download surface.
 
 `jira_read` requires both `issue_key` and a non-empty native `fields` array, for example `jira_read(issue_key="PROJ-123", fields=["summary", "description"])`. Each array item is one field key, ID, or endpoint-supported selector; do not use comma-separated items or surrounding whitespace. It has no `raw` mode because it always returns structured Jira data. Selectors such as `*all`, `*navigable`, or negative selectors can still return broad responses, so request only what is needed.

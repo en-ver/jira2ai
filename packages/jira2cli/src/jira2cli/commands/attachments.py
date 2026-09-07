@@ -167,7 +167,7 @@ def attachment_upload_command(
         help="Render structured output as JSON.",
     ),
 ) -> None:
-    """Upload a local file as a Jira issue attachment."""
+    """Upload a local file; --json and --raw expose each item's content URL."""
     validate_output_options(json_output=json_output, raw_output=raw_output)
 
     try:

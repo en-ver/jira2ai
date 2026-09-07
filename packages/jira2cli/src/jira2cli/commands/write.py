@@ -21,14 +21,20 @@ def create_command(
     description: str | None = typer.Option(
         None,
         "--description",
-        help="Issue description in Markdown. Supports [~accountId:<id>] mentions.",
+        help=(
+            "Issue description in Markdown. Supports [~accountId:<id>] mentions. "
+            "Attachment images require create, upload, then a complete edit. "
+            "External image URLs remain external media."
+        ),
     ),
     fields_json: str | None = typer.Option(
         None,
         "--fields-json",
         help=(
-            "Additional issue fields as a JSON object. Compatible rich-text "
-            "string values support [~accountId:<id>] mentions."
+            "Additional issue fields as a JSON object. Rich-text strings are limited "
+            "to environment and metadata-supported custom textarea fields; use "
+            "--description for description. Attachment images require create, upload, "
+            "then a complete edit. External image URLs remain external media."
         ),
     ),
     raw_output: bool = typer.Option(
@@ -77,14 +83,21 @@ def edit_command(
     description: str | None = typer.Option(
         None,
         "--description",
-        help="New issue description in Markdown. Supports [~accountId:<id>] mentions.",
+        help=(
+            "Replacement issue description in Markdown. Supports [~accountId:<id>] "
+            "mentions and !\\[alt](attachment-content-url) for an image already "
+            "attached to this issue. External image URLs remain external media."
+        ),
     ),
     fields_json: str | None = typer.Option(
         None,
         "--fields-json",
         help=(
             "Additional fields to update as a JSON object. Compatible rich-text "
-            "string values support [~accountId:<id>] mentions."
+            "strings are limited to environment and metadata-supported custom textarea "
+            "fields; use --description for description. They support "
+            "[~accountId:<id>] mentions and !\\[alt](attachment-content-url) for an "
+            "image already attached to this issue. External image URLs remain external media."
         ),
     ),
     raw_output: bool = typer.Option(
@@ -127,7 +140,12 @@ def edit_command(
 def comment_command(
     issue_key: str = typer.Argument(..., help="Issue key (e.g. PROJ-123)"),
     body: str = typer.Argument(
-        ..., help="Comment text in Markdown. [~accountId:<id>] creates a Jira mention."
+        ...,
+        help=(
+            "Comment text in Markdown. [~accountId:<id>] creates a Jira mention. "
+            "Use !\\[alt](attachment-content-url) for an image already attached to "
+            "this issue. External image URLs remain external media."
+        ),
     ),
     raw_output: bool = typer.Option(
         False,
@@ -164,8 +182,9 @@ def comment_update_command(
     body: str = typer.Argument(
         ...,
         help=(
-            "Replacement comment text in Markdown. [~accountId:<id>] creates a "
-            "Jira mention."
+            "Replacement comment text in Markdown. [~accountId:<id>] creates a Jira "
+            "mention. Use !\\[alt](attachment-content-url) for an image already "
+            "attached to this issue. External image URLs remain external media."
         ),
     ),
     raw_output: bool = typer.Option(

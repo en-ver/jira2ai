@@ -24,3 +24,18 @@ Use this when the issue context already identifies the Jira issue key or attachm
 - `attachment-download` adds structured/raw-friendly output.
 - Confirm the exact destination path before downloading or the exact source path before uploading.
 - Do not guess attachment IDs or overwrite/delete unexpected files without confirmation.
+
+## Markdown image workflow
+
+For an image already uploaded to an existing issue, `attachment-upload --json` and `--raw` expose each upload item's existing `content` URL. Use it only with that same issue's high-level Markdown as `![alt](attachment-content-url)`:
+
+```bash
+upload="$(uvx jira2cli attachment-upload <KEY> screenshot.png --json)"
+url="$(jq -er '.[0].content' <<<"$upload")"
+
+uvx jira2cli edit <KEY> --description "Complete replacement text
+
+![Screenshot]($url)" --json
+```
+
+The URL also works in comment add/update bodies and worklog add/update comments. Do not use an attachment-content URL during `create`: create the issue, upload to its returned key, then edit the complete rich-text value. External image URLs remain external.

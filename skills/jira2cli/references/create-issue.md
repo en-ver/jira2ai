@@ -22,4 +22,8 @@ Use this only when the user has asked for a new Jira issue.
 
 `--description` and string values in compatible rich-text `--fields-json` fields recognize canonical `[~accountId:<id>]` as one semantic ADF mention; Jira may notify that account. Escaped, malformed, code, link, and image forms remain text. Preserve raw issue ADF from `read --json` for identity-safe later edits, because formatted Markdown is presentation-only and can lose mention identity when written back.
 
+## Attached images
+
+Do not use `![alt](attachment-content-url)` when creating an issue: its new attachment does not yet exist in an issue context. Create the issue without the image, upload the image to the returned issue key with `attachment-upload <KEY> <PATH> --json`, take the upload item's existing `content` URL, then use `edit` to replace the complete description, environment, or supported custom textarea value.
+
 Do not guess required fields or send placeholder values just to make the create succeed.

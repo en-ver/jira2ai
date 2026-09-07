@@ -76,8 +76,9 @@ def worklog_add_command(
         None,
         "--comment",
         help=(
-            "Optional worklog comment in Markdown. [~accountId:<id>] creates a "
-            "Jira mention."
+            "Optional worklog comment in Markdown. [~accountId:<id>] creates a Jira "
+            "mention. Use !\\[alt](attachment-content-url) for an image already "
+            "attached to this issue. External image URLs remain external media."
         ),
     ),
     raw_output: bool = typer.Option(
@@ -132,7 +133,9 @@ def worklog_update_command(
         "--comment",
         help=(
             "Optional replacement worklog comment in Markdown. "
-            "[~accountId:<id>] creates a Jira mention."
+            "[~accountId:<id>] creates a Jira mention. Use "
+            "!\\[alt](attachment-content-url) for an image already attached to this issue. "
+            "External image URLs remain external media."
         ),
     ),
     raw_output: bool = typer.Option(

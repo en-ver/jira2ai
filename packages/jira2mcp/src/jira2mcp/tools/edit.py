@@ -28,12 +28,16 @@ async def edit(
     summary: Annotated[str | None, "New issue title / summary"] = None,
     description: Annotated[
         str | None,
-        "New description in Markdown; [~accountId:<id>] creates a Jira mention",
+        "Replacement description in Markdown; [~accountId:<id>] creates a Jira "
+        "mention. Use ![alt](attachment-content-url) for an image already attached "
+        "to this issue",
     ] = None,
     fields: Annotated[
         dict[str, Any] | None,
         "Additional fields to update as key-value pairs "
-        '(e.g. {"priority": {"name": "High"}}). '
+        '(e.g. {"priority": {"name": "High"}}). Compatible rich-text strings for '
+        "environment and supported custom textarea fields accept "
+        "![alt](attachment-content-url) for an image already attached to this issue. "
         "Cannot contain 'summary' or 'description' — use the explicit parameters instead",
     ] = None,
     raw: Annotated[bool, "Return raw JSON from the API"] = False,
@@ -44,8 +48,12 @@ async def edit(
 
     Provide at least one of summary, description, or fields.
     Markdown is auto-converted to ADF for rich-text fields (description,
-    environment, and custom textarea fields). Canonical [~accountId:<id>]
-    syntax creates an ADF mention in these high-level write inputs.
+    environment, and supported custom textarea fields). Canonical
+    [~accountId:<id>] syntax creates an ADF mention in these high-level write
+    inputs. Use ![alt](attachment-content-url) only for an image already
+    attached to this issue; each supplied rich-text value replaces its complete
+    field.
+    External (non-Jira) image URLs remain external media.
 
     Use jira_fields with issue_key to discover which fields are available
     on the edit screen. Use jira_users to look up account IDs for assignee updates.

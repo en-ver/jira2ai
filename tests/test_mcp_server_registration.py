@@ -60,6 +60,7 @@ def test_mcp_registers_existing_and_new_jira_tools() -> None:
     assert (
         "jira_transition.update comment bodies must already be ADF" in mcp.instructions
     )
+    assert "External (non-Jira) image URLs remain external media" in mcp.instructions
 
 
 def test_mcp_high_level_write_tools_describe_canonical_mentions() -> None:
@@ -75,6 +76,63 @@ def test_mcp_high_level_write_tools_describe_canonical_mentions() -> None:
         "jira_update_worklog",
     }:
         assert "[~accountId:<id>]" in descriptions[name]
+
+
+def test_markdown_attachment_guidance_keeps_mcp_tool_schemas() -> None:
+    tools = asyncio.run(mcp.list_tools(run_middleware=False))
+    by_name = {tool.name: tool for tool in tools}
+    expected_properties = {
+        "jira_create": {
+            "project_key",
+            "issue_type",
+            "summary",
+            "description",
+            "fields",
+            "raw",
+        },
+        "jira_edit": {"issue_key", "summary", "description", "fields", "raw"},
+        "jira_comment": {"issue_key", "body", "raw"},
+        "jira_update_comment": {"issue_key", "comment_id", "body", "raw"},
+        "jira_add_worklog": {
+            "issue_key",
+            "time_spent",
+            "started",
+            "comment",
+            "raw",
+        },
+        "jira_update_worklog": {
+            "issue_key",
+            "worklog_id",
+            "time_spent",
+            "started",
+            "comment",
+            "raw",
+        },
+    }
+
+    for name, expected in expected_properties.items():
+        tool = by_name[name]
+        parameters = cast(dict[str, Any], tool.parameters)
+
+        assert set(parameters["properties"]) == expected
+        assert parameters["additionalProperties"] is False
+        assert not {
+            "append",
+            "embed",
+            "image",
+            "image_url",
+            "attachment_content_url",
+        } & set(parameters["properties"])
+        description = " ".join(tool.description.split())
+        assert "![alt](attachment-content-url)" in description
+        assert "External (non-Jira) image URLs remain external media" in description
+
+    assert (
+        "structuredContent.data[0].content"
+        in by_name["jira_upload_attachment"].description
+    )
+    assert "structuredContent.data[0].content" in mcp.instructions
+    assert "create, upload, then edit the complete rich-text field" in mcp.instructions
 
 
 def test_transition_tools_expose_native_workflow_schemas_and_annotations() -> None:

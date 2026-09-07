@@ -269,7 +269,11 @@ async def upload_attachment(
     ctx: Context = CurrentContext(),
     api: JiraAPI = Depends(get_api),
 ) -> str | ToolResult:
-    """Upload a local file as a Jira issue attachment."""
+    """Upload a local file as a Jira issue attachment.
+
+    With raw=True, each uploaded item's existing content field is available at
+    structuredContent.data[0].content for Markdown image writes to this issue.
+    """
     _validate_upload_path(file_path)
     await ctx.info(f"Uploading attachment to {issue_key}: {file_path}")
 

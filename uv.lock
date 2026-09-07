@@ -10,6 +10,19 @@ members = [
 ]
 
 [[package]]
+name = "adf-bridge"
+version = "0.1.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "fastjsonschema" },
+    { name = "mistune" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c6/67/9a09d50daedb9892e88c3d02fd917bbae7a5dc10eac45e90dcf8e62b5803/adf_bridge-0.1.2.tar.gz", hash = "sha256:8c55d2e28b239519f0996bb8b6c4948a3c0c154082afdabc6078d36e051b211d", size = 63210, upload-time = "2026-09-07T05:53:23.801Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/23/3b/e007149d82d5227c0a4b5407cfadc15033a0c1bb5c4a029201962f97cbef/adf_bridge-0.1.2-py3-none-any.whl", hash = "sha256:90fad16ee1cb2f24811c8100e4435d114017fb161079281eef169db3f8203f0e", size = 47083, upload-time = "2026-09-07T05:53:22.52Z" },
+]
+
+[[package]]
 name = "aiofile"
 version = "3.9.0"
 source = { registry = "https://pypi.org/simple" }
@@ -301,6 +314,15 @@ wheels = [
 ]
 
 [[package]]
+name = "fastjsonschema"
+version = "2.22.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/33/a4/9473c7c3b87009d9c1d74034e4a0f6a35ff0d42dd0f9866d0c3ec4e9217b/fastjsonschema-2.22.2.tar.gz", hash = "sha256:72064e12356a7d6ef02165be2946b9abadbdf238536e07eb587e3dbaa33099cf", size = 385171, upload-time = "2026-08-15T19:47:08.853Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/49/82/2755c7c982086f00d4dab85bc120ec35045a9fc2191893a6ce79afe94443/fastjsonschema-2.22.2-py3-none-any.whl", hash = "sha256:0fb3915616adac85ccfdd737d26be1089845d2019819505b42d39888458f74d4", size = 27413, upload-time = "2026-08-15T19:47:04.406Z" },
+]
+
+[[package]]
 name = "fastmcp"
 version = "3.4.7"
 source = { registry = "https://pypi.org/simple" }
@@ -560,7 +582,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "httpx", specifier = ">=0.28.1" },
-    { name = "jira2py", specifier = "==0.13.0" },
+    { name = "jira2py", specifier = "==0.14.0" },
     { name = "typer", specifier = ">=0.16.0" },
 ]
 
@@ -569,38 +591,35 @@ name = "jira2mcp"
 version = "0.6.1"
 source = { editable = "packages/jira2mcp" }
 dependencies = [
+    { name = "adf-bridge" },
     { name = "fastmcp" },
     { name = "httpx" },
     { name = "jira2py" },
-    { name = "marklassian" },
-    { name = "pyadf" },
     { name = "pydantic" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "adf-bridge", specifier = ">=0.1.2,<0.2" },
     { name = "fastmcp", specifier = ">=3.2.0,<4" },
     { name = "httpx", specifier = ">=0.28.1" },
-    { name = "jira2py", specifier = "==0.13.0" },
-    { name = "marklassian", specifier = ">=0.1.0" },
-    { name = "pyadf", specifier = ">=0.3.0" },
+    { name = "jira2py", specifier = "==0.14.0" },
     { name = "pydantic", specifier = ">=2.12.5" },
 ]
 
 [[package]]
 name = "jira2py"
-version = "0.13.0"
+version = "0.14.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
+    { name = "adf-bridge" },
     { name = "httpx", extra = ["http2"] },
-    { name = "marklassian" },
-    { name = "pyadf" },
     { name = "pydantic" },
     { name = "tenacity" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/3f/71/ec372bab5d277f181d7e33a041b689a509453446ae29d48b7f1b2f85a5d7/jira2py-0.13.0.tar.gz", hash = "sha256:f6fe3b5fa9e2017c094d799808d22f0d0da474b774c0b032f0c56ba7be460e07", size = 82780, upload-time = "2026-09-04T16:05:45.582Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/de/46/76eafd4c9c0a9b46b0175f46bfa7b151ad7c1a6a3dc8311d0910d2d2c09c/jira2py-0.14.0.tar.gz", hash = "sha256:f062c4eed260e6950dd5b3379b45f1f2794fa9a724f887008a6b82dae10f7e84", size = 96563, upload-time = "2026-09-07T17:23:04.327Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a2/62/348ec7625e6aea0a00ca6ff4eb6237c9163cf3c4c07c7ecf8d98c33440e4/jira2py-0.13.0-py3-none-any.whl", hash = "sha256:eda899113ebd40794be6eb57ab49e6d824b75be5eba5ca3288ee356eebf69c30", size = 65820, upload-time = "2026-09-04T16:05:44.119Z" },
+    { url = "https://files.pythonhosted.org/packages/8c/35/a7c8e52baebac8a7dd583a59736692f7482125f98e7ea496a16c891f477f/jira2py-0.14.0-py3-none-any.whl", hash = "sha256:faf0ba9d894ac6e1156fae0386ad34484b7b522154b2d11d029015f7431d097e", size = 73008, upload-time = "2026-09-07T17:23:03.183Z" },
 ]
 
 [[package]]
@@ -692,18 +711,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/5b/f5/4ec618ed16cc4f8fb3b701563655a69816155e79e24a17b651541804721d/markdown_it_py-4.0.0.tar.gz", hash = "sha256:cb0a2b4aa34f932c007117b194e945bd74e0ec24133ceb5bac59009cda1cb9f3", size = 73070, upload-time = "2025-08-11T12:57:52.854Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/94/54/e7d793b573f298e1c9013b8c4dade17d481164aa517d1d7148619c2cedbf/markdown_it_py-4.0.0-py3-none-any.whl", hash = "sha256:87327c59b172c5011896038353a81343b6754500a08cd7a4973bb48c6d578147", size = 87321, upload-time = "2025-08-11T12:57:51.923Z" },
-]
-
-[[package]]
-name = "marklassian"
-version = "0.3.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "mistune" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/7e/2d/8e69819ae52179627a60e6d4daefaf1e2128a33ac291fee2b24fa1f52999/marklassian-0.3.0.tar.gz", hash = "sha256:486158e6f738910259e8b930a370de66cfe66ad6d0d2583354b2f4c5590bd937", size = 107413, upload-time = "2026-09-03T08:21:37.686Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/e6/a8/91e06be906a8e35676acc3758e98eb35b0f0c5f15ec9d3b847da84264e9c/marklassian-0.3.0-py3-none-any.whl", hash = "sha256:937f2d60cdc9cdec0a6d05c083fbcd2de4c5986a8798c973d056f33d1ab37c32", size = 8421, upload-time = "2026-09-03T08:21:36.371Z" },
 ]
 
 [[package]]
@@ -842,20 +849,6 @@ keyring = [
 ]
 memory = [
     { name = "cachetools" },
-]
-
-[[package]]
-name = "pyadf"
-version = "0.5.2"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/80/81/719bfc44067b23f9dd17135810e170d91f07e95179142691a76b290520ea/pyadf-0.5.2.tar.gz", hash = "sha256:6a189b0689201e71249727256bb48698ba99133e7726065abf32cd9a72e99376", size = 65995, upload-time = "2026-06-11T23:06:06.235Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/5b/1b/76d0227d0018f91b8d1c17bf096528c67837fe8c6961361bca5254f198fa/pyadf-0.5.2-cp311-abi3-macosx_10_12_x86_64.whl", hash = "sha256:139f3a3a85529e206a6b8641a4240c851c5691d8ff608897beb14855a414c402", size = 640454, upload-time = "2026-06-11T23:05:57.551Z" },
-    { url = "https://files.pythonhosted.org/packages/11/d0/ff487a93f36b493b8b602c658724f3683b3806b4e96723cc95bbd9e83e15/pyadf-0.5.2-cp311-abi3-macosx_11_0_arm64.whl", hash = "sha256:57f5a07b535f9cb664de5893195aea6cf597e2d2179fca58f98931a8664ec50c", size = 624560, upload-time = "2026-06-11T23:05:59.32Z" },
-    { url = "https://files.pythonhosted.org/packages/67/b4/891c34d3147573aa0c3d3b8ba0c8bfde037a2614d0cdb698703defd5a60d/pyadf-0.5.2-cp311-abi3-manylinux_2_28_aarch64.whl", hash = "sha256:35bff7abc8112c0fcc826dcf2066078104961958aedf0d142499bc5654c24f1e", size = 708718, upload-time = "2026-06-11T23:06:00.741Z" },
-    { url = "https://files.pythonhosted.org/packages/47/91/4702145dfb98961bbb2a4588b57285419be5faa76e2048ae6ecfd4a56722/pyadf-0.5.2-cp311-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:10b617395cbf918ca3cc8f540b802b3f43a5be82088ada7449a572b5adc6a211", size = 725778, upload-time = "2026-06-11T23:06:02.102Z" },
-    { url = "https://files.pythonhosted.org/packages/e7/70/15619991c9c8c20a43f17f8d8b6a16016475d1dd0f313addd042f29b3822/pyadf-0.5.2-cp311-abi3-manylinux_2_34_x86_64.whl", hash = "sha256:d2226549683633711171c930995ca391a264c2a9227402fb36acd72e0a95ca78", size = 725014, upload-time = "2026-06-11T23:06:03.488Z" },
-    { url = "https://files.pythonhosted.org/packages/c0/de/4a20b29d6cd6ca5f1c64a70ee1164d62f86e0932a1bfd67f04560486fa50/pyadf-0.5.2-cp311-abi3-win_amd64.whl", hash = "sha256:05e8d7ffa28a4f7eb48e2223aac1d3005d3cf5f869f7b981c72ed5726e2ada08", size = 580151, upload-time = "2026-06-11T23:06:05.008Z" },
 ]
 
 [[package]]
