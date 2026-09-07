@@ -1,53 +1,45 @@
-"""Compatibility shim for moved ADF helpers."""
+"""Compatibility shim for retained ADF helpers."""
 
 from __future__ import annotations
 
-import logging
 from typing import Any
 
-from marklassian import AdfDocument, AdfNode
-from marklassian import markdown_to_adf as _markdown_to_adf
-from pyadf import Document
-
-logger = logging.getLogger(__name__)
+from adf_bridge import AdfBridgeError, AdfDocument
+from adf_bridge import adf_to_markdown as _adf_to_markdown
+from adf_bridge import markdown_to_adf as _markdown_to_adf
 
 _ADF_SYSTEM_FIELDS: set[str] = {"description", "environment"}
 _ADF_CUSTOM_SUFFIX = ":textarea"
 
 
 def adf_to_markdown(adf: Any) -> str:
-    """Convert an ADF document into Markdown text."""
+    """Convert an ADF document into readable Markdown text."""
     if not adf or not isinstance(adf, dict):
         return "(none)"
 
     try:
-        document = Document(adf)
-        markdown = document.to_markdown()
-        return markdown.strip() if markdown else "(none)"
-    except Exception:
-        logger.exception("ADF to Markdown conversion failed, using plain text fallback")
+        return _adf_to_markdown(adf).value.strip() or "(none)"
+    except AdfBridgeError:
         return _extract_text_fallback(adf)
 
 
 def markdown_to_adf(markdown: str) -> AdfDocument:
     """Convert Markdown into an ADF document."""
     if not markdown or not markdown.strip():
-        return AdfDocument(type="doc", version=1, content=[])
-
+        return {"type": "doc", "version": 1, "content": []}
     try:
-        return _markdown_to_adf(markdown)
-    except Exception:
-        logger.exception("Markdown to ADF conversion failed, wrapping as plain text")
-        return AdfDocument(
-            type="doc",
-            version=1,
-            content=[
-                AdfNode(
-                    type="paragraph",
-                    content=[AdfNode(type="text", text=markdown)],
-                )
+        return _markdown_to_adf(markdown).value
+    except AdfBridgeError:
+        return {
+            "type": "doc",
+            "version": 1,
+            "content": [
+                {
+                    "type": "paragraph",
+                    "content": [{"type": "text", "text": markdown}],
+                }
             ],
-        )
+        }
 
 
 def is_adf_value(value: Any) -> bool:

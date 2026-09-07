@@ -27,7 +27,8 @@ async def comment(
     issue_key: Annotated[str, "Issue key (e.g. PROJ-123)"],
     body: Annotated[
         str,
-        "Comment text in Markdown; [~accountId:<id>] creates a Jira mention",
+        "Comment text in Markdown; [~accountId:<id>] creates a Jira mention. Use "
+        "![alt](attachment-content-url) for an image already attached to this issue",
     ],
     raw: Annotated[bool, "Return raw JSON from the API"] = False,
     ctx: Context = CurrentContext(),
@@ -37,7 +38,9 @@ async def comment(
 
     Provide the comment body in Markdown — it will be converted to
     Atlassian Document Format (ADF) automatically. Canonical
-    [~accountId:<id>] syntax creates an ADF mention.
+    [~accountId:<id>] syntax creates an ADF mention. Use
+    ![alt](attachment-content-url) for an image already attached to this issue.
+    External (non-Jira) image URLs remain external media.
     """
     await ctx.info(f"Adding comment to {issue_key}")
 

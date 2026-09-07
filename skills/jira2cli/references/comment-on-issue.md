@@ -38,4 +38,8 @@ Use `--raw` instead of `--json` only when you need API-oriented output. `--raw` 
 
 Comment add and update bodies recognize canonical `[~accountId:<id>]` as one semantic ADF mention; Jira may notify that account. Escaped, malformed, code, link, and image forms remain text. Formatted comment Markdown is presentation-only and can lose mention identity when written back, so preserve raw ADF from `comments --json` for identity-safe updates.
 
+## Attached images
+
+For an image already attached to this issue, use its upload result's existing `content` URL as `![alt](attachment-content-url)` in a comment add or replacement update body. External image URLs remain external. Confirm the attachment upload separately before asking for confirmation of the complete comment body.
+
 Do not post, overwrite, or delete a comment before checking the current issue and recent comments.

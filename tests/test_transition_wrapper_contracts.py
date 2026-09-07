@@ -19,14 +19,14 @@ def test_wrappers_pin_published_jira2py_without_bumping_wrapper_versions() -> No
     jira2py = next(
         package
         for package in lock["package"]
-        if package["name"] == "jira2py" and package["version"] == "0.13.0"
+        if package["name"] == "jira2py" and package["version"] == "0.14.0"
     )
 
     for package_name in ("jira2cli", "jira2mcp"):
         project = tomllib.loads(
             (ROOT / "packages" / package_name / "pyproject.toml").read_text()
         )["project"]
-        assert "jira2py==0.13.0" in project["dependencies"]
+        assert "jira2py==0.14.0" in project["dependencies"]
 
         locked_wrapper = next(
             package for package in lock["package"] if package["name"] == package_name
@@ -34,12 +34,34 @@ def test_wrappers_pin_published_jira2py_without_bumping_wrapper_versions() -> No
         requires_dist = locked_wrapper["metadata"]["requires-dist"]
         assert {
             entry["specifier"] for entry in requires_dist if entry["name"] == "jira2py"
-        } == {"==0.13.0"}
+        } == {"==0.14.0"}
 
     assert jira2py["source"] == {"registry": "https://pypi.org/simple"}
     assert jira2py["sdist"]["url"].startswith("https://files.pythonhosted.org/")
     assert jira2py["wheels"][0]["url"].startswith("https://files.pythonhosted.org/")
-    assert jira2py_version == "0.13.0"
+    assert jira2py_version == "0.14.0"
+
+    mcp_project = tomllib.loads(
+        (ROOT / "packages" / "jira2mcp" / "pyproject.toml").read_text()
+    )["project"]
+    assert "adf-bridge>=0.1.2,<0.2" in mcp_project["dependencies"]
+    assert not {
+        "marklassian>=0.1.0",
+        "pyadf>=0.3.0",
+    } & set(mcp_project["dependencies"])
+
+    adf_bridge = next(
+        package
+        for package in lock["package"]
+        if package["name"] == "adf-bridge" and package["version"] == "0.1.2"
+    )
+    assert adf_bridge["source"] == {"registry": "https://pypi.org/simple"}
+    assert adf_bridge["sdist"]["url"].startswith("https://files.pythonhosted.org/")
+    assert adf_bridge["wheels"][0]["url"].startswith("https://files.pythonhosted.org/")
+    assert {package["name"] for package in lock["package"]}.isdisjoint(
+        {"marklassian", "pyadf"}
+    )
+
     assert set(signature(MetadataHelpers.transitions).parameters) == {
         "self",
         "issue_key",
@@ -120,3 +142,33 @@ def test_transition_docs_and_skill_match_current_cli_help() -> None:
         "Use `--include-unavailable` only to diagnose why an action is unavailable; "
         "never submit an unavailable action."
     ) in cli_readme
+
+
+def test_markdown_attachment_image_docs_describe_current_surface() -> None:
+    documents = {
+        "root README": (ROOT / "README.md").read_text(),
+        "CLI README": (ROOT / "packages" / "jira2cli" / "README.md").read_text(),
+        "MCP README": (ROOT / "packages" / "jira2mcp" / "README.md").read_text(),
+        "skill": (ROOT / "skills" / "jira2cli" / "SKILL.md").read_text(),
+        "attachment reference": (
+            ROOT / "skills" / "jira2cli" / "references" / "attachment-download.md"
+        ).read_text(),
+        "create reference": (
+            ROOT / "skills" / "jira2cli" / "references" / "create-issue.md"
+        ).read_text(),
+        "edit reference": (
+            ROOT / "skills" / "jira2cli" / "references" / "edit-issue.md"
+        ).read_text(),
+        "comment reference": (
+            ROOT / "skills" / "jira2cli" / "references" / "comment-on-issue.md"
+        ).read_text(),
+        "worklog reference": (
+            ROOT / "skills" / "jira2cli" / "references" / "worklog-management.md"
+        ).read_text(),
+    }
+    assert all("![alt](attachment-content-url)" in text for text in documents.values())
+    assert "content" in documents["attachment reference"]
+    assert "explicit description option" in documents["root README"]
+    assert "create the issue" in documents["create reference"].lower()
+    assert "complete" in documents["edit reference"].lower()
+    assert "structuredContent.data[0].content" in documents["MCP README"]

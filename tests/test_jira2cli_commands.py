@@ -1205,6 +1205,85 @@ def test_high_level_write_help_describes_canonical_mentions(argv: list[str]) -> 
     assert "[~accountId:<id>]" in strip_ansi(result.stdout)
 
 
+def test_markdown_attachment_help_keeps_the_existing_cli_surface() -> None:
+    expected_parameters = {
+        "create": [
+            "project_key",
+            "issue_type",
+            "summary",
+            "description",
+            "fields_json",
+            "raw_output",
+            "json_output",
+        ],
+        "edit": [
+            "issue_key",
+            "summary",
+            "description",
+            "fields_json",
+            "raw_output",
+            "json_output",
+        ],
+        "comment": ["issue_key", "body", "raw_output", "json_output"],
+        "comment-update": [
+            "issue_key",
+            "comment_id",
+            "body",
+            "raw_output",
+            "json_output",
+        ],
+        "worklog-add": [
+            "issue_key",
+            "time_spent",
+            "started",
+            "comment",
+            "raw_output",
+            "json_output",
+        ],
+        "worklog-update": [
+            "issue_key",
+            "worklog_id",
+            "time_spent",
+            "started",
+            "comment",
+            "raw_output",
+            "json_output",
+        ],
+    }
+    commands = cast(Any, get_command(app)).commands
+
+    for command_name, parameter_names in expected_parameters.items():
+        result = runner.invoke(app, [command_name, "--help"])
+        help_output = " ".join(strip_ansi(result.stdout).replace("│", " ").split())
+
+        assert result.exit_code == 0
+        assert [
+            parameter.name for parameter in commands[command_name].params
+        ] == parameter_names
+        assert "--append" not in help_output
+        assert "--embed" not in help_output
+        assert "--image" not in help_output
+        assert "External image URLs remain external media" in help_output
+        if command_name == "create":
+            assert "create, upload, then a complete edit" in help_output
+        else:
+            assert "![alt](attachment-content-url)" in help_output
+
+    for command_name in ("create", "edit"):
+        fields_help = " ".join(
+            strip_ansi(runner.invoke(app, [command_name, "--help"]).stdout)
+            .replace("│", " ")
+            .split()
+        )
+        assert (
+            "environment and metadata-supported custom textarea fields" in fields_help
+        )
+        assert "--description for description" in fields_help
+
+    upload_help = strip_ansi(runner.invoke(app, ["attachment-upload", "--help"]).stdout)
+    assert "content URL" in upload_help
+
+
 @pytest.mark.parametrize(
     ("argv", "group_name", "method_name", "expected_stdout"),
     [

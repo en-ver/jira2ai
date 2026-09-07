@@ -33,7 +33,8 @@ async def create(
     summary: Annotated[str, "Issue title / summary"],
     description: Annotated[
         str | None,
-        "Issue description in Markdown; [~accountId:<id>] creates a Jira mention",
+        "Issue description in Markdown; [~accountId:<id>] creates a Jira mention. "
+        "Attachment images require create, upload, then a complete edit",
     ] = None,
     fields: Annotated[
         dict[str, Any] | None,
@@ -48,8 +49,13 @@ async def create(
     """Create a new Jira issue.
 
     Markdown is auto-converted to ADF for rich-text fields (description,
-    environment, and custom textarea fields). Canonical [~accountId:<id>]
-    syntax creates an ADF mention in these high-level write inputs.
+    environment, and supported custom textarea fields). Canonical
+    [~accountId:<id>] syntax creates an ADF mention in these high-level write
+    inputs. An issue cannot embed an attachment image while it is being
+    created: create it first, upload the image to its returned key, then use
+    jira_edit to replace the complete rich-text field with
+    ![alt](attachment-content-url).
+    External (non-Jira) image URLs remain external media.
 
     Always use jira_fields with project_key + issue_type first to discover
     required fields on the create screen. Use jira_users to look up account

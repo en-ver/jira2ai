@@ -72,7 +72,9 @@ async def update_comment(
     comment_id: Annotated[str, "Comment ID"],
     body: Annotated[
         str,
-        "Replacement comment text in Markdown; [~accountId:<id>] creates a Jira mention",
+        "Replacement comment text in Markdown; [~accountId:<id>] creates a Jira "
+        "mention. Use ![alt](attachment-content-url) for an image already attached "
+        "to this issue",
     ],
     raw: Annotated[bool, "Return raw JSON from the API"] = False,
     ctx: Context = CurrentContext(),
@@ -80,7 +82,9 @@ async def update_comment(
 ) -> str | ToolResult:
     """Update an existing Jira issue comment.
 
-    Canonical [~accountId:<id>] syntax creates an ADF mention.
+    Canonical [~accountId:<id>] syntax creates an ADF mention. Use
+    ![alt](attachment-content-url) for an image already attached to this issue.
+    External (non-Jira) image URLs remain external media.
     """
     await ctx.info(f"Updating comment {comment_id} on {issue_key}")
 

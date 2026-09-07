@@ -10,9 +10,8 @@ requires-python = ">=3.13"
 dependencies = [
     "fastmcp>=3.2.0,<4",
     "httpx>=0.28.1",
-    "jira2py==0.13.0",
-    "marklassian>=0.1.0",
-    "pyadf>=0.3.0",
+    "adf-bridge>=0.1.2,<0.2",
+    "jira2py==0.14.0",
     "pydantic>=2.12.5",
 ]
 

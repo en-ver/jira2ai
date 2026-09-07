@@ -60,6 +60,12 @@ Keep API tokens out of source control, logs, prompts, and shared client configur
 
 The products support authentication checks, issue reads and JQL search, complete issue changelog history, projects, create/edit field metadata, a one-page field catalog, comments, transitions, saved filters, issue links, attachments, and worklogs. `changelogs` retrieves every Jira history page and can filter timestamps and exact field IDs locally; it can optionally page the retained events. `changelogs-by-ids` uses Jira's distinct known-ID request and can filter exact field IDs. Descriptions and comments accept Markdown. Plain CLI issue reads can render selected rich-text fields, while JSON and MCP structured issue reads preserve Jira's raw field data.
 
+## Markdown images from attachments
+
+For an existing issue, high-level Markdown writes accept `![alt](attachment-content-url)` for an image already attached to that issue. Get the ordinary URL from the existing `content` field in the JSON/raw attachment-upload result, then use it in an issue edit, comment add/update, or worklog comment add/update. On issue edit, this applies to the explicit description option and `environment` or supported custom textarea field strings supplied through the existing fields input; it does not convert plain fields or raw Jira API inputs.
+
+Issue creation cannot embed its own new attachment. Create the issue, upload the image to its returned key, then edit the complete rich-text field; edits replace whole field values rather than appending. External image URLs remain external.
+
 For local development or contributions, see [CONTRIBUTING.md](CONTRIBUTING.md). Contributors working from a repository checkout use `uv run --locked --package jira2cli jira2cli ...` after workspace setup. The optional [Pi CLI skill](skills/jira2cli/SKILL.md) is a source-checkout template for agents using `jira2cli`; UVX runs the CLI but does not install or auto-discover the skill.
 
 ## License

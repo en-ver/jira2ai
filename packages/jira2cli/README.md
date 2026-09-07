@@ -71,6 +71,24 @@ Only the unescaped canonical form is a mention. Escaped, malformed, code, link, 
 
 Formatted issue, comment, and worklog Markdown is presentation-only and may lose mention identity when edited or written back. For identity-safe edits, preserve raw ADF from `read --json` for issue fields and structured `comments --json` or `worklogs --json` output for their bodies; do not write formatted text back when mention identity matters.
 
+## Images from attached Jira files
+
+For an existing issue, high-level Markdown writes accept native `![alt](attachment-content-url)` for an image already attached to that issue. Upload first and take the ordinary attachment-content URL from the existing `content` field in `attachment-upload --json` or `--raw` output:
+
+```bash
+upload="$(uvx jira2cli attachment-upload PROJ-123 screenshot.png --json)"
+url="$(jq -er '.[0].content' <<<"$upload")"
+
+# This replaces the complete description; it does not append Markdown.
+uvx jira2cli edit PROJ-123 --description "Full description
+
+![Failure screenshot]($url)" --json
+```
+
+The same syntax works for comment add/update bodies and worklog add/update comments. In `edit --fields-json`, it applies only to compatible rich-text string values: `environment` and supported custom textarea fields (as well as the explicit description option), not plain fields or raw Jira inputs. Each supplied rich-text value is a complete replacement.
+
+`create` cannot embed an attachment image for the issue it is creating. Create the issue without that image, upload it to the returned issue key, then use `edit` with the complete rich-text value. External image URLs remain external.
+
 ## Multi-issue projected search and pagination
 
 Unlike singular `read`, `search` and `filter-run` are multi-issue projected reads. Each invocation returns one page and requests the selected `--fields` for every issue in that page. A requested field can still be absent or null. Use structured `--json` or `--raw` to inspect arbitrary projected fields: plain output is a fixed compact view.

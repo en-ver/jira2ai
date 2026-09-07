@@ -75,7 +75,9 @@ async def add_worklog(
     ] = None,
     comment: Annotated[
         str | None,
-        "Optional worklog comment in Markdown; [~accountId:<id>] creates a Jira mention",
+        "Optional worklog comment in Markdown; [~accountId:<id>] creates a Jira "
+        "mention. Use ![alt](attachment-content-url) for an image already attached "
+        "to this issue",
     ] = None,
     raw: Annotated[bool, "Return raw JSON from the API"] = False,
     ctx: Context = CurrentContext(),
@@ -84,6 +86,8 @@ async def add_worklog(
     """Add a worklog to a Jira issue.
 
     Canonical [~accountId:<id>] syntax creates an ADF mention in its comment.
+    Use ![alt](attachment-content-url) for an image already attached to this issue.
+    External (non-Jira) image URLs remain external media.
     """
     await ctx.info(f"Adding worklog to {issue_key}")
 
@@ -126,7 +130,9 @@ async def update_worklog(
     ] = None,
     comment: Annotated[
         str | None,
-        "Optional replacement worklog comment in Markdown; [~accountId:<id>] creates a Jira mention",
+        "Optional replacement worklog comment in Markdown; [~accountId:<id>] "
+        "creates a Jira mention. Use ![alt](attachment-content-url) for an image "
+        "already attached to this issue",
     ] = None,
     raw: Annotated[bool, "Return raw JSON from the API"] = False,
     ctx: Context = CurrentContext(),
@@ -135,6 +141,8 @@ async def update_worklog(
     """Update an existing Jira worklog.
 
     Canonical [~accountId:<id>] syntax creates an ADF mention in its comment.
+    Use ![alt](attachment-content-url) for an image already attached to this issue.
+    External (non-Jira) image URLs remain external media.
     """
     await ctx.info(f"Updating worklog {worklog_id} on {issue_key}")
 

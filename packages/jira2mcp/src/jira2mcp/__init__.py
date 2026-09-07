@@ -21,6 +21,7 @@ mcp = FastMCP(
         "- Use jira_list_fields for one server-paged field catalog; its project context does not determine issue-type or screen applicability\n"
         "- Before assigning: use jira_users to look up account IDs\n"
         "- High-level description, compatible rich-text field, comment add/update, and worklog-comment add/update inputs accept Markdown; canonical [~accountId:<id>] becomes an ADF mention, while escaped, malformed, code, link, and image forms stay text and Jira may notify the account\n"
+        "- For an existing issue, jira_upload_attachment with raw=True exposes structuredContent.data[0].content; use it in ![alt](attachment-content-url) when replacing a description, compatible rich-text field, comment, or worklog comment. Create cannot embed its own new attachment: create, upload, then edit the complete rich-text field. External (non-Jira) image URLs remain external media\n"
         "- Formatted issue/comment/worklog Markdown is presentation-only and can lose mention identity when written back; preserve raw ADF from jira_read structured data or raw jira_comments/jira_worklogs results for identity-safe edits\n"
         "- Native jira_transition fields/update data is not converted, and jira_transition.update comment bodies must already be ADF\n"
         "- jira_read requires a non-empty fields array; request only the Jira fields needed\n"
