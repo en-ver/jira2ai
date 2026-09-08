@@ -571,7 +571,7 @@ dev = [
 
 [[package]]
 name = "jira2cli"
-version = "0.6.0"
+version = "0.7.0"
 source = { editable = "packages/jira2cli" }
 dependencies = [
     { name = "httpx" },
@@ -588,7 +588,7 @@ requires-dist = [
 
 [[package]]
 name = "jira2mcp"
-version = "0.6.1"
+version = "0.7.0"
 source = { editable = "packages/jira2mcp" }
 dependencies = [
     { name = "adf-bridge" },
