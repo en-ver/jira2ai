@@ -11,15 +11,15 @@ members = [
 
 [[package]]
 name = "adf-bridge"
-version = "0.1.2"
+version = "0.1.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "fastjsonschema" },
     { name = "mistune" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c6/67/9a09d50daedb9892e88c3d02fd917bbae7a5dc10eac45e90dcf8e62b5803/adf_bridge-0.1.2.tar.gz", hash = "sha256:8c55d2e28b239519f0996bb8b6c4948a3c0c154082afdabc6078d36e051b211d", size = 63210, upload-time = "2026-09-07T05:53:23.801Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/4c/eb/7fc50c6bfcf18da07b2d05d8ea4532120908cc83215de274235e779bfa82/adf_bridge-0.1.3.tar.gz", hash = "sha256:b6928a8c7aef9a22243a400f7cf9ee53c32317065bec042af60f2b4afbc8e166", size = 66052, upload-time = "2026-09-09T13:31:33.59Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/23/3b/e007149d82d5227c0a4b5407cfadc15033a0c1bb5c4a029201962f97cbef/adf_bridge-0.1.2-py3-none-any.whl", hash = "sha256:90fad16ee1cb2f24811c8100e4435d114017fb161079281eef169db3f8203f0e", size = 47083, upload-time = "2026-09-07T05:53:22.52Z" },
+    { url = "https://files.pythonhosted.org/packages/b3/9c/631be7f21f3b506f5049bdd73f36cf9eb0076b23a99925a40f970bdd616c/adf_bridge-0.1.3-py3-none-any.whl", hash = "sha256:df160cecf3bd2d9ad51ce096ed7f3760df4fc2e9c80d5efd3b1bddcbc10f75fd", size = 48251, upload-time = "2026-09-09T13:31:32.333Z" },
 ]
 
 [[package]]
@@ -486,6 +486,15 @@ wheels = [
 ]
 
 [[package]]
+name = "imagesize"
+version = "2.0.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/fb/5e/513ff06670c84e7b9887c1fdf61b2d42b4f574a831f2f1d2222023049d8a/imagesize-2.0.1.tar.gz", hash = "sha256:b2ba6a4dea487a7ebcd53248d3476aca449d30db12a2dde5e0c5ca9624fd77e5", size = 1883774, upload-time = "2026-08-24T12:35:19.13Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/01/f9/575c8d760eae1fc99651b7cc5efd96ad5379ca4d6b53750b0fb4fe983f34/imagesize-2.0.1-py3-none-any.whl", hash = "sha256:ea0c9a0384df69ed86a943a15cde37d0360b82491b3910dc2215e202e62b5b02", size = 14794, upload-time = "2026-08-24T12:35:12.548Z" },
+]
+
+[[package]]
 name = "importlib-metadata"
 version = "8.7.1"
 source = { registry = "https://pypi.org/simple" }
@@ -582,7 +591,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "httpx", specifier = ">=0.28.1" },
-    { name = "jira2py", specifier = "==0.14.0" },
+    { name = "jira2py", specifier = "==0.15.0" },
     { name = "typer", specifier = ">=0.16.0" },
 ]
 
@@ -600,26 +609,27 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "adf-bridge", specifier = ">=0.1.2,<0.2" },
+    { name = "adf-bridge", specifier = ">=0.1.3,<0.2" },
     { name = "fastmcp", specifier = ">=3.2.0,<4" },
     { name = "httpx", specifier = ">=0.28.1" },
-    { name = "jira2py", specifier = "==0.14.0" },
+    { name = "jira2py", specifier = "==0.15.0" },
     { name = "pydantic", specifier = ">=2.12.5" },
 ]
 
 [[package]]
 name = "jira2py"
-version = "0.14.0"
+version = "0.15.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "adf-bridge" },
     { name = "httpx", extra = ["http2"] },
+    { name = "imagesize" },
     { name = "pydantic" },
     { name = "tenacity" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/de/46/76eafd4c9c0a9b46b0175f46bfa7b151ad7c1a6a3dc8311d0910d2d2c09c/jira2py-0.14.0.tar.gz", hash = "sha256:f062c4eed260e6950dd5b3379b45f1f2794fa9a724f887008a6b82dae10f7e84", size = 96563, upload-time = "2026-09-07T17:23:04.327Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/0b/30/e1f41b9a40905e5014b89d0c269bfe6b5d8e900cb8e9d7f1da0787c9f88d/jira2py-0.15.0.tar.gz", hash = "sha256:62a397bf5e0826164e4d201fb1c68815d0b78d9ba75f0f78a1d1ee2c7740f4f8", size = 108492, upload-time = "2026-09-09T18:35:42.203Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8c/35/a7c8e52baebac8a7dd583a59736692f7482125f98e7ea496a16c891f477f/jira2py-0.14.0-py3-none-any.whl", hash = "sha256:faf0ba9d894ac6e1156fae0386ad34484b7b522154b2d11d029015f7431d097e", size = 73008, upload-time = "2026-09-07T17:23:03.183Z" },
+    { url = "https://files.pythonhosted.org/packages/35/fb/60618fbfc3f35d39683a4250b0620485c163598e0ab339e1a4cec84b38ac/jira2py-0.15.0-py3-none-any.whl", hash = "sha256:ecfd1d41cd326c9bb41c795fc1477a3f8e9b49d69fd1eec2c32c79f0be109f16", size = 78191, upload-time = "2026-09-09T18:35:38.993Z" },
 ]
 
 [[package]]

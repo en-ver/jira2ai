@@ -64,7 +64,9 @@ The products support authentication checks, issue reads and JQL search, complete
 
 For an existing issue, high-level Markdown writes accept `![alt](attachment-content-url)` for an image already attached to that issue. Get the ordinary URL from the existing `content` field in the JSON/raw attachment-upload result, then use it in an issue edit, comment add/update, or worklog comment add/update. On issue edit, this applies to the explicit description option and `environment` or supported custom textarea field strings supplied through the existing fields input; it does not convert plain fields or raw Jira API inputs.
 
-Issue creation cannot embed its own new attachment. Create the issue, upload the image to its returned key, then edit the complete rich-text field; edits replace whole field values rather than appending. External image URLs remain external.
+Issue creation cannot embed its own new attachment. Create the issue, upload the image to its returned key, then edit the complete rich-text field; edits replace whole field values rather than appending.
+
+Managed attachment images are sized transparently during ordinary Markdown writes: their intrinsic dimensions are used with a centered 100% media container at the document root and in Markdown lists. External URLs are never fetched and remain external media without managed sizing. If safe dimensions cannot be acquired from an attached Jira image, the write fails before Jira receives a mutation.
 
 For local development or contributions, see [CONTRIBUTING.md](CONTRIBUTING.md). Contributors working from a repository checkout use `uv run --locked --package jira2cli jira2cli ...` after workspace setup. The optional [Pi CLI skill](skills/jira2cli/SKILL.md) is a source-checkout template for agents using `jira2cli`; UVX runs the CLI but does not install or auto-discover the skill.
 

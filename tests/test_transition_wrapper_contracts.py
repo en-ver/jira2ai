@@ -19,32 +19,34 @@ def test_wrappers_pin_published_jira2py_without_bumping_wrapper_versions() -> No
     jira2py = next(
         package
         for package in lock["package"]
-        if package["name"] == "jira2py" and package["version"] == "0.14.0"
+        if package["name"] == "jira2py" and package["version"] == "0.15.0"
     )
 
     for package_name in ("jira2cli", "jira2mcp"):
         project = tomllib.loads(
             (ROOT / "packages" / package_name / "pyproject.toml").read_text()
         )["project"]
-        assert "jira2py==0.14.0" in project["dependencies"]
+        assert project["version"] == "0.7.0"
+        assert "jira2py==0.15.0" in project["dependencies"]
 
         locked_wrapper = next(
             package for package in lock["package"] if package["name"] == package_name
         )
+        assert locked_wrapper["version"] == "0.7.0"
         requires_dist = locked_wrapper["metadata"]["requires-dist"]
         assert {
             entry["specifier"] for entry in requires_dist if entry["name"] == "jira2py"
-        } == {"==0.14.0"}
+        } == {"==0.15.0"}
 
     assert jira2py["source"] == {"registry": "https://pypi.org/simple"}
     assert jira2py["sdist"]["url"].startswith("https://files.pythonhosted.org/")
     assert jira2py["wheels"][0]["url"].startswith("https://files.pythonhosted.org/")
-    assert jira2py_version == "0.14.0"
+    assert jira2py_version == "0.15.0"
 
     mcp_project = tomllib.loads(
         (ROOT / "packages" / "jira2mcp" / "pyproject.toml").read_text()
     )["project"]
-    assert "adf-bridge>=0.1.2,<0.2" in mcp_project["dependencies"]
+    assert "adf-bridge>=0.1.3,<0.2" in mcp_project["dependencies"]
     assert not {
         "marklassian>=0.1.0",
         "pyadf>=0.3.0",
@@ -53,7 +55,7 @@ def test_wrappers_pin_published_jira2py_without_bumping_wrapper_versions() -> No
     adf_bridge = next(
         package
         for package in lock["package"]
-        if package["name"] == "adf-bridge" and package["version"] == "0.1.2"
+        if package["name"] == "adf-bridge" and package["version"] == "0.1.3"
     )
     assert adf_bridge["source"] == {"registry": "https://pypi.org/simple"}
     assert adf_bridge["sdist"]["url"].startswith("https://files.pythonhosted.org/")
@@ -172,3 +174,8 @@ def test_markdown_attachment_image_docs_describe_current_surface() -> None:
     assert "create the issue" in documents["create reference"].lower()
     assert "complete" in documents["edit reference"].lower()
     assert "structuredContent.data[0].content" in documents["MCP README"]
+    for name in ("root README", "CLI README", "MCP README", "skill"):
+        assert "sized transparently during ordinary Markdown writes" in documents[name]
+        assert "document root and in Markdown lists" in documents[name]
+        assert "External URLs are never fetched" in documents[name]
+        assert "fails before Jira receives a mutation" in documents[name]
