@@ -87,7 +87,9 @@ uvx jira2cli edit PROJ-123 --description "Full description
 
 The same syntax works for comment add/update bodies and worklog add/update comments. In `edit --fields-json`, it applies only to compatible rich-text string values: `environment` and supported custom textarea fields (as well as the explicit description option), not plain fields or raw Jira inputs. Each supplied rich-text value is a complete replacement.
 
-`create` cannot embed an attachment image for the issue it is creating. Create the issue without that image, upload it to the returned issue key, then use `edit` with the complete rich-text value. External image URLs remain external.
+`create` cannot embed an attachment image for the issue it is creating. Create the issue without that image, upload it to the returned issue key, then use `edit` with the complete rich-text value.
+
+Managed attachment images are sized transparently during ordinary Markdown writes: their intrinsic dimensions are used with a centered 100% media container at the document root and in Markdown lists. External URLs are never fetched and remain external media without managed sizing. If safe dimensions cannot be acquired from an attached Jira image, the write fails before Jira receives a mutation.
 
 ## Multi-issue projected search and pagination
 

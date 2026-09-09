@@ -91,7 +91,9 @@ Formatted issue, comment, and worklog Markdown is presentation-only and may lose
 
 ## Images from attachments
 
-For an existing issue, upload the image and use the returned JSON/raw item's `content` URL as native `![alt](attachment-content-url)` Markdown in `edit`, comment add/update, or worklog comment add/update. `edit` replaces whole rich-text values; compatible `--fields-json` strings are limited to `environment` and supported custom textarea fields, not plain fields or transition data. `create` cannot embed its own new attachment: create first, upload to the returned key, then edit the complete rich-text value. External image URLs remain external. Load the attachment, create, edit, comment, or worklog reference above for the exact flow.
+For an existing issue, upload the image and use the returned JSON/raw item's `content` URL as native `![alt](attachment-content-url)` Markdown in `edit`, comment add/update, or worklog comment add/update. `edit` replaces whole rich-text values; compatible `--fields-json` strings are limited to `environment` and supported custom textarea fields, not plain fields or transition data. `create` cannot embed its own new attachment: create first, upload to the returned key, then edit the complete rich-text value.
+
+Managed attachment images are sized transparently during ordinary Markdown writes: their intrinsic dimensions are used with a centered 100% media container at the document root and in Markdown lists. External URLs are never fetched and remain external media without managed sizing. If safe dimensions cannot be acquired from an attached Jira image, the write fails before Jira receives a mutation. Load the attachment, create, edit, comment, or worklog reference above for the exact flow.
 
 ## Flat command surface
 
