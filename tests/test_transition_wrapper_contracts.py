@@ -14,7 +14,7 @@ from typer.main import get_command
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_wrappers_pin_published_jira2py_without_bumping_wrapper_versions() -> None:
+def test_wrappers_pin_published_jira2py_with_release_versions() -> None:
     lock = tomllib.loads((ROOT / "uv.lock").read_text())
     jira2py = next(
         package
@@ -22,17 +22,18 @@ def test_wrappers_pin_published_jira2py_without_bumping_wrapper_versions() -> No
         if package["name"] == "jira2py" and package["version"] == "0.15.0"
     )
 
-    for package_name in ("jira2cli", "jira2mcp"):
+    expected_versions = {"jira2cli": "0.8.0", "jira2mcp": "0.7.0"}
+    for package_name, expected_version in expected_versions.items():
         project = tomllib.loads(
             (ROOT / "packages" / package_name / "pyproject.toml").read_text()
         )["project"]
-        assert project["version"] == "0.7.0"
+        assert project["version"] == expected_version
         assert "jira2py==0.15.0" in project["dependencies"]
 
         locked_wrapper = next(
             package for package in lock["package"] if package["name"] == package_name
         )
-        assert locked_wrapper["version"] == "0.7.0"
+        assert locked_wrapper["version"] == expected_version
         requires_dist = locked_wrapper["metadata"]["requires-dist"]
         assert {
             entry["specifier"] for entry in requires_dist if entry["name"] == "jira2py"
