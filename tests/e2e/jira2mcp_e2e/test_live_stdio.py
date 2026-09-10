@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Mapping
+from pathlib import Path
 
 import pytest
 
@@ -63,10 +64,12 @@ def _run(awaitable):
     return asyncio.run(awaitable)
 
 
-def test_stdio_smoke_lists_expected_tools(jira_e2e_stdio_env: dict[str, str]) -> None:
+def test_stdio_smoke_lists_expected_tools(
+    jira_e2e_credentials_file: Path,
+) -> None:
     async def scenario() -> None:
         async with stdio_client_mcp(
-            env=jira_e2e_stdio_env,
+            credentials_file=jira_e2e_credentials_file,
             cwd=REPO_ROOT,
             timeout=30,
         ) as client:
@@ -77,12 +80,12 @@ def test_stdio_smoke_lists_expected_tools(jira_e2e_stdio_env: dict[str, str]) ->
 
 
 def test_stdio_smoke_calls_safe_read_only_tool(
-    jira_e2e_stdio_env: dict[str, str],
+    jira_e2e_credentials_file: Path,
     jira_e2e_project_key: str,
 ) -> None:
     async def scenario() -> None:
         async with stdio_client_mcp(
-            env=jira_e2e_stdio_env,
+            credentials_file=jira_e2e_credentials_file,
             cwd=REPO_ROOT,
             timeout=30,
         ) as client:

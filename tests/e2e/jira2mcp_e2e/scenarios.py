@@ -43,34 +43,31 @@ def inmemory_client_mcp(*, timeout: float | int | None = None) -> Client:
 
 def stdio_transport_mcp(
     *,
-    env: Mapping[str, str] | None = None,
+    credentials_file: Path,
     cwd: str | Path | None = None,
-    keep_alive: bool | None = None,
     log_file: Path | TextIO | None = None,
 ) -> StdioTransport:
     return StdioTransport(
         command=STDIO_COMMAND,
-        args=STDIO_ARGS,
-        env=dict(env) if env is not None else None,
+        args=[*STDIO_ARGS, "--credentials-file", str(credentials_file.resolve())],
+        env=None,
         cwd=str(cwd) if cwd is not None else None,
-        keep_alive=keep_alive,
+        keep_alive=False,
         log_file=log_file,
     )
 
 
 def stdio_client_mcp(
     *,
-    env: Mapping[str, str] | None = None,
+    credentials_file: Path,
     cwd: str | Path | None = None,
-    keep_alive: bool | None = None,
     log_file: Path | TextIO | None = None,
     timeout: float | int | None = None,
 ) -> Client:
     return Client(
         stdio_transport_mcp(
-            env=env,
+            credentials_file=credentials_file,
             cwd=cwd,
-            keep_alive=keep_alive,
             log_file=log_file,
         ),
         timeout=timeout,
