@@ -597,7 +597,7 @@ requires-dist = [
 
 [[package]]
 name = "jira2mcp"
-version = "0.7.0"
+version = "0.8.0"
 source = { editable = "packages/jira2mcp" }
 dependencies = [
     { name = "adf-bridge" },
