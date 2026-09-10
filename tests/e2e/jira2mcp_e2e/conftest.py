@@ -1,7 +1,12 @@
 from __future__ import annotations
 
+import json
 import os
+import tempfile
+from collections.abc import Generator, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass, field
+from pathlib import Path
 
 import pytest
 
@@ -10,12 +15,13 @@ DEFAULT_ISSUE_TYPE = "Task"
 DEFAULT_LABEL = "jira2py-e2e"
 LIVE_CREDENTIAL_ENV_VARS = ("JIRA_URL", "JIRA_USER", "JIRA_API_TOKEN")
 ALLOW_WRITE_ENV_VAR = "JIRA_E2E_ALLOW_WRITE"
+_REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
 @dataclass(frozen=True, slots=True)
 class JiraE2EConfig:
-    jira_url: str
-    jira_user: str
+    jira_url: str = field(repr=False)
+    jira_user: str = field(repr=False)
     jira_api_token: str = field(repr=False)
     project_key: str = DEFAULT_PROJECT_KEY
     issue_type: str = DEFAULT_ISSUE_TYPE
@@ -26,37 +32,77 @@ class JiraE2EConfig:
     attachment_id: str | None = None
     allow_write: bool = False
 
-    def stdio_env(self) -> dict[str, str]:
-        env = os.environ.copy()
-        env.update(
-            {
-                "JIRA_URL": self.jira_url,
-                "JIRA_USER": self.jira_user,
-                "JIRA_API_TOKEN": self.jira_api_token,
-                "JIRA_E2E_PROJECT_KEY": self.project_key,
-                "JIRA_E2E_ISSUE_TYPE": self.issue_type,
-                "JIRA_E2E_LABEL": self.label,
-            }
-        )
 
-        optional_values = {
-            "JIRA_E2E_ISSUE_KEY": self.issue_key,
-            "JIRA_E2E_USER_QUERY": self.user_query,
-            "JIRA_E2E_WORKLOG_ISSUE_KEY": self.worklog_issue_key,
-            "JIRA_E2E_ATTACHMENT_ID": self.attachment_id,
-        }
-        for name, value in optional_values.items():
-            if value is None:
-                env.pop(name, None)
-                continue
-            env[name] = value
-
-        if self.allow_write:
-            env[ALLOW_WRITE_ENV_VAR] = "1"
+@contextmanager
+def _private_credentials_file(config: JiraE2EConfig) -> Iterator[Path]:
+    """Write one stdio server credential file outside the checkout."""
+    with tempfile.TemporaryDirectory(prefix="jira2mcp-e2e-") as directory:
+        credentials_directory = Path(directory).resolve()
+        try:
+            credentials_directory.relative_to(_REPO_ROOT)
+        except ValueError:
+            pass
         else:
-            env.pop(ALLOW_WRITE_ENV_VAR, None)
+            raise RuntimeError(
+                "Refusing to create live credentials inside the checkout"
+            )
 
-        return env
+        if os.name == "posix":
+            credentials_directory.chmod(0o700)
+
+        credentials_file = credentials_directory / "credentials.json"
+        descriptor = os.open(
+            credentials_file,
+            os.O_WRONLY | os.O_CREAT | os.O_EXCL,
+            0o600,
+        )
+        try:
+            stream = os.fdopen(descriptor, "w", encoding="utf-8")
+        except BaseException:
+            os.close(descriptor)
+            raise
+
+        with stream:
+            json.dump(
+                {
+                    "url": config.jira_url,
+                    "username": config.jira_user,
+                    "api_token": config.jira_api_token,
+                },
+                stream,
+            )
+            stream.write("\n")
+
+        if os.name == "posix":
+            credentials_file.chmod(0o600)
+
+        yield credentials_file
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(
+    item: pytest.Item,
+    call: pytest.CallInfo[None],
+) -> Generator[None]:
+    """Keep live-test tracebacks from rendering fixture arguments or locals."""
+    if item.get_closest_marker("mcp_live") is None:
+        yield
+        return
+
+    options = item.config.option
+    original_options = {
+        "fulltrace": options.fulltrace,
+        "showlocals": options.showlocals,
+        "tbstyle": options.tbstyle,
+    }
+    options.fulltrace = False
+    options.showlocals = False
+    options.tbstyle = "short"
+    try:
+        yield
+    finally:
+        for name, value in original_options.items():
+            setattr(options, name, value)
 
 
 def _env(name: str, *, default: str | None = None) -> str | None:
@@ -123,8 +169,11 @@ def jira_e2e_config() -> JiraE2EConfig:
 
 
 @pytest.fixture
-def jira_e2e_stdio_env(jira_e2e_config: JiraE2EConfig) -> dict[str, str]:
-    return jira_e2e_config.stdio_env()
+def jira_e2e_credentials_file(
+    jira_e2e_config: JiraE2EConfig,
+) -> Generator[Path]:
+    with _private_credentials_file(jira_e2e_config) as credentials_file:
+        yield credentials_file
 
 
 @pytest.fixture
