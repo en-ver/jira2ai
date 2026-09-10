@@ -132,6 +132,53 @@ def test_stdio_transport_uses_credentials_file_without_parent_environment(
     assert captured["cwd"] == str(tmp_path)
 
 
+def test_uv_project_preserves_caller_cwd_and_selects_local_jira2mcp(
+    tmp_path: Path,
+) -> None:
+    server_cwd = tmp_path / "server-cwd"
+    server_cwd.mkdir()
+    attachment = server_cwd / "fixture.png"
+    attachment.touch()
+    assert scenarios.STDIO_ARGS == [
+        "--project",
+        str(scenarios.REPO_ROOT),
+        "run",
+        "--package",
+        "jira2mcp",
+        "jira2mcp",
+    ]
+    probe = (
+        "from pathlib import Path; import json, os, sys, jira2mcp; "
+        "print(json.dumps({'cwd': os.getcwd(), "
+        "'path': str(Path(sys.argv[1]).resolve()), "
+        "'module': str(Path(jira2mcp.__file__).resolve())}))"
+    )
+
+    result = subprocess.run(
+        [
+            scenarios.STDIO_COMMAND,
+            "--offline",
+            *scenarios.STDIO_ARGS[:-1],
+            "python",
+            "-c",
+            probe,
+            attachment.name,
+        ],
+        capture_output=True,
+        check=True,
+        cwd=server_cwd,
+        text=True,
+    )
+
+    assert json.loads(result.stdout) == {
+        "cwd": str(server_cwd.resolve()),
+        "path": str(attachment.resolve()),
+        "module": str(
+            scenarios.REPO_ROOT / "packages/jira2mcp/src/jira2mcp/__init__.py"
+        ),
+    }
+
+
 def _write_failure_suite(directory: Path) -> None:
     (directory / "conftest.py").write_text(
         "\n".join(

@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 REPO_ROOT = Path(__file__).resolve().parents[3]
 STDIO_COMMAND = "uv"
 STDIO_ARGS = [
-    "--directory",
+    "--project",
     str(REPO_ROOT),
     "run",
     "--package",
