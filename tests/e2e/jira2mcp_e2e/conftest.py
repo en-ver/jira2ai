@@ -29,7 +29,6 @@ class JiraE2EConfig:
     issue_key: str | None = None
     user_query: str | None = None
     worklog_issue_key: str | None = None
-    attachment_id: str | None = None
     allow_write: bool = False
 
 
@@ -163,7 +162,6 @@ def jira_e2e_config() -> JiraE2EConfig:
         issue_key=_env("JIRA_E2E_ISSUE_KEY"),
         user_query=_env("JIRA_E2E_USER_QUERY"),
         worklog_issue_key=_env("JIRA_E2E_WORKLOG_ISSUE_KEY"),
-        attachment_id=_env("JIRA_E2E_ATTACHMENT_ID"),
         allow_write=_env(ALLOW_WRITE_ENV_VAR) == "1",
     )
 
@@ -227,15 +225,3 @@ def jira_e2e_required_worklog_issue_key(
     if jira_e2e_worklog_issue_key is None:
         _skip_for_missing_optional("JIRA_E2E_WORKLOG_ISSUE_KEY")
     return jira_e2e_worklog_issue_key
-
-
-@pytest.fixture
-def jira_e2e_attachment_id(jira_e2e_config: JiraE2EConfig) -> str | None:
-    return jira_e2e_config.attachment_id
-
-
-@pytest.fixture
-def jira_e2e_required_attachment_id(jira_e2e_attachment_id: str | None) -> str:
-    if jira_e2e_attachment_id is None:
-        _skip_for_missing_optional("JIRA_E2E_ATTACHMENT_ID")
-    return jira_e2e_attachment_id

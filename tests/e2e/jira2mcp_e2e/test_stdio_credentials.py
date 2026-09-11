@@ -31,7 +31,6 @@ def _synthetic_config() -> JiraE2EConfig:
         issue_key="SYN-1",
         user_query="synthetic-user-query-control",
         worklog_issue_key="SYN-2",
-        attachment_id="synthetic-attachment-control",
         allow_write=True,
     )
 

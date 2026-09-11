@@ -9,9 +9,8 @@ authors = [
 requires-python = ">=3.13"
 dependencies = [
     "fastmcp>=3.2.0,<4",
-    "httpx>=0.28.1",
     "adf-bridge>=0.1.3,<0.2",
-    "jira2py==0.15.0",
+    "jira2py==0.16.0",
     "pydantic>=2.12.5",
 ]
 

@@ -34,7 +34,6 @@ pytestmark = pytest.mark.mcp_live
 EXPECTED_JIRA_TOOLS = [
     "jira_add_link",
     "jira_add_worklog",
-    "jira_attachment",
     "jira_attachment_metadata",
     "jira_attachments",
     "jira_auth_status",

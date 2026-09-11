@@ -65,6 +65,7 @@ def test_root_help_lists_stage9_commands_and_credentials_flag() -> None:
 
     assert result.exit_code == 0
     assert "--credentials-file" in help_output
+    assert "attachment" not in get_command(app).commands
     for command_name in [
         "auth-status",
         "me",
@@ -89,6 +90,17 @@ def test_root_help_lists_stage9_commands_and_credentials_flag() -> None:
         "filter-run",
     ]:
         assert command_name in help_output
+
+
+def test_attachment_download_help_exposes_directory_and_basename() -> None:
+    result = runner.invoke(app, ["attachment-download", "--help"])
+    help_output = strip_ansi(result.stdout)
+
+    assert result.exit_code == 0
+    for option in ("--directory", "--filename", "--json", "--raw"):
+        assert option in help_output
+    assert "--output-path" not in help_output
+    assert "not a path" in help_output.lower()
 
 
 def test_filter_run_help_explains_multi_issue_projected_reads() -> None:
@@ -418,11 +430,15 @@ def test_attachment_flat_commands_delegate_to_helpers(
                 calls.append(("read", attachment_id))
                 or HelperResult.text_only("attachment metadata")
             ),
-            "download": lambda attachment_id, *, output_path: (
-                calls.append(("download", (attachment_id, output_path)))
+            "download": lambda attachment_id, *, directory, filename: (
+                calls.append(("download", (attachment_id, directory, filename)))
                 or HelperResult.with_data(
                     "ignored",
-                    {"attachment_id": attachment_id, "output_path": output_path},
+                    {
+                        "attachment_id": attachment_id,
+                        "directory": directory,
+                        "filename": filename,
+                    },
                 )
             ),
             "upload": lambda issue_key, path: (
@@ -440,7 +456,15 @@ def test_attachment_flat_commands_delegate_to_helpers(
     read_result = runner.invoke(app, ["attachment-read", "63899"])
     download_result = runner.invoke(
         app,
-        ["attachment-download", "63899", "--output-path", "downloads/", "--raw"],
+        [
+            "attachment-download",
+            "63899",
+            "--directory",
+            "downloads",
+            "--filename",
+            "renamed.log",
+            "--raw",
+        ],
     )
     upload_result = runner.invoke(
         app,
@@ -454,7 +478,7 @@ def test_attachment_flat_commands_delegate_to_helpers(
     assert read_result.stdout == "attachment metadata\n"
     assert download_result.exit_code == 0
     assert download_result.stdout == (
-        '{\n  "attachment_id": "63899",\n  "output_path": "downloads/"\n}\n'
+        '{\n  "attachment_id": "63899",\n  "directory": "downloads",\n  "filename": "renamed.log"\n}\n'
     )
     assert upload_result.exit_code == 0
     assert upload_result.stdout == "attachment uploaded\n"
@@ -466,7 +490,7 @@ def test_attachment_flat_commands_delegate_to_helpers(
         ("get_api", None),
         ("read", "63899"),
         ("get_api", None),
-        ("download", ("63899", "downloads/")),
+        ("download", ("63899", "downloads", "renamed.log")),
         ("get_api", None),
         ("upload", ("PROJ-1", "notes.txt")),
         ("get_api", None),

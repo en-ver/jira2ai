@@ -11,6 +11,7 @@ def test_jira2mcp_helper_modules_expose_runtime_local_or_public_helpers() -> Non
     assert mcp_models.JiraIssue is JiraIssue
     assert mcp_models.FieldMeta is FieldMeta
     assert mcp_models.FieldSchema is FieldSchema
+    assert not hasattr(mcp_models, "AttachmentDownloadPlan")
     assert not hasattr(mcp_formatters, "DEFAULT_FIELDS")
     assert not hasattr(mcp_formatters, "format_issue_full")
     assert mcp_adf.adf_to_markdown.__module__ == "jira2mcp.adf"

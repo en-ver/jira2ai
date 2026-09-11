@@ -13,10 +13,7 @@ from jira2cli.commands.worklogs import worklog_report_command
 from jira2cli.jql import JQL_REFERENCE
 from jira2py import JiraError
 from jira2py.helpers import HelperResult
-from jira2py.helpers.errors import (
-    AttachmentDownloadError,
-    JiraHelperValidationError,
-)
+from jira2py.helpers.errors import JiraHelperOperationError, JiraHelperValidationError
 from typer.main import get_command
 from typer.testing import CliRunner
 
@@ -1344,10 +1341,9 @@ def test_link_commands_delegate_to_helpers(
     assert result.stdout == expected_stdout
 
 
-def test_attachment_command_delegates_to_helpers(
+def test_attachment_download_command_delegates_to_helpers(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    plan = SimpleNamespace(output_file="/tmp/debug.log")
     calls: list[tuple[str, object]] = []
 
     monkeypatch.setattr(
@@ -1358,95 +1354,59 @@ def test_attachment_command_delegates_to_helpers(
         monkeypatch,
         "jira2cli.commands.attachments",
         attachments={
-            "validate_id": lambda attachment_id: calls.append(
-                ("validate_id", attachment_id)
-            ),
-            "plan_download": lambda attachment_id, *, output_path: (
-                calls.append(("plan_download", (attachment_id, output_path)))
-                or HelperResult.with_data("ignored", plan)
+            "download": lambda attachment_id, *, directory, filename: (
+                calls.append(("download", (attachment_id, directory, filename)))
+                or HelperResult.text_only("downloaded")
             ),
         },
-    )
-    monkeypatch.setattr(
-        "jira2cli.commands.attachments.download_attachment_content",
-        lambda received_plan, *, api: calls.append(("download", received_plan)),
-    )
-    monkeypatch.setattr(
-        "jira2cli.commands.attachments.format_attachment_download_result",
-        lambda received_plan: calls.append(("format", received_plan)) or "downloaded",
     )
 
     result = runner.invoke(
         app,
-        ["attachment", "63899", "--output-path", "downloads/"],
+        [
+            "attachment-download",
+            "63899",
+            "--directory",
+            "downloads",
+            "--filename",
+            "debug.log",
+        ],
     )
 
     assert result.exit_code == 0
     assert result.stdout == "downloaded\n"
     assert calls == [
         ("get_api", None),
-        ("validate_id", "63899"),
-        ("plan_download", ("63899", "downloads/")),
-        ("download", plan),
-        ("format", plan),
+        ("download", ("63899", "downloads", "debug.log")),
     ]
 
 
-def test_attachment_command_rejects_empty_ids_before_download(
+@pytest.mark.parametrize(
+    ("error", "expected_code"),
+    [
+        (JiraHelperValidationError("invalid attachment"), 2),
+        (JiraHelperOperationError("download failed"), 1),
+    ],
+)
+def test_attachment_download_command_reports_helper_errors(
     monkeypatch: pytest.MonkeyPatch,
+    error: Exception,
+    expected_code: int,
 ) -> None:
     monkeypatch.setattr("jira2cli.client.get_api", lambda: object())
     _patch_helpers(
         monkeypatch,
         "jira2cli.commands.attachments",
         attachments={
-            "validate_id": lambda _attachment_id: (_ for _ in ()).throw(
-                JiraHelperValidationError(
-                    "attachment_id is required and cannot be empty"
-                )
-            )
+            "download": lambda *_args, **_kwargs: (_ for _ in ()).throw(error),
         },
     )
 
-    result = runner.invoke(app, ["attachment", "   "])
+    result = runner.invoke(app, ["attachment-download", "63899"])
 
-    assert result.exit_code == 2
+    assert result.exit_code == expected_code
     assert result.stdout == ""
-    assert result.stderr == "attachment_id is required and cannot be empty\n"
-
-
-def test_attachment_command_reports_download_errors(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    plan = SimpleNamespace(output_file="/tmp/debug.log")
-
-    monkeypatch.setattr("jira2cli.client.get_api", lambda: object())
-    _patch_helpers(
-        monkeypatch,
-        "jira2cli.commands.attachments",
-        attachments={
-            "validate_id": lambda _attachment_id: None,
-            "plan_download": lambda attachment_id, *, output_path: (
-                HelperResult.with_data("ignored", plan)
-            ),
-        },
-    )
-    monkeypatch.setattr(
-        "jira2cli.commands.attachments.download_attachment_content",
-        lambda _received_plan, *, api: (_ for _ in ()).throw(
-            AttachmentDownloadError("download failed")
-        ),
-    )
-    monkeypatch.setattr(
-        "jira2cli.commands.attachments.format_attachment_download_result",
-        lambda _received_plan: pytest.fail("format should not be called"),
-    )
-
-    result = runner.invoke(app, ["attachment", "63899"])
-
-    assert result.exit_code == 1
-    assert result.stdout == ""
-    assert result.stderr == "download failed\n"
+    assert result.stderr == f"{error}\n"
 
 
 def test_create_command_rejects_invalid_fields_json(

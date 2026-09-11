@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Annotated, cast
+from typing import Annotated
 from urllib.parse import urlparse
 
 from fastmcp import Context
@@ -11,29 +11,21 @@ from fastmcp.dependencies import CurrentContext, Depends
 from fastmcp.exceptions import ToolError
 from fastmcp.tools import ToolResult
 from jira2py import JiraAPI
-from jira2py.helpers import HelperResult, JiraHelpers
+from jira2py.helpers import JiraHelpers
 from jira2py.helpers.errors import (
-    AttachmentDownloadError,
-    AttachmentError,
     JiraHelperError,
     JiraHelperOperationError,
     JiraHelperValidationError,
 )
-from jira2py.helpers.models import AttachmentDownloadPlan
 from mcp.types import Root
 
 from jira2mcp.adapter import adapt_operation_result, to_tool_error
-from jira2mcp.attachment_io import (
-    download_attachment_content,
-    format_attachment_download_result,
-)
 from jira2mcp.utils import get_api
 
 from .server import tools
 
 
-def _validate_attachment_id(*, attachment_id: str, api: JiraAPI) -> None:
-    helpers = JiraHelpers(api)
+def _validate_attachment_id(*, attachment_id: str, helpers: JiraHelpers) -> None:
     try:
         helpers.attachments.validate_id(attachment_id)
     except JiraHelperValidationError as exc:
@@ -66,65 +58,29 @@ def _validate_upload_path(file_path: str) -> None:
         )
 
 
-async def _plan_download_with_root_checks(
-    *,
-    attachment_id: str,
-    output_path: str | None,
-    ctx: Context,
-    api: JiraAPI,
-) -> AttachmentDownloadPlan:
-    helpers = JiraHelpers(api)
-    plan_result = helpers.attachments.plan_download(
-        attachment_id,
-        output_path=output_path,
-    )
-    plan = cast(AttachmentDownloadPlan, plan_result.data)
+async def _resolve_download_directory(*, directory: str, ctx: Context) -> Path:
+    """Resolve and authorize a download directory without owning filename policy."""
+    resolved = Path(directory).expanduser().resolve(strict=False)
 
-    roots: list[Root] | None = None
     try:
         roots = await ctx.list_roots()
     except Exception:
-        pass
+        roots = None
 
     if roots:
-        if not _path_within_roots(plan.resolved_output, roots):
+        if not _path_within_roots(resolved, roots):
             raise ToolError(
-                f"Path is outside allowed MCP roots. Resolved path: {plan.resolved_output}"
+                "Directory is outside allowed MCP roots. "
+                f"Resolved directory: {resolved}"
             )
-    else:
+    elif not _path_within_cwd(resolved):
         cwd = Path.cwd().resolve()
-        if not _path_within_cwd(plan.resolved_output):
-            raise ToolError(
-                f"Cannot write outside working directory ({cwd}). "
-                f"Resolved path: {plan.resolved_output}"
-            )
+        raise ToolError(
+            f"Cannot write outside working directory ({cwd}). "
+            f"Resolved directory: {resolved}"
+        )
 
-    return plan
-
-
-def _download_result_from_plan(
-    *,
-    attachment_id: str,
-    plan: AttachmentDownloadPlan,
-    api: JiraAPI,
-) -> HelperResult:
-    try:
-        download_attachment_content(plan, api=api)
-    except AttachmentDownloadError as exc:
-        raise to_tool_error(exc) from exc
-
-    return HelperResult.with_data(
-        format_attachment_download_result(plan),
-        {
-            "status": "downloaded",
-            "attachment_id": attachment_id,
-            "filename": plan.filename,
-            "output_file": plan.output_file,
-            "size": plan.meta.size,
-            "mime_type": plan.meta.mimeType,
-            "content_url": plan.content_url,
-        },
-    )
+    return resolved
 
 
 @tools.tool(
@@ -179,78 +135,43 @@ async def attachment_metadata(
     tags={"read"},
     annotations={"readOnlyHint": True, "idempotentHint": True, "openWorldHint": False},
 )
-async def attachment(
-    attachment_id: Annotated[str, "Attachment ID (e.g. 63899)"],
-    output_path: Annotated[
-        str | None,
-        "Path to save the attachment. An existing directory or path ending in '/' or "
-        "'\\' uses the Jira filename; otherwise, a nonexistent path is an exact file "
-        "destination. Defaults to current directory",
-    ] = None,
-    ctx: Context = CurrentContext(),
-    api: JiraAPI = Depends(get_api),
-) -> str:
-    """Download a Jira attachment by its ID.
-
-    Use jira_attachments to find IDs and jira_attachment_metadata for details.
-    The attachment is saved to the specified output path (or current directory).
-    """
-    _validate_attachment_id(attachment_id=attachment_id, api=api)
-    await ctx.info(f"Downloading attachment {attachment_id}")
-
-    try:
-        plan = await _plan_download_with_root_checks(
-            attachment_id=attachment_id,
-            output_path=output_path,
-            ctx=ctx,
-            api=api,
-        )
-    except JiraHelperOperationError as exc:
-        await ctx.error(str(exc))
-        raise to_tool_error(exc) from exc
-    except AttachmentError as exc:
-        raise to_tool_error(exc) from exc
-
-    _download_result_from_plan(attachment_id=attachment_id, plan=plan, api=api)
-    return format_attachment_download_result(plan)
-
-
-@tools.tool(
-    tags={"read"},
-    annotations={"readOnlyHint": True, "idempotentHint": True, "openWorldHint": False},
-)
 async def download_attachment(
     attachment_id: Annotated[str, "Attachment ID (e.g. 63899)"],
-    output_path: Annotated[
+    directory: Annotated[
+        str,
+        "Directory in which to save the attachment. Relative paths are resolved from "
+        "the server working directory",
+    ] = ".",
+    filename: Annotated[
         str | None,
-        "Path to save the attachment. An existing directory or path ending in '/' or "
-        "'\\' uses the Jira filename; otherwise, a nonexistent path is an exact file "
-        "destination. Defaults to current directory",
+        "Optional single destination filename, not a path. Defaults to the sanitized "
+        "Jira filename",
     ] = None,
-    raw: Annotated[
-        bool, "Return raw structured output describing the download"
-    ] = False,
+    raw: Annotated[bool, "Return structured output describing the download"] = False,
     ctx: Context = CurrentContext(),
     api: JiraAPI = Depends(get_api),
 ) -> str | ToolResult:
-    """Download a Jira attachment by its ID with optional raw structured output."""
-    _validate_attachment_id(attachment_id=attachment_id, api=api)
+    """Download a Jira attachment into an authorized directory."""
+    helpers = JiraHelpers(api)
+    _validate_attachment_id(attachment_id=attachment_id, helpers=helpers)
     await ctx.info(f"Downloading attachment {attachment_id}")
 
     try:
-        plan = await _plan_download_with_root_checks(
-            attachment_id=attachment_id,
-            output_path=output_path,
+        resolved_directory = await _resolve_download_directory(
+            directory=directory,
             ctx=ctx,
-            api=api,
+        )
+        result = helpers.attachments.download(
+            attachment_id,
+            directory=resolved_directory,
+            filename=filename,
         )
     except JiraHelperOperationError as exc:
         await ctx.error(str(exc))
         raise to_tool_error(exc) from exc
-    except AttachmentError as exc:
+    except JiraHelperError as exc:
         raise to_tool_error(exc) from exc
 
-    result = _download_result_from_plan(attachment_id=attachment_id, plan=plan, api=api)
     return adapt_operation_result(result, raw=raw)
 
 

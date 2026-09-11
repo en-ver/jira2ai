@@ -8,7 +8,6 @@ from jira2mcp import mcp
 EXPECTED_JIRA_TOOLS = {
     "jira_add_link",
     "jira_add_worklog",
-    "jira_attachment",
     "jira_attachment_metadata",
     "jira_attachments",
     "jira_auth_status",
@@ -51,6 +50,7 @@ def test_mcp_registers_existing_and_new_jira_tools() -> None:
     names = {tool.name for tool in tools}
 
     assert EXPECTED_JIRA_TOOLS <= names
+    assert "jira_attachment" not in names
     assert "[~accountId:<id>]" in mcp.instructions
     assert (
         "escaped, malformed, code, link, and image forms stay text" in mcp.instructions
@@ -61,6 +61,27 @@ def test_mcp_registers_existing_and_new_jira_tools() -> None:
         "jira_transition.update comment bodies must already be ADF" in mcp.instructions
     )
     assert "External (non-Jira) image URLs remain external media" in mcp.instructions
+
+
+def test_download_attachment_exposes_canonical_directory_schema() -> None:
+    tools = asyncio.run(mcp.list_tools(run_middleware=False))
+    tool = next(tool for tool in tools if tool.name == "jira_download_attachment")
+    parameters = cast(dict[str, Any], tool.parameters)
+    properties = cast(dict[str, dict[str, Any]], parameters["properties"])
+
+    assert set(parameters["required"]) == {"attachment_id"}
+    assert set(properties) == {"attachment_id", "directory", "filename", "raw"}
+    assert parameters["additionalProperties"] is False
+    assert properties["directory"]["default"] == "."
+    assert properties["filename"]["default"] is None
+    assert {entry["type"] for entry in properties["filename"]["anyOf"]} == {
+        "string",
+        "null",
+    }
+    assert properties["raw"]["default"] is False
+    assert tool.annotations.readOnlyHint is True
+    assert tool.annotations.idempotentHint is True
+    assert tool.annotations.openWorldHint is False
 
 
 def test_mcp_high_level_write_tools_describe_canonical_mentions() -> None:
