@@ -351,11 +351,16 @@ def test_write_issue_lifecycle_creates_two_tasks_and_leaves_them_in_jira(
                     {"issue_key": first_key, "raw": True},
                 )
             )
-            attachments_payload = assert_result_data(attachments_result, list)
+            attachments_payload = assert_result_data(attachments_result, dict)
+            attachment_items = attachments_payload.get("attachments")
+            if not isinstance(attachment_items, list):
+                raise AssertionError(
+                    "Expected jira_attachments raw payload to include an attachments list"
+                )
             assert any(
                 isinstance(item, Mapping)
                 and str(item.get("id")) == uploaded_attachment_id
-                for item in attachments_payload
+                for item in attachment_items
             )
 
             attachment_metadata_result = assert_non_error_result(
