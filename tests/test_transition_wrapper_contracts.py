@@ -22,7 +22,7 @@ def test_wrappers_pin_published_jira2py_with_release_versions() -> None:
         if package["name"] == "jira2py" and package["version"] == "0.16.0"
     )
 
-    expected_versions = {"jira2cli": "0.9.0", "jira2mcp": "0.8.0"}
+    expected_versions = {"jira2cli": "0.9.0", "jira2mcp": "0.9.0"}
     for package_name, expected_version in expected_versions.items():
         project = tomllib.loads(
             (ROOT / "packages" / package_name / "pyproject.toml").read_text()
