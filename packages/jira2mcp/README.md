@@ -109,7 +109,6 @@ All tools use the `jira_*` namespace.
 
 | Tool | Description |
 |---|---|
-| `jira_attachment` | Download an attachment with the original simple surface. |
 | `jira_attachments` / `jira_attachment_metadata` | List attachments or read metadata. |
 | `jira_download_attachment` / `jira_upload_attachment` / `jira_delete_attachment` | Download, upload, or delete an attachment. |
 | `jira_worklogs` | List issue worklogs. |
@@ -132,7 +131,9 @@ For `jira_edit`, this applies to description and compatible rich-text strings in
 
 Managed attachment images are sized transparently during ordinary Markdown writes: their intrinsic dimensions are used with a centered 100% media container at the document root and in Markdown lists. External URLs are never fetched and remain external media without managed sizing. If safe dimensions cannot be acquired from an attached Jira image, the write fails before Jira receives a mutation.
 
-`jira_read` returns selected Jira fields unchanged, including ADF, as structured content and a compact JSON text fallback; it does not format or truncate the response. `jira_run_filter` returns the same search-shaped result as `jira_search` after resolving the filter's JQL. `jira_download_attachment` provides structured/raw-friendly output, while `jira_attachment` remains available for its original simple download surface.
+`jira_read` returns selected Jira fields unchanged, including ADF, as structured content and a compact JSON text fallback; it does not format or truncate the response. `jira_run_filter` returns the same search-shaped result as `jira_search` after resolving the filter's JQL.
+
+Download attachments with `jira_download_attachment(attachment_id="63899", directory="downloads", filename="debug.log", raw=True)`. `directory` is authorized against advertised MCP roots, or the server working directory when roots are unavailable. The core helper ensures the final file is an immediate child of that directory; `filename` is optional and must be one filename, not a path. Its structured result reports the actual destination and observed byte count.
 
 `jira_read` requires both `issue_key` and a non-empty native `fields` array, for example `jira_read(issue_key="PROJ-123", fields=["summary", "description"])`. Each array item is one field key, ID, or endpoint-supported selector; do not use comma-separated items or surrounding whitespace. It has no `raw` mode because it always returns structured Jira data. Selectors such as `*all`, `*navigable`, or negative selectors can still return broad responses, so request only what is needed.
 

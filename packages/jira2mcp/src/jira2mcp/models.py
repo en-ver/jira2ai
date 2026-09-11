@@ -1,7 +1,6 @@
 """Compatibility shim for moved shared models."""
 
 from jira2py.helpers.models import (
-    AttachmentDownloadPlan,
     AttachmentMeta,
     CommentPage,
     FieldMeta,
@@ -34,7 +33,6 @@ from jira2py.helpers.models import (
 )
 
 __all__ = [
-    "AttachmentDownloadPlan",
     "AttachmentMeta",
     "CommentPage",
     "FieldMeta",

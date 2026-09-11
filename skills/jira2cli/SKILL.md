@@ -139,7 +139,6 @@ Managed attachment images are sized transparently during ordinary Markdown write
 
 ### Attachments and worklogs
 
-- `attachment`
 - `attachment-list`
 - `attachment-read`
 - `attachment-download`
@@ -179,10 +178,9 @@ Managed attachment images are sized transparently during ordinary Markdown write
 - `uvx jira2cli worklog-update <KEY> <WORKLOG_ID> --time-spent '45m' --json`
 - `uvx jira2cli worklog-delete <KEY> <WORKLOG_ID> --json`
 - `uvx jira2cli worklog-report --start-date <YYYY-MM-DD> --end-date <YYYY-MM-DD> --jql '<JQL>' --account-id <ACCOUNT_ID> --max-issues <N> --include-details --json`
-- `uvx jira2cli attachment <ATTACHMENT_ID> --output-path <path>`
 - `uvx jira2cli attachment-list <KEY> --json`
 - `uvx jira2cli attachment-read <ATTACHMENT_ID> --json`
-- `uvx jira2cli attachment-download <ATTACHMENT_ID> --output-path <path> --json`
+- `uvx jira2cli attachment-download <ATTACHMENT_ID> --directory <directory> --filename <filename> --json`
 - `uvx jira2cli attachment-upload <KEY> <PATH> --json`
 - `uvx jira2cli attachment-delete <ATTACHMENT_ID> --json`
 - `uvx jira2cli create <PROJECT> <TYPE> <SUMMARY> --description <text> --fields-json '<json>' --json`

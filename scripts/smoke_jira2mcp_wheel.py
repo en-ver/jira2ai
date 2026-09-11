@@ -12,7 +12,7 @@ from mcp.client.stdio import stdio_client
 from packaging.specifiers import SpecifierSet
 from packaging.version import Version
 
-EXPECTED_TOOL_COUNT = 37
+EXPECTED_TOOL_COUNT = 36
 REGISTRY_PACKAGES = ("fastmcp", "jira2py")
 
 

@@ -11,8 +11,7 @@ Use this when the issue context already identifies the Jira issue key or attachm
 3. Read attachment metadata when you need details for one attachment:
    - `uvx jira2cli attachment-read <ATTACHMENT_ID> --json`
 4. Download the attachment when you need local content:
-   - `uvx jira2cli attachment <ATTACHMENT_ID>`
-   - `uvx jira2cli attachment-download <ATTACHMENT_ID> --output-path <path> --json`
+   - `uvx jira2cli attachment-download <ATTACHMENT_ID> --directory <directory> --filename <filename> --json`
 5. Upload only after the user confirms the exact file path and target issue:
    - `uvx jira2cli attachment-upload <KEY> <PATH> --json`
 6. Delete only after the user confirms the exact attachment ID:
@@ -20,10 +19,9 @@ Use this when the issue context already identifies the Jira issue key or attachm
 
 ## Notes
 
-- `attachment` remains the simple download command.
-- `attachment-download` adds structured/raw-friendly output.
-- Confirm the exact destination path before downloading or the exact source path before uploading.
-- Do not guess attachment IDs or overwrite/delete unexpected files without confirmation.
+- `--directory` defaults to the current directory.
+- `--filename` is optional and must be a single basename, not a path. If omitted, jira2py uses the sanitized Jira filename.
+- Confirm an expected destination before downloading: a successful validated download can atomically replace it. Also confirm the exact source path before uploading and do not guess attachment IDs.
 
 ## Markdown image workflow
 

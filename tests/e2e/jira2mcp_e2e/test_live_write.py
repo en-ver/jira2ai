@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import re
 from collections.abc import Mapping
+from pathlib import Path
 from time import monotonic
 from uuid import uuid4
 
@@ -11,13 +12,13 @@ import pytest
 from .conftest import JiraE2EConfig
 from .scenarios import (
     assert_non_error_result,
+    assert_result_data,
     assert_structured_content,
     build_create_fields_from_metadata_mcp,
     call_tool_mcp,
     inmemory_client_mcp,
     read_resource_mcp,
     require_resource_text,
-    require_text_content,
 )
 
 pytestmark = [pytest.mark.mcp_live, pytest.mark.mcp_write]
@@ -242,7 +243,13 @@ def _link_id_for_issue(payload: Mapping[str, object], other_issue_key: str) -> s
 
 def test_write_issue_lifecycle_creates_two_tasks_and_leaves_them_in_jira(
     jira_e2e_config: JiraE2EConfig,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
 ) -> None:
+    monkeypatch.chdir(tmp_path)
+    attachment_source = tmp_path / "attachment-round-trip-source.txt"
+    attachment_bytes = b"jira2mcp attachment round trip\n"
+    attachment_source.write_bytes(attachment_bytes)
     token = uuid4().hex[:8]
     primary_summary = f"jira2mcp e2e primary {token}"
     secondary_summary = f"jira2mcp e2e secondary {token}"
@@ -316,6 +323,80 @@ def test_write_issue_lifecycle_creates_two_tasks_and_leaves_them_in_jira(
             assert jira_e2e_config.label in _labels_from_issue_payload(
                 second_read_payload
             )
+
+            upload_result = assert_non_error_result(
+                await call_tool_mcp(
+                    client,
+                    "jira_upload_attachment",
+                    {
+                        "issue_key": first_key,
+                        "file_path": attachment_source.name,
+                        "raw": True,
+                    },
+                )
+            )
+            upload_items = assert_result_data(upload_result, list)
+            if not upload_items or not isinstance(upload_items[0], Mapping):
+                raise AssertionError(
+                    "Expected jira_upload_attachment to return one item"
+                )
+            uploaded_attachment_id = str(upload_items[0].get("id", ""))
+            if not uploaded_attachment_id:
+                raise AssertionError("Expected uploaded attachment to include an ID")
+
+            attachments_result = assert_non_error_result(
+                await call_tool_mcp(
+                    client,
+                    "jira_attachments",
+                    {"issue_key": first_key, "raw": True},
+                )
+            )
+            attachments_payload = assert_result_data(attachments_result, dict)
+            attachment_items = attachments_payload.get("attachments")
+            if not isinstance(attachment_items, list):
+                raise AssertionError(
+                    "Expected jira_attachments raw payload to include an attachments list"
+                )
+            assert any(
+                isinstance(item, Mapping)
+                and str(item.get("id")) == uploaded_attachment_id
+                for item in attachment_items
+            )
+
+            attachment_metadata_result = assert_non_error_result(
+                await call_tool_mcp(
+                    client,
+                    "jira_attachment_metadata",
+                    {"attachment_id": uploaded_attachment_id, "raw": True},
+                )
+            )
+            attachment_metadata = assert_structured_content(attachment_metadata_result)
+            assert str(attachment_metadata.get("id")) == uploaded_attachment_id
+
+            downloaded_name = "attachment-round-trip-download.txt"
+            download_result = assert_non_error_result(
+                await call_tool_mcp(
+                    client,
+                    "jira_download_attachment",
+                    {
+                        "attachment_id": uploaded_attachment_id,
+                        "directory": "downloads",
+                        "filename": downloaded_name,
+                        "raw": True,
+                    },
+                )
+            )
+            download_payload = assert_structured_content(download_result)
+            downloaded_path = (tmp_path / "downloads" / downloaded_name).resolve()
+            assert download_payload == {
+                "status": "downloaded",
+                "attachment_id": uploaded_attachment_id,
+                "filename": downloaded_name,
+                "output_file": str(downloaded_path),
+                "size": len(attachment_bytes),
+                "mime_type": "text/plain",
+            }
+            assert downloaded_path.read_bytes() == attachment_bytes
 
             found_keys = await _search_for_expected_issue_keys(
                 client,
@@ -480,33 +561,3 @@ def test_write_issue_lifecycle_creates_two_tasks_and_leaves_them_in_jira(
             assert str(delete_link_payload.get("link_id")) == link_id
 
     _run(scenario())
-
-
-def test_write_module_can_download_fixture_attachment_when_configured(
-    jira_e2e_required_attachment_id: str,
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path,
-) -> None:
-    download_dir = tmp_path / "downloads"
-    monkeypatch.chdir(tmp_path)
-
-    async def scenario() -> None:
-        async with inmemory_client_mcp(timeout=30) as client:
-            result = assert_non_error_result(
-                await call_tool_mcp(
-                    client,
-                    "jira_attachment",
-                    {
-                        "attachment_id": jira_e2e_required_attachment_id,
-                        "output_path": "downloads/",
-                    },
-                )
-            )
-            text = require_text_content(result)
-            assert "Downloaded:" in text
-            assert "Saved to:" in text
-
-    _run(scenario())
-
-    assert download_dir.exists()
-    assert any(download_dir.iterdir())

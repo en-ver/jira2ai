@@ -19,7 +19,7 @@ def test_wrappers_pin_published_jira2py_with_release_versions() -> None:
     jira2py = next(
         package
         for package in lock["package"]
-        if package["name"] == "jira2py" and package["version"] == "0.15.0"
+        if package["name"] == "jira2py" and package["version"] == "0.16.0"
     )
 
     expected_versions = {"jira2cli": "0.8.0", "jira2mcp": "0.8.0"}
@@ -28,7 +28,10 @@ def test_wrappers_pin_published_jira2py_with_release_versions() -> None:
             (ROOT / "packages" / package_name / "pyproject.toml").read_text()
         )["project"]
         assert project["version"] == expected_version
-        assert "jira2py==0.15.0" in project["dependencies"]
+        assert "jira2py==0.16.0" in project["dependencies"]
+        assert not any(
+            dependency.startswith("httpx") for dependency in project["dependencies"]
+        )
 
         locked_wrapper = next(
             package for package in lock["package"] if package["name"] == package_name
@@ -37,12 +40,12 @@ def test_wrappers_pin_published_jira2py_with_release_versions() -> None:
         requires_dist = locked_wrapper["metadata"]["requires-dist"]
         assert {
             entry["specifier"] for entry in requires_dist if entry["name"] == "jira2py"
-        } == {"==0.15.0"}
+        } == {"==0.16.0"}
 
     assert jira2py["source"] == {"registry": "https://pypi.org/simple"}
     assert jira2py["sdist"]["url"].startswith("https://files.pythonhosted.org/")
     assert jira2py["wheels"][0]["url"].startswith("https://files.pythonhosted.org/")
-    assert jira2py_version == "0.15.0"
+    assert jira2py_version == "0.16.0"
 
     mcp_project = tomllib.loads(
         (ROOT / "packages" / "jira2mcp" / "pyproject.toml").read_text()

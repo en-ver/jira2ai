@@ -57,9 +57,20 @@ Run `uvx jira2cli --help` for the current command and option help.
 
 ### Attachments and worklogs
 
-`attachment`, `attachment-list`, `attachment-read`, `attachment-download`, `attachment-upload`, `attachment-delete`, `worklogs`, `worklog-add`, `worklog-update`, `worklog-delete`, `worklog-report`
+`attachment-list`, `attachment-read`, `attachment-download`, `attachment-upload`, `attachment-delete`, `worklogs`, `worklog-add`, `worklog-update`, `worklog-delete`, `worklog-report`
 
 Most structured commands accept `--json` for helper output. `--raw` renders API-oriented output by parsing JSON when needed, then pretty-printing it with recursively sorted object keys; it does not emit untouched HTTP bytes. `read` does not support `--raw`; use its `--json` option for the unchanged Jira response. Do not combine `--raw` and `--json` on commands that support both. `filter-run` resolves a saved filter's JQL and returns the same search-shaped result as `search`.
+
+`attachment-download` saves into `--directory` (the current directory by default). Its optional `--filename` must be one filename, not a path; when omitted, the sanitized Jira filename is used. For example:
+
+```bash
+uvx jira2cli attachment-download 63899 \
+  --directory downloads \
+  --filename debug.log \
+  --json
+```
+
+A validated download can atomically replace an existing destination. Structured output reports the actual destination and observed byte count; it does not include a `content_url`.
 
 `read` requires exactly one `--fields FIELD[,FIELD...]` option. Its CSV segments are trimmed, must be non-empty, and are forwarded in order as Jira field keys, IDs, or endpoint-supported selectors. `--json` bypasses text formatting and preserves the returned Jira object, including ADF. Selectors such as `*all`, `*navigable`, or negative selectors can still return broad responses; request only what is needed.
 
