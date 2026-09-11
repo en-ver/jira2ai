@@ -580,7 +580,7 @@ dev = [
 
 [[package]]
 name = "jira2cli"
-version = "0.8.0"
+version = "0.9.0"
 source = { editable = "packages/jira2cli" }
 dependencies = [
     { name = "jira2py" },
